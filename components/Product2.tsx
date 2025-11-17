@@ -67,7 +67,8 @@ const Product2: React.FC = () => {
 
         const prompt = `🎓 Bạn là chuyên gia biên soạn đề thi môn Công nghệ THPT theo Chương trình GDPT 2018.
 
-📚 NGUỒN: SGK Công nghệ lớp ${grade} - Bộ Cánh Diều + Đề thi thật THPT Quốc Gia
+📚 NGUỒN: SGK Công nghệ lớp ${grade} - Bộ **Kết nối tri thức với cuộc sống** và **Cánh Diều** + Đề thi thật THPT Quốc Gia
+   ➡️ Sử dụng nội dung từ CẢ 2 BỘ SÁCH để tạo câu hỏi toàn diện!
 
 🎯 YÊU CẦU TẠO CÂU HỎI:
 
@@ -84,7 +85,7 @@ Chủ đề: "${topic}"
    - ${Math.floor(parseInt(numTF) / 2)} câu: Công nghệ điện tử
 
 📋 TIÊU CHUẨN MỖI CÂU:
-1. Bám sát SGK Cánh Diều và đề thi thật
+1. Bám sát SGK **Kết nối tri thức & Cánh Diều** và đề thi thật
 2. Ghi rõ YCCĐ (Yêu cầu cần đạt) theo GDPT 2018
 3. Mức độ nhận thức: "Nhận biết" / "Thông hiểu" / "Vận dụng"
 4. Phương án nhiễu hợp lý, có tính phân hóa

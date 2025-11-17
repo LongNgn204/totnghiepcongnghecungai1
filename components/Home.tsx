@@ -20,7 +20,7 @@ const Home: React.FC = () => {
           </h2>
           <p className="text-xl mb-4 text-blue-100">
             <i className="fas fa-book mr-2"></i>
-            Dựa trên SGK Cánh Diều - Chương trình GDPT 2018
+            Dựa trên SGK Kết nối tri thức & Cánh Diều - Chương trình GDPT 2018
           </p>
           <p className="text-lg text-blue-50 max-w-3xl mx-auto">
             Sử dụng công nghệ trí tuệ nhân tạo Google Gemini 2.0 Flash để hỗ trợ học tập, 
@@ -30,7 +30,7 @@ const Home: React.FC = () => {
       </div>
 
       {/* Features Section */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Link to="/san-pham-1" className="group">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 h-full">
             <div className="text-center">
@@ -97,27 +97,58 @@ const Home: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 h-full">
             <div className="text-center">
               <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <i className="fas fa-file-alt text-3xl text-white"></i>
+                <i className="fas fa-industry text-3xl text-white"></i>
               </div>
               <h3 className="text-2xl font-bold mb-3 text-purple-600 dark:text-purple-400">
                 Sản Phẩm 3
               </h3>
               <h4 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">
-                Tạo Đề Thi THPT
+                Đề Thi - Công Nghiệp
               </h4>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Mô phỏng đề thi THPT Quốc Gia với 24 câu chuẩn Bộ GD&ĐT. 
-                Hỗ trợ in đề và tải xuống file để luyện tập.
+                Đề thi THPT chuyên đề Công nghiệp: Điện, Điện tử. 
+                28 câu (24 TN + 4 Đ/S) chuẩn format Bộ GD&ĐT với in đề và tải xuống.
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
                 <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
-                  <i className="fas fa-clipboard-list mr-1"></i>24 Câu
+                  <i className="fas fa-bolt mr-1"></i>Điện
                 </span>
                 <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm">
-                  <i className="fas fa-print mr-1"></i>In Đề
+                  <i className="fas fa-microchip mr-1"></i>Điện tử
                 </span>
                 <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-sm">
-                  <i className="fas fa-download mr-1"></i>Tải Xuống
+                  <i className="fas fa-print mr-1"></i>In/Tải
+                </span>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        <Link to="/san-pham-4" className="group">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 h-full">
+            <div className="text-center">
+              <div className="bg-gradient-to-br from-green-500 to-teal-600 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <i className="fas fa-tractor text-3xl text-white"></i>
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-green-600 dark:text-green-400">
+                Sản Phẩm 4
+              </h3>
+              <h4 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">
+                Đề Thi - Nông Nghiệp
+              </h4>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Đề thi THPT chuyên đề Nông nghiệp: Trồng trọt, Chăn nuôi. 
+                28 câu (24 TN + 4 Đ/S) chuẩn format với nội dung từ cả 2 bộ SGK.
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                  <i className="fas fa-seedling mr-1"></i>Trồng trọt
+                </span>
+                <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm">
+                  <i className="fas fa-paw mr-1"></i>Chăn nuôi
+                </span>
+                <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-sm">
+                  <i className="fas fa-print mr-1"></i>In/Tải
                 </span>
               </div>
             </div>
@@ -133,9 +164,9 @@ const Home: React.FC = () => {
         </h3>
         <div className="grid md:grid-cols-4 gap-6">
           <div className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-all duration-300">
-            <div className="text-5xl font-bold mb-2">24</div>
+            <div className="text-5xl font-bold mb-2">28</div>
             <p className="text-lg text-indigo-100">Câu hỏi/Đề thi</p>
-            <p className="text-sm text-indigo-200 mt-1">Đúng chuẩn THPT</p>
+            <p className="text-sm text-indigo-200 mt-1">Format chuẩn THPT</p>
           </div>
           
           <div className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-all duration-300">
@@ -396,10 +427,17 @@ const Home: React.FC = () => {
             </Link>
             <Link 
               to="/san-pham-3" 
-              className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-bold rounded-xl hover:from-yellow-500 hover:to-orange-500 transition-all duration-300 hover:scale-105 shadow-lg"
+              className="px-6 py-4 bg-gradient-to-r from-purple-400 to-purple-500 text-white font-bold rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all duration-300 hover:scale-105 shadow-lg"
             >
-              <i className="fas fa-file-alt mr-2"></i>
-              Tạo Đề Thi Ngay
+              <i className="fas fa-industry mr-2"></i>
+              Đề Thi Công Nghiệp
+            </Link>
+            <Link 
+              to="/san-pham-4" 
+              className="px-6 py-4 bg-gradient-to-r from-green-400 to-teal-400 text-white font-bold rounded-xl hover:from-green-500 hover:to-teal-500 transition-all duration-300 hover:scale-105 shadow-lg"
+            >
+              <i className="fas fa-tractor mr-2"></i>
+              Đề Thi Nông Nghiệp
             </Link>
           </div>
         </div>

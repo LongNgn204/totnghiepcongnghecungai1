@@ -26,7 +26,7 @@ const Header: React.FC = () => {
             <i className="fas fa-graduation-cap text-3xl text-white mr-3"></i>
             <div>
               <h1 className="text-xl font-bold text-white">Ôn Thi THPT Quốc Gia - Công Nghệ</h1>
-              <p className="text-xs text-blue-100">Học thông minh cùng AI - SGK Cánh Diều</p>
+              <p className="text-xs text-blue-100">SGK Kết nối tri thức & Cánh Diều</p>
             </div>
         </div>
         <nav className="flex items-center space-x-2 sm:space-x-3">
@@ -40,19 +40,31 @@ const Header: React.FC = () => {
             to="/san-pham-1"
             className={({ isActive }) => `${isActive ? 'bg-white text-blue-600' : 'text-white hover:bg-blue-700'} px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200`}
           >
-            <i className="fas fa-sitemap mr-1"></i> SP1
+            <i className="fas fa-comments mr-1"></i> Chat AI
           </NavLink>
           <NavLink
             to="/san-pham-2"
             className={({ isActive }) => `${isActive ? 'bg-white text-blue-600' : 'text-white hover:bg-blue-700'} px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200`}
           >
-            <i className="fas fa-question-circle mr-1"></i> SP2
+            <i className="fas fa-question-circle mr-1"></i> Câu hỏi
           </NavLink>
           <NavLink
             to="/san-pham-3"
             className={({ isActive }) => `${isActive ? 'bg-white text-blue-600' : 'text-white hover:bg-blue-700'} px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200`}
           >
-            <i className="fas fa-file-alt mr-1"></i> SP3
+            <i className="fas fa-industry mr-1"></i> Công nghiệp
+          </NavLink>
+          <NavLink
+            to="/san-pham-4"
+            className={({ isActive }) => `${isActive ? 'bg-white text-blue-600' : 'text-white hover:bg-blue-700'} px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200`}
+          >
+            <i className="fas fa-tractor mr-1"></i> Nông nghiệp
+          </NavLink>
+          <NavLink
+            to="/lich-su"
+            className={({ isActive }) => `${isActive ? 'bg-white text-blue-600' : 'text-white hover:bg-blue-700'} px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200`}
+          >
+            <i className="fas fa-history mr-1"></i> Lịch sử
           </NavLink>
         </nav>
       </div>

@@ -10,7 +10,7 @@ const Product1: React.FC = () => {
           Sản phẩm học tập số 1: Trò chuyện với AI
         </h2>
         <p className="text-center text-blue-100">
-          Hỏi AI bất kỳ câu hỏi nào về Công nghệ - Upload file để phân tích - Lịch sử chat được lưu tự động
+          Hỏi AI bất kỳ câu hỏi nào về Công nghệ (SGK KNTT & Cánh Diều) - Upload file để phân tích - Lịch sử chat được lưu tự động
         </p>
       </div>
 

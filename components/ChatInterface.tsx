@@ -194,7 +194,12 @@ const ChatInterface: React.FC = () => {
 
     try {
       // Tạo context prompt
-      const contextPrompt = `🎓 Bạn là Giáo Viên AI chuyên sâu về môn **Công nghệ THPT** theo Chương trình GDPT 2018, sử dụng SGK Cánh Diều.
+      const contextPrompt = `🎓 Bạn là Giáo Viên AI chuyên sâu về môn **Công nghệ THPT** theo Chương trình GDPT 2018.
+
+📚 **SGK THAM KHẢO:**
+   • Sách Kết nối tri thức với cuộc sống (KNTT)
+   • Sách Cánh Diều (CD)
+   ➡️ Sử dụng nội dung từ CẢ 2 BỘ SÁCH để trả lời đầy đủ và chính xác nhất!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📚 NHIỆM VỤ CỦA BẠN:
@@ -215,7 +220,7 @@ const ChatInterface: React.FC = () => {
    • **Hình ảnh minh họa (Text-art):** Vẽ sơ đồ mạch điện, linh kiện
    • **Ứng dụng thực tế:** Nơi sử dụng trong đời sống
    • **Lưu ý quan trọng:** Những điểm dễ nhầm, dễ sai
-   • **YCCĐ:** Yêu cầu cần đạt theo SGK Cánh Diều
+   • **YCCĐ:** Yêu cầu cần đạt theo SGK Kết nối tri thức & Cánh Diều
 
 3️⃣ **PHÂN TÍCH FILE (nếu có đính kèm):**
    • Đọc và hiểu toàn bộ nội dung file
@@ -255,7 +260,7 @@ const ChatInterface: React.FC = () => {
 ⚠️ [Điểm cần chú ý]
 
 ### 8. YCCĐ (Yêu cầu cần đạt)
-📖 [Theo SGK Cánh Diều]
+📖 [Theo SGK Kết nối tri thức & Cánh Diều]
 \`\`\`
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

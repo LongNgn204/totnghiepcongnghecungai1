@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { generateContent } from '../utils/geminiAPI';
 import QuestionCard from './QuestionCard';
 import { QuestionMC, QuestionTF, QuestionLevel } from '../types';
+import { saveExamToHistory } from '../utils/examStorage';
 
 const Product3: React.FC = () => {
   const [grade, setGrade] = useState('12');
@@ -28,16 +29,21 @@ const Product3: React.FC = () => {
     setIsSubmitted(false);
     setStartTime(Date.now());
 
-    const prompt = `🎓 Bạn là chuyên gia biên soạn đề thi tốt nghiệp THPT môn Công nghệ theo Chương trình GDPT 2018, dựa trên SGK Cánh Diều.
+    const prompt = `🎓 Bạn là chuyên gia biên soạn đề thi tốt nghiệp THPT môn Công nghệ theo Chương trình GDPT 2018.
+
+📚 **SGK THAM KHẢO:**
+   • Sách Kết nối tri thức với cuộc sống (KNTT)
+   • Sách Cánh Diều (CD)
+   ➡️ Sử dụng nội dung từ CẢ 2 BỘ SÁCH để tạo đề thi chuẩn!
 
 📚 NHIỆM VỤ: Tạo đề thi mô phỏng CHÍNH THỨC với độ khó và nội dung giống đề thi THPT thật.
 
 ⚠️ QUAN TRỌNG: Đề thi phải ĐÚNG FORMAT và CÂN ĐỐI với đề thi chính thức của Bộ GD&ĐT!
 
-📋 CẤU TRÚC BẮT BUỘC (24 câu - 50 phút):
+📋 CẤU TRÚC BẮT BUỘC (28 câu - 50 phút):
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📌 PHẦN I: TRẮC NGHIỆM 4 LỰA CHỌN (20 câu)
+📌 PHẦN I: TRẮC NGHIỆM 4 LỰA CHỌN (24 câu)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 🔹 Câu 1-8: Công nghệ 10-11 (8 câu)
@@ -61,22 +67,25 @@ const Product3: React.FC = () => {
    • IC số (IC 74xx, IC 4xxx, ứng dụng)
    • Mạch dao động (LC, RC, tần số f = 1/(2π√LC))
 
+🔹 Câu 21-24: Công nghệ lớp 10-11 (4 câu tiếp)
+   • Bản vẽ kỹ thuật, Vật liệu, Máy công cụ, Động cơ
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📌 PHẦN II: TRẮC NGHIỆM ĐÚNG/SAI (4 câu)
+📌 PHẦN II: TRẮC NGHIỆM ĐÚNG/SAI (4 câu - Câu 25-28)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🔹 Câu 21-22: Công nghệ ĐIỆN (2 câu)
+🔹 Câu 25-26: Công nghệ ĐIỆN (2 câu)
    Mỗi câu có 4 ý a), b), c), d) cần xác định Đúng/Sai
    
-🔹 Câu 23-24: Công nghệ ĐIỆN TỬ (2 câu)
+🔹 Câu 27-28: Công nghệ ĐIỆN TỬ (2 câu)
    Mỗi câu có 4 ý a), b), c), d) cần xác định Đúng/Sai
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📊 PHÂN BỔ MỨC ĐỘ (THEO CHUẨN BỘ GD&ĐT):
-• Nhận biết: 10 câu (42%) - Câu 1,2,3,4,9,10,15,16,21,22
-• Thông hiểu: 10 câu (42%) - Câu 5,6,7,8,11,12,17,18,23,24
-• Vận dụng: 4 câu (16%) - Câu 13,14,19,20
+• Nhận biết: 12 câu (43%) - Câu 1,2,3,4,9,10,15,16,21,22,25,26
+• Thông hiểu: 12 câu (43%) - Câu 5,6,7,8,11,12,17,18,23,24,27,28
+• Vận dụng: 4 câu (14%) - Câu 13,14,19,20
 
 🎯 YÊU CẦU KỸ THUẬT:
 1. ✅ Nội dung: BÁM SÁT SGK Cánh Diều, giống đề thi thật 95%
@@ -192,8 +201,34 @@ d) Tần số của mỗi pha là 100Hz [SAI - f = 50Hz]"
   };
 
   const handleSubmit = () => {
+    const currentEndTime = Date.now();
     setIsSubmitted(true);
-    setEndTime(Date.now());
+    setEndTime(currentEndTime);
+    
+    // Calculate score
+    const currentScore = questions.reduce((acc, q) => {
+      if (userAnswers[q.id] === q.answer) return acc + 1;
+      return acc;
+    }, 0);
+    
+    const percentage = (currentScore / questions.length) * 100;
+    const timeSpent = startTime ? Math.round((currentEndTime - startTime) / 1000 / 60) : 0;
+    
+    // Save to history
+    saveExamToHistory({
+      id: `exam_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      examTitle: examTitle,
+      examType: 'industrial',
+      questions: questions,
+      userAnswers: userAnswers,
+      score: currentScore,
+      totalQuestions: questions.length,
+      timeSpent: timeSpent,
+      percentage: percentage,
+      createdAt: new Date().toISOString(),
+      isSubmitted: true
+    });
+    
     window.scrollTo(0, 0);
   };
 
@@ -229,7 +264,11 @@ d) Tần số của mỗi pha là 100Hz [SAI - f = 50Hz]"
           Sản phẩm học tập số 3: Tạo đề thi mô phỏng
         </h2>
         <p className="text-center text-blue-100">
-          Đề thi chuẩn tốt nghiệp THPT Quốc Gia - 24 câu, 50 phút
+          Đề thi chuẩn tốt nghiệp THPT Quốc Gia - 28 câu (24 TN + 4 Đ/S), 50 phút
+        </p>
+        <p className="text-center text-blue-50 text-sm mt-2">
+          <i className="fas fa-info-circle mr-1"></i>
+          Công cụ hỗ trợ học tập - Nội dung mang tính tham khảo
         </p>
       </div>
 
@@ -262,13 +301,17 @@ d) Tần số của mỗi pha là 100Hz [SAI - f = 50Hz]"
                 Cấu trúc đề thi chuẩn THPT:
               </h4>
               <ul className="space-y-1 text-sm">
-                <li>✅ <strong>Phần I:</strong> 20 câu trắc nghiệm 4 lựa chọn</li>
-                <li className="ml-6">• 8 câu: Công nghệ 10-11</li>
-                <li className="ml-6">• 6 câu: Công nghệ điện (lớp 12)</li>
-                <li className="ml-6">• 6 câu: Công nghệ điện tử (lớp 12)</li>
-                <li>✅ <strong>Phần II:</strong> 4 câu Đúng/Sai</li>
-                <li className="ml-6">• 2 câu: Công nghệ điện</li>
-                <li className="ml-6">• 2 câu: Công nghệ điện tử</li>
+                <li>✅ <strong>Phần I:</strong> 24 câu trắc nghiệm 4 lựa chọn</li>
+                <li className="ml-6">• Câu 1-8: Công nghệ 10-11 (Phần 1)</li>
+                <li className="ml-6">• Câu 9-14: Công nghệ điện lớp 12</li>
+                <li className="ml-6">• Câu 15-20: Công nghệ điện tử lớp 12</li>
+                <li className="ml-6">• Câu 21-24: Công nghệ 10-11 (Phần 2)</li>
+                <li>✅ <strong>Phần II:</strong> 4 câu Đúng/Sai (Câu 25-28)</li>
+                <li className="ml-6">• Câu 25-26: Công nghệ điện</li>
+                <li className="ml-6">• Câu 27-28: Công nghệ điện tử</li>
+                <li className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+                  <i className="fas fa-book mr-1"></i>Dựa trên SGK Kết nối tri thức & Cánh Diều
+                </li>
               </ul>
             </div>
 
@@ -336,21 +379,30 @@ d) Tần số của mỗi pha là 100Hz [SAI - f = 50Hz]"
             <p className="text-gray-600 dark:text-gray-400">
               <i className="fas fa-clock mr-2"></i>Thời gian làm bài: 50 phút
               <span className="mx-3">|</span>
-              <i className="fas fa-book mr-2"></i>24 câu hỏi
+              <i className="fas fa-book mr-2"></i>28 câu hỏi (24 TN + 4 Đ/S)
             </p>
           </div>
 
-          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900 rounded-lg">
-            <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
-              <i className="fas fa-exclamation-triangle mr-2"></i>
-              Lưu ý: Đây là đề thi mô phỏng được AI tạo dựa trên cấu trúc chuẩn thi THPT Quốc Gia
-            </p>
+          <div className="mb-6 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900 dark:to-orange-900 rounded-lg border-l-4 border-yellow-500">
+            <div className="flex items-start space-x-3">
+              <i className="fas fa-info-circle text-yellow-600 dark:text-yellow-400 text-xl mt-0.5"></i>
+              <div>
+                <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
+                  Công cụ hỗ trợ học tập môn Công nghệ THPT
+                </p>
+                <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1">
+                  <li>• Đề thi do AI tạo dựa trên SGK <strong>Kết nối tri thức</strong> và <strong>Cánh Diều</strong></li>
+                  <li>• Nội dung mang tính tham khảo, hỗ trợ ôn tập và làm quen format đề thi</li>
+                  <li>• Đây là phiên bản demo, có thể chưa chính xác 100%</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
           {/* Phần I */}
           <div className="mb-8">
             <h4 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">
-              PHẦN I: Trắc nghiệm nhiều lựa chọn (20 câu)
+              PHẦN I: Trắc nghiệm 4 lựa chọn (Câu 1-24)
             </h4>
             <div className="space-y-6">
               {questions.filter((q): q is QuestionMC => 'options' in q).map((q, idx) => (
@@ -370,7 +422,7 @@ d) Tần số của mỗi pha là 100Hz [SAI - f = 50Hz]"
           {/* Phần II */}
           <div className="mb-8">
             <h4 className="text-xl font-bold mb-4 text-green-600 dark:text-green-400">
-              PHẦN II: Trắc nghiệm Đúng/Sai (4 câu)
+              PHẦN II: Trắc nghiệm Đúng/Sai (Câu 25-28)
             </h4>
             <div className="space-y-6">
               {questions.filter((q): q is QuestionTF => !('options' in q)).map((q) => (
@@ -477,7 +529,7 @@ ${questions.map((q, idx) => {
               <i className="fas fa-brain text-purple-500 text-xl mt-1"></i>
               <div>
                 <p className="font-semibold">Ôn tập kiến thức toàn diện</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Bao gồm cả 3 lớp 10, 11, 12 theo SGK Cánh Diều</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Bao gồm cả 3 lớp 10, 11, 12 theo SGK KNTT & Cánh Diều</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">

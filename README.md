@@ -6,7 +6,7 @@
 
 Nền tảng học tập thông minh sử dụng **Google Gemini 2.0 AI** để hỗ trợ học sinh ôn tập và luyện thi tốt nghiệp THPT môn Công nghệ.
 
-Dựa trên **SGK Cánh Diều** - Chương trình GDPT 2018
+Dựa trên **SGK Kết nối tri thức với cuộc sống** và **SGK Cánh Diều** - Chương trình GDPT 2018
 
 ---
 
@@ -35,11 +35,19 @@ Dựa trên **SGK Cánh Diều** - Chương trình GDPT 2018
 - ✅ Hiển thị kết quả bằng Mermaid diagram
 - ✅ Tùy chỉnh số lượng câu hỏi
 
-### � Sản Phẩm 3: Tạo Đề Thi THPT
-- ✅ 24 câu hỏi đúng format thi THPT Quốc Gia
-- ✅ Phân bổ chuẩn: 20 câu MC + 4 câu Đúng/Sai
-- ✅ Nội dung: Công nghệ 10-11 (8 câu) + Điện (6 câu) + Điện tử (6 câu) + Đúng/Sai (4 câu)
-- ✅ Phân bố mức độ: 42% Nhận biết, 42% Thông hiểu, 16% Vận dụng
+### 📝 Sản Phẩm 3: Tạo Đề Thi THPT - Công Nghiệp
+- ✅ 28 câu hỏi đúng format thi THPT Quốc Gia
+- ✅ Phân bổ chuẩn: 24 câu Trắc nghiệm 4 lựa chọn + 4 câu Đúng/Sai
+- ✅ Nội dung: Công nghệ 10-11 (12 câu) + Điện (6 câu) + Điện tử (6 câu) + Đúng/Sai (4 câu)
+- ✅ Phân bố mức độ: 43% Nhận biết, 43% Thông hiểu, 14% Vận dụng
+- ✅ In đề thi với CSS tối ưu
+- ✅ Tải đề thi ra file .txt
+
+### 🚜 Sản Phẩm 4: Tạo Đề Thi THPT - Nông Nghiệp
+- ✅ 28 câu hỏi đúng format thi THPT Quốc Gia
+- ✅ Phân bổ chuẩn: 24 câu Trắc nghiệm 4 lựa chọn + 4 câu Đúng/Sai
+- ✅ Nội dung: Công nghệ 10-11 (12 câu) + Trồng trọt (6 câu) + Chăn nuôi (6 câu) + Đúng/Sai (4 câu)
+- ✅ Phân bố mức độ: 43% Nhận biết, 43% Thông hiểu, 14% Vận dụng
 - ✅ In đề thi với CSS tối ưu
 - ✅ Tải đề thi ra file .txt
 
@@ -113,7 +121,7 @@ npm run build
    - Công thức toán học
    - Sơ đồ minh họa (text-art)
    - Ví dụ thực tế
-   - YCCĐ theo SGK
+   - YCCĐ theo SGK KNTT & Cánh Diều
 6. Click "Xuất file" để lưu lịch sử chat
 
 ### ❓ Sản Phẩm 2: Tạo Câu Hỏi Trắc Nghiệm
@@ -126,17 +134,18 @@ npm run build
    - Câu hỏi có 4 phương án
    - Đáp án chính xác
    - Mức độ (Nhận biết/Thông hiểu/Vận dụng)
-   - YCCĐ theo SGK
+   - YCCĐ theo SGK KNTT & Cánh Diều
 
-### 📝 Sản Phẩm 3: Tạo Đề Thi THPT
-1. Click menu SP3 hoặc "Tạo Đề Thi Ngay"
+### 📝 Sản Phẩm 3 & 4: Tạo Đề Thi THPT (Công Nghiệp & Nông Nghiệp)
+1. Chọn chuyên đề: Công nghiệp (SP3) hoặc Nông nghiệp (SP4)
 2. Nhấn nút "🎯 Tạo Đề Thi THPT"
 3. Chờ AI tạo đề (~30-60 giây)
-4. Xem đề thi với 24 câu:
-   - Câu 1-8: Công nghệ 10-11
-   - Câu 9-14: Công nghệ điện lớp 12
-   - Câu 15-20: Công nghệ điện tử lớp 12
-   - Câu 21-24: Câu Đúng/Sai
+4. Xem đề thi với **28 câu** (24 TN + 4 Đ/S):
+   - Câu 1-8: Công nghệ 10-11 (Phần cơ sở)
+   - Câu 9-14: Chuyên đề 1 (Điện/Trồng trọt)
+   - Câu 15-20: Chuyên đề 2 (Điện tử/Chăn nuôi)
+   - Câu 21-24: Công nghệ 10-11 (Tiếp)
+   - Câu 25-28: Đúng/Sai (4 câu)
 5. Nhấn "🖨️ In Đề Thi" để in
 6. Nhấn "💾 Tải Kết Quả" để lưu file .txt
 
