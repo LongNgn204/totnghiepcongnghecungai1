@@ -31,22 +31,28 @@ const Header: React.FC = () => {
         </div>
         <nav className="flex items-center space-x-2 sm:space-x-3">
           <NavLink
+            to="/"
+            className={({ isActive }) => `${isActive ? 'bg-white text-blue-600' : 'text-white hover:bg-blue-700'} px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200`}
+          >
+            <i className="fas fa-home mr-1"></i> Trang Chủ
+          </NavLink>
+          <NavLink
             to="/san-pham-1"
             className={({ isActive }) => `${isActive ? 'bg-white text-blue-600' : 'text-white hover:bg-blue-700'} px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200`}
           >
-            <i className="fas fa-sitemap mr-1"></i> SP1: Hệ thống hóa
+            <i className="fas fa-sitemap mr-1"></i> SP1
           </NavLink>
           <NavLink
             to="/san-pham-2"
             className={({ isActive }) => `${isActive ? 'bg-white text-blue-600' : 'text-white hover:bg-blue-700'} px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200`}
           >
-            <i className="fas fa-question-circle mr-1"></i> SP2: Câu hỏi TN
+            <i className="fas fa-question-circle mr-1"></i> SP2
           </NavLink>
           <NavLink
             to="/san-pham-3"
             className={({ isActive }) => `${isActive ? 'bg-white text-blue-600' : 'text-white hover:bg-blue-700'} px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200`}
           >
-            <i className="fas fa-file-alt mr-1"></i> SP3: Đề thi
+            <i className="fas fa-file-alt mr-1"></i> SP3
           </NavLink>
         </nav>
       </div>

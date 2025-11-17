@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
+import Home from './components/Home';
 import Product1 from './components/Product1';
 import Product2 from './components/Product2';
 import Product3 from './components/Product3';
@@ -13,7 +14,7 @@ const App: React.FC = () => {
         <Header />
         <main className="flex-grow container mx-auto px-4 py-8">
           <Routes>
-            <Route path="/" element={<Navigate to="/san-pham-1" replace />} />
+            <Route path="/" element={<Home />} />
             <Route path="/san-pham-1" element={<Product1 />} />
             <Route path="/san-pham-2" element={<Product2 />} />
             <Route path="/san-pham-3" element={<Product3 />} />
