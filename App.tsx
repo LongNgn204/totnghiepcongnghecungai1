@@ -113,7 +113,7 @@ const App: React.FC = () => {
                     <li><i className="fas fa-check mr-2"></i>Google Gemini 2.0</li>
                     <li><i className="fab fa-react mr-2"></i>React 19 + TypeScript</li>
                     <li><i className="fas fa-bolt mr-2"></i>Vite + Tailwind CSS</li>
-                    <li><i className="fas fa-book mr-2"></i>SGK Cánh Diều</li>
+                    <li><i className="fas fa-book mr-2"></i>SGK Kết nối tri thức với cuộc sống & Cánh Diều</li>
                   </ul>
                 </div>
               </div>
@@ -124,16 +124,8 @@ const App: React.FC = () => {
                   Ôn Thi THPT Quốc Gia - Công Nghệ với AI | Chương trình GDPT 2018
                 </p>
                 <p className="text-xs text-blue-100 mt-2">
-                  &copy; 2025 - Nền tảng học tập thông minh cùng AI. Phát triển với ❤️ bởi AI Education Team
+                  &copy; 2025 - Ý tưởng và phát triển bởi Long Nguyễn 204
                 </p>
-                <div className="flex justify-center gap-4 mt-3">
-                  <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-100 hover:text-white transition-colors">
-                    <i className="fas fa-robot text-xl"></i>
-                  </a>
-                  <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-blue-100 hover:text-white transition-colors">
-                    <i className="fab fa-github text-xl"></i>
-                  </a>
-                </div>
               </div>
             </div>
         </footer>

@@ -26,7 +26,7 @@ const Header: React.FC = () => {
             <i className="fas fa-graduation-cap text-3xl text-white mr-3"></i>
             <div>
               <h1 className="text-xl font-bold text-white">Ôn Thi THPT Quốc Gia - Công Nghệ</h1>
-              <p className="text-xs text-blue-100">SGK Kết nối tri thức & Cánh Diều</p>
+              <p className="text-xs text-blue-100">SGK Kết nối tri thức với cuộc sống & Cánh Diều</p>
             </div>
         </div>
         <nav className="flex items-center space-x-2 sm:space-x-3">
