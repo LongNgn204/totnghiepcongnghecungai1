@@ -5,6 +5,7 @@ import Header from './components/Header';
 import ScrollToTop from './components/ScrollToTop';
 import TechBadge from './components/TechBadge';
 import LoadingSpinner from './components/LoadingSpinner';
+import SyncStatus from './components/SyncStatus';
 
 // Lazy load components for code splitting
 const Home = lazy(() => import('./components/Home'));
@@ -12,6 +13,12 @@ const Product1 = lazy(() => import('./components/Product1'));
 const Product2 = lazy(() => import('./components/Product2'));
 const Product3 = lazy(() => import('./components/Product3'));
 const Product4 = lazy(() => import('./components/Product4'));
+const Product5 = lazy(() => import('./components/Product5'));
+const Product6 = lazy(() => import('./components/Product6'));
+const Product7 = lazy(() => import('./components/Product7'));
+const Leaderboard = lazy(() => import('./components/Leaderboard'));
+const PWASettings = lazy(() => import('./components/PWASettings'));
+const SyncSettings = lazy(() => import('./components/SyncSettings'));
 const ExamHistory = lazy(() => import('./components/ExamHistory'));
 const ExamReview = lazy(() => import('./components/ExamReview'));
 
@@ -78,6 +85,12 @@ const App: React.FC = () => {
               <Route path="/san-pham-2" element={<Product2 />} />
               <Route path="/san-pham-3" element={<Product3 />} />
               <Route path="/san-pham-4" element={<Product4 />} />
+              <Route path="/san-pham-5" element={<Product5 />} />
+              <Route path="/san-pham-6" element={<Product6 />} />
+              <Route path="/san-pham-7" element={<Product7 />} />
+              <Route path="/bang-xep-hang" element={<Leaderboard />} />
+              <Route path="/pwa-settings" element={<PWASettings />} />
+              <Route path="/sync-settings" element={<SyncSettings />} />
               <Route path="/lich-su" element={<ExamHistory />} />
               <Route path="/xem-lai/:id" element={<ExamReview />} />
             </Routes>
@@ -85,6 +98,7 @@ const App: React.FC = () => {
         </main>
         <ScrollToTop />
         <TechBadge />
+        <SyncStatus />
         <footer className="bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 shadow-2xl mt-auto border-t-2 border-blue-500/30">
             <div className="container mx-auto px-4 py-10">
               <div className="grid md:grid-cols-4 gap-8 text-white mb-8">

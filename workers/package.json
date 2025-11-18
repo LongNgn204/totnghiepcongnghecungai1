@@ -1,0 +1,23 @@
+{
+  "name": "ai-hoc-tap-api",
+  "version": "1.0.0",
+  "description": "Backend API for AI Học Tập - Cloudflare Workers + D1",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create ai-hoc-tap-db",
+    "db:init": "wrangler d1 execute ai-hoc-tap-db --file=schema.sql",
+    "db:init-local": "wrangler d1 execute ai-hoc-tap-db --local --file=schema.sql",
+    "db:query": "wrangler d1 execute ai-hoc-tap-db --command",
+    "tail": "wrangler tail"
+  },
+  "dependencies": {
+    "itty-router": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240620.0",
+    "typescript": "^5.0.0",
+    "wrangler": "^3.57.0"
+  }
+}

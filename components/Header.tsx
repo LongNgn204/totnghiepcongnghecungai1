@@ -71,8 +71,50 @@ const Header: React.FC = () => {
             <span className="hidden sm:inline">Nông nghiệp</span>
           </NavLink>
           <NavLink
-            to="/lich-su"
+            to="/san-pham-5"
             className={({ isActive }) => `${isActive ? 'bg-white text-pink-600 shadow-lg scale-105' : 'text-white hover:bg-white/20 hover:backdrop-blur-sm'} px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2`}
+          >
+            <i className="fas fa-layer-group"></i> 
+            <span className="hidden sm:inline">Flashcards</span>
+          </NavLink>
+          <NavLink
+            to="/san-pham-6"
+            className={({ isActive }) => `${isActive ? 'bg-white text-blue-600 shadow-lg scale-105' : 'text-white hover:bg-white/20 hover:backdrop-blur-sm'} px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2`}
+          >
+            <i className="fas fa-chart-line"></i> 
+            <span className="hidden sm:inline">Dashboard</span>
+          </NavLink>
+          <NavLink
+            to="/san-pham-7"
+            className={({ isActive }) => `${isActive ? 'bg-white text-indigo-600 shadow-lg scale-105' : 'text-white hover:bg-white/20 hover:backdrop-blur-sm'} px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2`}
+          >
+            <i className="fas fa-users"></i> 
+            <span className="hidden sm:inline">Nhóm học</span>
+          </NavLink>
+          <NavLink
+            to="/bang-xep-hang"
+            className={({ isActive }) => `${isActive ? 'bg-white text-yellow-600 shadow-lg scale-105' : 'text-white hover:bg-white/20 hover:backdrop-blur-sm'} px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2`}
+          >
+            <i className="fas fa-trophy"></i> 
+            <span className="hidden sm:inline">BXH</span>
+          </NavLink>
+          <NavLink
+            to="/pwa-settings"
+            className={({ isActive }) => `${isActive ? 'bg-white text-cyan-600 shadow-lg scale-105' : 'text-white hover:bg-white/20 hover:backdrop-blur-sm'} px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2`}
+          >
+            <i className="fas fa-mobile-alt"></i> 
+            <span className="hidden sm:inline">PWA</span>
+          </NavLink>
+          <NavLink
+            to="/sync-settings"
+            className={({ isActive }) => `${isActive ? 'bg-white text-emerald-600 shadow-lg scale-105' : 'text-white hover:bg-white/20 hover:backdrop-blur-sm'} px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2`}
+          >
+            <i className="fas fa-cloud"></i> 
+            <span className="hidden sm:inline">Đồng bộ</span>
+          </NavLink>
+          <NavLink
+            to="/lich-su"
+            className={({ isActive }) => `${isActive ? 'bg-white text-orange-600 shadow-lg scale-105' : 'text-white hover:bg-white/20 hover:backdrop-blur-sm'} px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2`}
           >
             <i className="fas fa-history"></i> 
             <span className="hidden sm:inline">Lịch sử</span>

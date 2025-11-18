@@ -569,3 +569,29 @@ html {
 .dark .markdown-content table th {
   background: #1f2937;
 }
+
+/* Flashcard 3D Flip Animations */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Smooth transitions for flashcards */
+.flashcard-container {
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flashcard-container:hover {
+  transform: scale(1.02);
+}

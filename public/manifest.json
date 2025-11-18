@@ -1,0 +1,99 @@
+{
+  "name": "AI Hỗ Trợ Học Tập Công Nghệ",
+  "short_name": "AI Học Tập",
+  "description": "Ứng dụng hỗ trợ học tập môn Công nghệ cho lớp 6-12 với AI, flashcards, và nhóm học",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4F46E5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Màn hình chính"
+    },
+    {
+      "src": "/screenshots/chat.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Chat với AI"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Chat AI",
+      "short_name": "Chat",
+      "description": "Trò chuyện với AI",
+      "url": "/#/san-pham-1",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Thi thử",
+      "short_name": "Thi",
+      "description": "Làm bài kiểm tra",
+      "url": "/#/san-pham-3",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Flashcards",
+      "short_name": "Flashcards",
+      "description": "Ôn tập với flashcards",
+      "url": "/#/san-pham-5",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  "prefer_related_applications": false
+}

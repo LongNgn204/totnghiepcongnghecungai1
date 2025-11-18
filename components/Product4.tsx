@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { generateContent } from '../utils/geminiAPI';
-import { saveExamToHistory } from '../utils/examStorage';
+import { saveExamToHistory, getExamHistory, ExamHistory, deleteExamFromHistory } from '../utils/examStorage';
 import QuestionCard from './QuestionCard';
 import LoadingSpinner from './LoadingSpinner';
 import { ExamSkeleton } from './Skeleton';
 import CountdownTimer from './CountdownTimer';
+import ExamReviewModal from './ExamReviewModal';
 
 interface Question {
   id: number;
@@ -19,6 +20,7 @@ interface Question {
 }
 
 const Product4: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'create' | 'history'>('create');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -26,6 +28,15 @@ const Product4: React.FC = () => {
   const [userAnswers, setUserAnswers] = useState<{ [key: number]: any }>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
+  const [examHistory, setExamHistory] = useState<ExamHistory[]>([]);
+  const [selectedExam, setSelectedExam] = useState<ExamHistory | null>(null);
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      const history = getExamHistory().filter(e => e.examType === 'agriculture');
+      setExamHistory(history);
+    }
+  }, [activeTab]);
 
   const generateExam = async () => {
     const prompt = `🎓 Bạn là chuyên gia biên soạn đề thi tốt nghiệp THPT môn Công nghệ - Chuyên đề NÔNG NGHIỆP theo Chương trình GDPT 2018.
@@ -261,7 +272,11 @@ d) SAI (Nái mang thai ăn vừa đủ 2-2.5kg/ngày, ăn nhiều dễ béo, kh�
             level: q.level,
             grade: q.grade,
             topic: q.topic,
-            type: 'tf'
+            type: 'tf',
+            // Format mới với 4 phát biểu a, b, c, d
+            statements: q.statements,
+            answers: q.answers,
+            explanations: q.explanations
           };
         }
       });
@@ -367,7 +382,36 @@ d) SAI (Nái mang thai ăn vừa đủ 2-2.5kg/ngày, ăn nhiều dễ béo, kh�
         </p>
       </div>
 
-      {/* Instructions */}
+      {/* Tabs */}
+      <div className="flex gap-2 bg-white rounded-lg shadow-md p-2">
+        <button
+          onClick={() => setActiveTab('create')}
+          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+            activeTab === 'create'
+              ? 'bg-gradient-to-r from-green-600 to-teal-600 text-white shadow-lg'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <i className="fas fa-plus-circle mr-2"></i>
+          Tạo đề mới
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+            activeTab === 'history'
+              ? 'bg-gradient-to-r from-green-600 to-teal-600 text-white shadow-lg'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <i className="fas fa-history mr-2"></i>
+          Lịch sử thi ({examHistory.length})
+        </button>
+      </div>
+
+      {/* Create Tab */}
+      {activeTab === 'create' && (
+        <>
+          {/* Instructions */}
       <div className="bg-green-50 dark:bg-green-900 p-6 rounded-lg">
         <h3 className="text-xl font-semibold mb-3 text-green-800 dark:text-green-200 flex items-center">
           <i className="fas fa-seedling mr-2"></i>
@@ -647,6 +691,156 @@ d) SAI (Nái mang thai ăn vừa đủ 2-2.5kg/ngày, ăn nhiều dễ béo, kh�
             </ul>
           </div>
         </>
+      )}
+      </>
+      )}
+
+      {/* History Tab */}
+      {activeTab === 'history' && (
+        <div className="space-y-6">
+          {/* Overall Statistics */}
+          {examHistory.length > 0 && (
+            <div className="bg-gradient-to-r from-green-50 to-teal-50 rounded-lg shadow-lg p-6 animate-fade-in">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+                <i className="fas fa-chart-line text-green-600"></i>
+                Thống kê tổng quan
+              </h3>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
+                  <div className="text-3xl font-bold text-green-600">{examHistory.length}</div>
+                  <div className="text-sm text-gray-600 mt-1">Đề đã làm</div>
+                </div>
+                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
+                  <div className="text-3xl font-bold text-teal-600">
+                    {(examHistory.reduce((sum, e) => sum + e.percentage, 0) / examHistory.length).toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Điểm TB</div>
+                </div>
+                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
+                  <div className="text-3xl font-bold text-emerald-600">
+                    {Math.max(...examHistory.map(e => e.percentage)).toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Cao nhất</div>
+                </div>
+                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
+                  <div className="text-3xl font-bold text-orange-600">
+                    {examHistory.reduce((sum, e) => sum + e.timeSpent, 0)}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Tổng phút</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {examHistory.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+              <i className="fas fa-history text-gray-300 text-6xl mb-4"></i>
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">Chưa có đề thi nào</h3>
+              <p className="text-gray-500 mb-6">Hãy tạo đề thi đầu tiên của bạn!</p>
+              <button
+                onClick={() => setActiveTab('create')}
+                className="px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:shadow-lg transition-all"
+              >
+                <i className="fas fa-plus-circle mr-2"></i>
+                Tạo đề mới
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {examHistory.map((exam, idx) => (
+                <div
+                  key={exam.id}
+                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all animate-fade-in"
+                  style={{ animationDelay: `${idx * 0.1}s` }}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-800 mb-2">
+                        <i className="fas fa-tractor text-green-600 mr-2"></i>
+                        {exam.examTitle}
+                      </h3>
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
+                        <span>
+                          <i className="fas fa-calendar mr-1"></i>
+                          {new Date(exam.createdAt).toLocaleDateString('vi-VN')}
+                        </span>
+                        <span>
+                          <i className="fas fa-clock mr-1"></i>
+                          {exam.timeSpent} phút
+                        </span>
+                      </div>
+                      
+                      {/* Progress Bar */}
+                      <div className="mb-3">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-gray-600">Độ chính xác</span>
+                          <span className={`font-bold ${
+                            exam.percentage >= 80 ? 'text-green-600' :
+                            exam.percentage >= 50 ? 'text-yellow-600' : 'text-red-600'
+                          }`}>
+                            {exam.score}/{exam.totalQuestions} ({exam.percentage.toFixed(1)}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-1000 ${
+                              exam.percentage >= 80 ? 'bg-gradient-to-r from-green-500 to-green-600' :
+                              exam.percentage >= 50 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+                              'bg-gradient-to-r from-red-500 to-red-600'
+                            }`}
+                            style={{ width: `${exam.percentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Score Badge */}
+                    <div className={`ml-4 px-4 py-2 rounded-full font-bold text-white text-center min-w-[80px] ${
+                      exam.percentage >= 80 ? 'bg-gradient-to-r from-green-500 to-green-600' :
+                      exam.percentage >= 50 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+                      'bg-gradient-to-r from-red-500 to-red-600'
+                    }`}>
+                      <div className="text-2xl">{exam.percentage.toFixed(0)}%</div>
+                      <div className="text-xs opacity-90">
+                        {exam.percentage >= 80 ? 'Xuất sắc' :
+                         exam.percentage >= 50 ? 'Khá' : 'Cần cố gắng'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedExam(exam)}
+                      className="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:shadow-lg transition-all"
+                    >
+                      <i className="fas fa-eye mr-2"></i>
+                      Xem chi tiết
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm('Bạn có chắc muốn xóa đề thi này?')) {
+                          deleteExamFromHistory(exam.id);
+                          setExamHistory(getExamHistory().filter(e => e.examType === 'agriculture'));
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all"
+                    >
+                      <i className="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {selectedExam && (
+        <ExamReviewModal
+          exam={selectedExam}
+          onClose={() => setSelectedExam(null)}
+        />
       )}
     </div>
   );

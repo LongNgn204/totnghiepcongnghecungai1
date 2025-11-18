@@ -1,0 +1,16 @@
+name = "ai-hoc-tap-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-hoc-tap-db"
+database_id = "5e6f80b8-02cd-4d7a-8f5e-a17fd24dd60d"
+
+# Environment variables
+[vars]
+ALLOWED_ORIGINS = "https://your-domain.pages.dev,http://localhost:5173"
+
+# Production secrets (set via: wrangler secret put GEMINI_API_KEY)
+# GEMINI_API_KEY = "your-gemini-key"

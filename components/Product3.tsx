@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { generateContent } from '../utils/geminiAPI';
 import QuestionCard from './QuestionCard';
 import { QuestionMC, QuestionTF, QuestionLevel } from '../types';
-import { saveExamToHistory } from '../utils/examStorage';
+import { saveExamToHistory, getExamHistory, ExamHistory, deleteExamFromHistory } from '../utils/examStorage';
 import LoadingSpinner from './LoadingSpinner';
 import { ExamSkeleton } from './Skeleton';
 import CountdownTimer from './CountdownTimer';
+import ExamReviewModal from './ExamReviewModal';
 
 const Product3: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'create' | 'history'>('create');
   const [grade, setGrade] = useState('12');
   const [examType, setExamType] = useState('full'); // full: 24 câu, custom: tùy chỉnh
   const [loading, setLoading] = useState(false);
@@ -23,6 +25,18 @@ const Product3: React.FC = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [endTime, setEndTime] = useState<number | null>(null);
+  
+  // History & Review
+  const [examHistory, setExamHistory] = useState<ExamHistory[]>([]);
+  const [selectedExam, setSelectedExam] = useState<ExamHistory | null>(null);
+
+  // Load history when switching to history tab
+  useEffect(() => {
+    if (activeTab === 'history') {
+      const history = getExamHistory().filter(e => e.examType === 'industrial');
+      setExamHistory(history);
+    }
+  }, [activeTab]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -255,7 +269,11 @@ d) SAI (Tần số lưới điện VN là f = 50Hz)"
             requirement: q.requirement,
             level: q.level as QuestionLevel,
             grade: q.grade,
-            topic: q.topic
+            topic: q.topic,
+            // Format mới với 4 phát biểu a, b, c, d
+            statements: q.statements,
+            answers: q.answers,
+            explanations: q.explanations
           } as QuestionTF & { grade: string; topic: string };
         }
       });
@@ -347,8 +365,37 @@ d) SAI (Tần số lưới điện VN là f = 50Hz)"
         </p>
       </div>
 
-      {/* Form tạo đề */}
-      {!hasGenerated && (
+      {/* Tabs */}
+      <div className="flex gap-2 bg-white rounded-lg shadow-md p-2">
+        <button
+          onClick={() => setActiveTab('create')}
+          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+            activeTab === 'create'
+              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <i className="fas fa-plus-circle mr-2"></i>
+          Tạo đề mới
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+            activeTab === 'history'
+              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <i className="fas fa-history mr-2"></i>
+          Lịch sử thi ({examHistory.length})
+        </button>
+      </div>
+
+      {/* Create Tab */}
+      {activeTab === 'create' && (
+        <>
+          {/* Form tạo đề */}
+          {!hasGenerated && (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
           <h3 className="text-2xl font-semibold mb-4 border-b pb-2 border-gray-300 dark:border-gray-600 flex items-center">
             <i className="fas fa-cog text-blue-500 mr-3"></i>Cấu hình đề thi
@@ -649,6 +696,160 @@ ${questions.map((q, idx) => {
             </div>
           </div>
         </div>
+      )}
+        </>
+      )}
+
+      {/* History Tab */}
+      {activeTab === 'history' && (
+        <div className="space-y-6">
+          {/* Overall Statistics */}
+          {examHistory.length > 0 && (
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg shadow-lg p-6 animate-fade-in">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+                <i className="fas fa-chart-line text-blue-600"></i>
+                Thống kê tổng quan
+              </h3>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
+                  <div className="text-3xl font-bold text-blue-600">{examHistory.length}</div>
+                  <div className="text-sm text-gray-600 mt-1">Đề đã làm</div>
+                </div>
+                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
+                  <div className="text-3xl font-bold text-green-600">
+                    {(examHistory.reduce((sum, e) => sum + e.percentage, 0) / examHistory.length).toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Điểm TB</div>
+                </div>
+                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
+                  <div className="text-3xl font-bold text-purple-600">
+                    {Math.max(...examHistory.map(e => e.percentage)).toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Cao nhất</div>
+                </div>
+                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
+                  <div className="text-3xl font-bold text-orange-600">
+                    {examHistory.reduce((sum, e) => sum + e.timeSpent, 0)}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Tổng phút</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800">
+              <i className="fas fa-history text-blue-600"></i>
+              Lịch sử làm bài
+            </h3>
+            
+            {examHistory.length === 0 ? (
+              <div className="text-center py-12">
+                <i className="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+                <p className="text-gray-600 text-lg">Chưa có lịch sử thi</p>
+                <p className="text-gray-500 text-sm mt-2">Tạo và làm đề thi để xem lịch sử tại đây</p>
+                <button
+                  onClick={() => setActiveTab('create')}
+                  className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all"
+                >
+                  <i className="fas fa-plus mr-2"></i>
+                  Tạo đề thi ngay
+                </button>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {examHistory.map((exam, idx) => (
+                  <div
+                    key={exam.id}
+                    className="border-2 border-gray-200 rounded-xl p-5 hover:shadow-xl transition-all hover:border-blue-400 animate-fade-in"
+                    style={{ animationDelay: `${idx * 0.1}s` }}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h4 className="font-bold text-lg text-gray-800 mb-2">{exam.examTitle}</h4>
+                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                          <span>
+                            <i className="fas fa-calendar mr-1 text-blue-500"></i>
+                            {new Date(exam.createdAt).toLocaleString('vi-VN')}
+                          </span>
+                          <span>
+                            <i className="fas fa-clock mr-1 text-purple-500"></i>
+                            {exam.timeSpent} phút
+                          </span>
+                        </div>
+                        
+                        {/* Progress Bar */}
+                        <div className="mb-3">
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-gray-600">Độ chính xác</span>
+                            <span className={`font-bold ${
+                              exam.percentage >= 80 ? 'text-green-600' :
+                              exam.percentage >= 50 ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                              {exam.score}/{exam.totalQuestions} ({exam.percentage.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-1000 ${
+                                exam.percentage >= 80 ? 'bg-gradient-to-r from-green-500 to-green-600' :
+                                exam.percentage >= 50 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+                                'bg-gradient-to-r from-red-500 to-red-600'
+                              }`}
+                              style={{ width: `${exam.percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Score Badge */}
+                      <div className={`ml-4 px-4 py-2 rounded-full font-bold text-white text-center min-w-[80px] ${
+                        exam.percentage >= 80 ? 'bg-gradient-to-r from-green-500 to-green-600' :
+                        exam.percentage >= 50 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+                        'bg-gradient-to-r from-red-500 to-red-600'
+                      }`}>
+                        <div className="text-2xl">{exam.percentage.toFixed(0)}%</div>
+                        <div className="text-xs opacity-90">
+                          {exam.percentage >= 80 ? 'Xuất sắc' :
+                           exam.percentage >= 50 ? 'Khá' : 'Cần cố gắng'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSelectedExam(exam)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all text-sm font-semibold"
+                      >
+                        <i className="fas fa-eye mr-2"></i>
+                        Xem lại đề & Đáp án
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Bạn có chắc muốn xóa lịch sử thi này?')) {
+                            deleteExamFromHistory(exam.id);
+                            setExamHistory(prev => prev.filter(e => e.id !== exam.id));
+                          }
+                        }}
+                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all text-sm font-semibold"
+                      >
+                        <i className="fas fa-trash mr-2"></i>
+                        Xóa
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {selectedExam && (
+        <ExamReviewModal
+          exam={selectedExam}
+          onClose={() => setSelectedExam(null)}
+        />
       )}
     </div>
   );
