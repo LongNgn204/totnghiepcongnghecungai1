@@ -192,7 +192,7 @@ export async function logoutUser(db: any, token: string) {
 // Get user by ID
 export async function getUserById(db: any, userId: string) {
   const user = await db.prepare(
-    'SELECT id, username, email, display_name, avatar, bio, created_at, last_login FROM auth_users WHERE id = ?'
+    'SELECT id, username, email, display_name, avatar, bio, created_at, last_login, is_admin FROM auth_users WHERE id = ?'
   ).bind(userId).first();
   
   if (!user) {
@@ -207,7 +207,8 @@ export async function getUserById(db: any, userId: string) {
     avatar: user.avatar,
     bio: user.bio,
     createdAt: user.created_at,
-    lastLogin: user.last_login
+    lastLogin: user.last_login,
+    isAdmin: user.is_admin === 1
   };
 }
 

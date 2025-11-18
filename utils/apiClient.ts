@@ -187,6 +187,26 @@ export const leaderboardAPI = {
   },
 };
 
+// ============= ADMIN API =============
+
+export const adminAPI = {
+  getStats: async () => {
+    return fetchAPI('/api/admin/stats');
+  },
+
+  getUsers: async () => {
+    return fetchAPI('/api/admin/users');
+  },
+
+  getChats: async () => {
+    return fetchAPI('/api/admin/chats');
+  },
+
+  getExamStats: async () => {
+    return fetchAPI('/api/admin/exams/stats');
+  },
+};
+
 // Export all
 export const api = {
   users: usersAPI,
@@ -195,6 +215,7 @@ export const api = {
   chat: chatAPI,
   progress: progressAPI,
   leaderboard: leaderboardAPI,
+  admin: adminAPI,
 };
 
 export default api;

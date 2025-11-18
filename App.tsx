@@ -95,8 +95,8 @@ const App: React.FC = () => {
               <Route path="/api-tester" element={<APITester />} />
               
               {/* Protected routes */}
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/san-pham-1" element={<ProtectedRoute><Product1 /></ProtectedRoute>} />
+              
+                            <Route path="/san-pham-1" element={<ProtectedRoute><Product1 /></ProtectedRoute>} />
               <Route path="/san-pham-2" element={<ProtectedRoute><Product2 /></ProtectedRoute>} />
               <Route path="/san-pham-3" element={<ProtectedRoute><Product3 /></ProtectedRoute>} />
               <Route path="/san-pham-4" element={<ProtectedRoute><Product4 /></ProtectedRoute>} />

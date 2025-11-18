@@ -19,7 +19,8 @@ import {
   requestPasswordReset,
   verifyResetToken,
   resetPassword,
-  requireAuth as requireAuthNew
+  requireAuth as requireAuthNew,
+  hashPassword
 } from './auth-service';
 
 export interface Env {
@@ -152,28 +153,34 @@ router.post('/api/auth/change-password', async (request, env: Env) => {
   }
 });
 
-// Request password reset
+// Forgot password - Direct reset with new password
 router.post('/api/auth/forgot-password', async (request, env: Env) => {
   try {
     const body: any = await request.json();
-    const { email } = body;
+    const { email, newPassword } = body;
     
-    if (!email) {
-      return badRequestResponse('Email is required');
+    if (!email || !newPassword || newPassword.length < 6) {
+      return badRequestResponse('Email và mật khẩu mới (≥6 ký tự) là bắt buộc');
     }
     
-    // Prepare email config (if available)
-    const emailConfig = env.RESEND_API_KEY ? {
-      apiKey: env.RESEND_API_KEY,
-      fromEmail: env.EMAIL_FROM || 'noreply@yourdomain.com',
-      fromName: env.EMAIL_FROM_NAME || 'AI Học Tập'
-    } : undefined;
+    const passwordHash = await hashPassword(newPassword);
     
-    const result = await requestPasswordReset(env.DB, email, emailConfig);
+    const updated = await env.DB.prepare('UPDATE auth_users SET password_hash = ? WHERE email = ?')
+      .bind(passwordHash, email.toLowerCase())
+      .run();
     
-    return successResponse(result);
+    if (updated.meta.changes === 0) {
+      return errorResponse('Không tìm thấy email', 404);
+    }
+    
+    // Invalidate all sessions
+    await env.DB.prepare('DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM auth_users WHERE email = ?)')
+      .bind(email.toLowerCase())
+      .run();
+    
+    return successResponse({ success: true, message: 'Mật khẩu đã được cập nhật thành công! Đăng nhập ngay.' });
   } catch (error: any) {
-    return errorResponse(error.message, 400);
+    return errorResponse('Lỗi hệ thống', 500);
   }
 });
 
@@ -218,7 +225,7 @@ router.post('/api/auth/reset-password', async (request, env: Env) => {
 router.post('/api/users/register', async (request, env: Env) => {
   try {
     const userId = requireAuthOld(request);
-    const body = await request.json();
+    const body: any = await request.json();
 
     await ensureUser(env.DB, userId);
 
@@ -238,9 +245,12 @@ router.post('/api/users/register', async (request, env: Env) => {
   }
 });
 
+// Legacy /api/users/me deprecated - use /api/auth/me
+// Legacy /api/users/me - use /api/auth/me instead
+// Legacy endpoints - will be deprecated
 router.get('/api/users/me', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
     await ensureUser(env.DB, userId);
 
     const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?')
@@ -255,8 +265,8 @@ router.get('/api/users/me', async (request, env: Env) => {
 
 router.put('/api/users/me', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
-    const body = await request.json();
+    const userId = requireAuthOld(request);
+    const body: any = await request.json();
 
     const { name, email, avatar } = body;
     await env.DB.prepare(
@@ -279,10 +289,10 @@ router.put('/api/users/me', async (request, env: Env) => {
 
 router.post('/api/exams', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
     await ensureUser(env.DB, userId);
 
-    const body = await request.json();
+    const body: any = await request.json();
     const {
       id,
       title,
@@ -323,7 +333,7 @@ router.post('/api/exams', async (request, env: Env) => {
 
 router.get('/api/exams', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
     const url = new URL(request.url);
     const limit = parseInt(url.searchParams.get('limit') || '20');
     const offset = parseInt(url.searchParams.get('offset') || '0');
@@ -352,7 +362,7 @@ router.get('/api/exams', async (request, env: Env) => {
 
 router.get('/api/exams/:id', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
     const { id } = request.params;
 
     const exam = await env.DB.prepare(
@@ -377,7 +387,7 @@ router.get('/api/exams/:id', async (request, env: Env) => {
 
 router.delete('/api/exams/:id', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
     const { id } = request.params;
 
     await env.DB.prepare('DELETE FROM exams WHERE id = ? AND user_id = ?')
@@ -392,7 +402,7 @@ router.delete('/api/exams/:id', async (request, env: Env) => {
 
 router.get('/api/exams/stats', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
 
     const stats = await env.DB.prepare(
       `SELECT 
@@ -416,10 +426,10 @@ router.get('/api/exams/stats', async (request, env: Env) => {
 
 router.post('/api/flashcards/decks', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
     await ensureUser(env.DB, userId);
 
-    const body = await request.json();
+    const body: any = await request.json();
     const { id, title, description, category, grade, is_public, color } = body;
     const now = Date.now();
 
@@ -438,7 +448,7 @@ router.post('/api/flashcards/decks', async (request, env: Env) => {
 
 router.get('/api/flashcards/decks', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
 
     const decks = await env.DB.prepare(
       'SELECT * FROM flashcard_decks WHERE user_id = ? ORDER BY updated_at DESC'
@@ -487,7 +497,7 @@ router.get('/api/flashcards/decks/:id', async (request, env: Env) => {
 
 router.delete('/api/flashcards/decks/:id', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
     const { id } = request.params;
 
     await env.DB.prepare('DELETE FROM flashcard_decks WHERE id = ? AND user_id = ?')
@@ -502,9 +512,9 @@ router.delete('/api/flashcards/decks/:id', async (request, env: Env) => {
 
 router.post('/api/flashcards/decks/:deckId/cards', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
     const { deckId } = request.params;
-    const body = await request.json();
+    const body: any = await request.json();
 
     const { id, question, answer, difficulty, tags } = body;
     const now = Date.now();
@@ -530,7 +540,7 @@ router.post('/api/flashcards/decks/:deckId/cards', async (request, env: Env) => 
 router.put('/api/flashcards/cards/:id', async (request, env: Env) => {
   try {
     const { id } = request.params;
-    const body = await request.json();
+    const body: any = await request.json();
 
     const {
       ease_factor,
@@ -586,10 +596,10 @@ router.delete('/api/flashcards/cards/:id', async (request, env: Env) => {
 
 router.post('/api/chat/sessions', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
     await ensureUser(env.DB, userId);
 
-    const body = await request.json();
+    const body: any = await request.json();
     const { id, title, category, grade, messages } = body;
     const now = Date.now();
 
@@ -618,7 +628,7 @@ router.post('/api/chat/sessions', async (request, env: Env) => {
 
 router.get('/api/chat/sessions', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
 
     const sessions = await env.DB.prepare(
       'SELECT * FROM chat_sessions WHERE user_id = ? ORDER BY updated_at DESC LIMIT 50'
@@ -665,7 +675,7 @@ router.put('/api/chat/sessions/:id', async (request, env: Env) => {
   try {
     const userId = requireAuth(request);
     const { id } = request.params;
-    const body = await request.json();
+    const body: any = await request.json();
     const { messages } = body;
 
     await env.DB.prepare(
@@ -702,7 +712,7 @@ router.post('/api/progress/sessions', async (request, env: Env) => {
     const userId = requireAuth(request);
     await ensureUser(env.DB, userId);
 
-    const body = await request.json();
+    const body: any = await request.json();
     const { id, activity, duration, score, cards_studied, questions_asked, subject, grade, session_date } = body;
 
     await env.DB.prepare(
@@ -720,7 +730,7 @@ router.post('/api/progress/sessions', async (request, env: Env) => {
 
 router.get('/api/progress/stats', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
 
     const stats = await env.DB.prepare(
       `SELECT 
@@ -760,23 +770,25 @@ router.get('/api/progress/chart/:period', async (request, env: Env) => {
   }
 });
 
+
+
 // ============= LEADERBOARD =============
 
 router.get('/api/leaderboard', async (request, env: Env) => {
   try {
     const leaderboard = await env.DB.prepare(
       `SELECT 
-        u.id as user_id,
-        u.name as user_name,
+        au.id as user_id,
+        au.display_name as user_name,
         COUNT(DISTINCT CASE WHEN s.activity = 'exam' THEN s.id END) as exams_completed,
         SUM(CASE WHEN s.activity = 'flashcard' THEN s.cards_studied ELSE 0 END) as flashcards_learned,
         SUM(s.duration) as study_time,
         (COUNT(DISTINCT CASE WHEN s.activity = 'exam' THEN s.id END) * 10 +
          SUM(CASE WHEN s.activity = 'flashcard' THEN s.cards_studied ELSE 0 END) +
          SUM(s.duration) / 60) as points
-      FROM users u
-      LEFT JOIN study_sessions s ON u.id = s.user_id
-      GROUP BY u.id
+      FROM auth_users au
+      LEFT JOIN study_sessions s ON au.id = s.user_id
+      GROUP BY au.id
       ORDER BY points DESC
       LIMIT 100`
     )

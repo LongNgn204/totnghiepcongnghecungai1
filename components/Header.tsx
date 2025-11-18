@@ -110,6 +110,10 @@ export const Header: React.FC = () => {
                           <i className="fas fa-user text-blue-500"></i>
                           <span className="text-gray-700">Hồ sơ cá nhân</span>
                         </NavLink>
+                        <NavLink to="/admin-dashboard" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 transition" onClick={() => setUserMenuOpen(false)}>
+                          <i className="fas fa-shield-alt text-red-500"></i>
+                          <span className="text-gray-700">Admin Dashboard</span>
+                        </NavLink>
                         <button onClick={() => { logout(); setUserMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-red-50 transition text-left">
                           <i className="fas fa-sign-out-alt text-red-500"></i>
                           <span className="text-red-600 font-semibold">Đăng xuất</span>
@@ -156,6 +160,7 @@ export const Header: React.FC = () => {
             <MobileNavLink to="/san-pham-7" icon="fa-users" onClick={() => setMobileMenuOpen(false)}>Nhóm học</MobileNavLink>
             <MobileNavLink to="/bang-xep-hang" icon="fa-trophy" onClick={() => setMobileMenuOpen(false)}>BXH</MobileNavLink>
             <MobileNavLink to="/lich-su" icon="fa-history" onClick={() => setMobileMenuOpen(false)}>Lịch sử</MobileNavLink>
+            <MobileNavLink to="/admin-dashboard" icon="fa-shield-alt" onClick={() => setMobileMenuOpen(false)}>Admin Dashboard</MobileNavLink>
             {isAuthenticated && user && (
               <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-white rounded-lg transition-all">
                 <i className="fas fa-sign-out-alt"></i>

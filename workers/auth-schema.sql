@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS auth_users (
   bio TEXT,
   created_at INTEGER NOT NULL,
   last_login INTEGER,
-  is_active INTEGER DEFAULT 1
+  is_active INTEGER DEFAULT 1,
+  is_admin INTEGER DEFAULT 0
 );
 
 -- Sessions table for token management
@@ -49,3 +50,7 @@ CREATE INDEX IF NOT EXISTS idx_reset_tokens_expires ON password_reset_tokens(exp
 -- Migration: Link existing users table to auth_users
 -- Note: existing 'users' table will be kept for backward compatibility
 -- New registrations will use auth_users
+
+-- Add migration for existing users
+-- Uncomment and run once:
+-- UPDATE auth_users SET is_admin = 1 WHERE email IN ('your-email@example.com');
