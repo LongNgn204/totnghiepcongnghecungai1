@@ -12,7 +12,7 @@ function getHeaders(): HeadersInit {
       'X-User-ID': newId,
     };
   }
-  
+
   return {
     'Content-Type': 'application/json',
     'X-User-ID': userId,

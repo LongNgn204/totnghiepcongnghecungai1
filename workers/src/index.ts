@@ -49,18 +49,18 @@ router.post('/api/auth/register', async (request, env: Env) => {
   try {
     const body: any = await request.json();
     const { username, email, password, displayName } = body;
-    
+
     if (!username || !email || !password || !displayName) {
       return badRequestResponse('Missing required fields');
     }
-    
+
     const result = await registerUser(env.DB, {
       username,
       email,
       password,
       displayName
     });
-    
+
     return successResponse(result, 'Registration successful');
   } catch (error: any) {
     return errorResponse(error.message, 400);
@@ -72,13 +72,13 @@ router.post('/api/auth/login', async (request, env: Env) => {
   try {
     const body: any = await request.json();
     const { username, password } = body;
-    
+
     if (!username || !password) {
       return badRequestResponse('Username and password are required');
     }
-    
+
     const result = await loginUser(env.DB, username, password);
-    
+
     return successResponse(result, 'Login successful');
   } catch (error: any) {
     return errorResponse(error.message, 401);
@@ -92,10 +92,10 @@ router.post('/api/auth/logout', async (request, env: Env) => {
     if (!authHeader?.startsWith('Bearer ')) {
       return unauthorizedResponse();
     }
-    
+
     const token = authHeader.substring(7);
     await logoutUser(env.DB, token);
-    
+
     return successResponse(null, 'Logout successful');
   } catch (error: any) {
     return errorResponse(error.message);
@@ -107,7 +107,7 @@ router.get('/api/auth/me', async (request, env: Env) => {
   try {
     const userId = await requireAuthNew(request, env.DB);
     const user = await getUserById(env.DB, userId);
-    
+
     return successResponse(user);
   } catch (error: any) {
     return unauthorizedResponse(error.message);
@@ -119,14 +119,14 @@ router.put('/api/auth/profile', async (request, env: Env) => {
   try {
     const userId = await requireAuthNew(request, env.DB);
     const body: any = await request.json();
-    
+
     const { displayName, avatar, bio } = body;
     const updatedUser = await updateUserProfile(env.DB, userId, {
       displayName,
       avatar,
       bio
     });
-    
+
     return successResponse(updatedUser, 'Profile updated');
   } catch (error: any) {
     return errorResponse(error.message);
@@ -138,15 +138,15 @@ router.post('/api/auth/change-password', async (request, env: Env) => {
   try {
     const userId = await requireAuthNew(request, env.DB);
     const body: any = await request.json();
-    
+
     const { oldPassword, newPassword } = body;
-    
+
     if (!oldPassword || !newPassword) {
       return badRequestResponse('Old and new passwords are required');
     }
-    
+
     await changePassword(env.DB, userId, oldPassword, newPassword);
-    
+
     return successResponse(null, 'Password changed successfully');
   } catch (error: any) {
     return errorResponse(error.message, 400);
@@ -158,67 +158,33 @@ router.post('/api/auth/forgot-password', async (request, env: Env) => {
   try {
     const body: any = await request.json();
     const { email, newPassword } = body;
-    
+
     if (!email || !newPassword || newPassword.length < 6) {
       return badRequestResponse('Email và mật khẩu mới (≥6 ký tự) là bắt buộc');
     }
-    
+
     const passwordHash = await hashPassword(newPassword);
-    
+
     const updated = await env.DB.prepare('UPDATE auth_users SET password_hash = ? WHERE email = ?')
       .bind(passwordHash, email.toLowerCase())
       .run();
-    
+
     if (updated.meta.changes === 0) {
       return errorResponse('Không tìm thấy email', 404);
     }
-    
+
     // Invalidate all sessions
     await env.DB.prepare('DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM auth_users WHERE email = ?)')
       .bind(email.toLowerCase())
       .run();
-    
+
     return successResponse({ success: true, message: 'Mật khẩu đã được cập nhật thành công! Đăng nhập ngay.' });
   } catch (error: any) {
     return errorResponse('Lỗi hệ thống', 500);
   }
 });
 
-// Verify reset token
-router.post('/api/auth/verify-reset-token', async (request, env: Env) => {
-  try {
-    const body: any = await request.json();
-    const { email, token } = body;
-    
-    if (!email || !token) {
-      return badRequestResponse('Email and token are required');
-    }
-    
-    const result = await verifyResetToken(env.DB, email, token);
-    
-    return successResponse(result);
-  } catch (error: any) {
-    return errorResponse(error.message, 400);
-  }
-});
 
-// Reset password
-router.post('/api/auth/reset-password', async (request, env: Env) => {
-  try {
-    const body: any = await request.json();
-    const { email, token, newPassword } = body;
-    
-    if (!email || !token || !newPassword) {
-      return badRequestResponse('Email, token, and new password are required');
-    }
-    
-    const result = await resetPassword(env.DB, email, token, newPassword);
-    
-    return successResponse(result);
-  } catch (error: any) {
-    return errorResponse(error.message, 400);
-  }
-});
 
 // ============= USERS (Legacy - keeping for backward compatibility) =============
 
@@ -337,14 +303,26 @@ router.get('/api/exams', async (request, env: Env) => {
     const url = new URL(request.url);
     const limit = parseInt(url.searchParams.get('limit') || '20');
     const offset = parseInt(url.searchParams.get('offset') || '0');
+    const search = url.searchParams.get('search') || '';
+    const grade = url.searchParams.get('grade') || '';
 
-    const exams = await env.DB.prepare(
-      'SELECT * FROM exams WHERE user_id = ? ORDER BY completed_at DESC LIMIT ? OFFSET ?'
-    )
-      .bind(userId, limit, offset)
-      .all();
+    let query = 'SELECT * FROM exams WHERE user_id = ?';
+    const params = [userId];
 
-    // Parse JSON fields
+    if (search) {
+      query += ' AND (title LIKE ? OR category LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+    if (grade) {
+      query += ' AND grade = ?';
+      params.push(grade);
+    }
+
+    query += ' ORDER BY completed_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+
+    const exams = await env.DB.prepare(query).bind(...params).all();
+
     const results = exams.results.map((exam: any) => ({
       ...exam,
       questions: JSON.parse(exam.questions),
@@ -449,12 +427,28 @@ router.post('/api/flashcards/decks', async (request, env: Env) => {
 router.get('/api/flashcards/decks', async (request, env: Env) => {
   try {
     const userId = requireAuthOld(request);
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '50');
+    const offset = parseInt(url.searchParams.get('offset') || '0');
+    const search = url.searchParams.get('search') || '';
+    const grade = url.searchParams.get('grade') || '';
 
-    const decks = await env.DB.prepare(
-      'SELECT * FROM flashcard_decks WHERE user_id = ? ORDER BY updated_at DESC'
-    )
-      .bind(userId)
-      .all();
+    let query = 'SELECT * FROM flashcard_decks WHERE user_id = ?';
+    const params = [userId];
+
+    if (search) {
+      query += ' AND (title LIKE ? OR description LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+    if (grade) {
+      query += ' AND grade = ?';
+      params.push(grade);
+    }
+
+    query += ' ORDER BY updated_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+
+    const decks = await env.DB.prepare(query).bind(...params).all();
 
     return successResponse({ decks: decks.results });
   } catch (error: any) {
@@ -629,18 +623,35 @@ router.post('/api/chat/sessions', async (request, env: Env) => {
 router.get('/api/chat/sessions', async (request, env: Env) => {
   try {
     const userId = requireAuthOld(request);
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '50');
+    const offset = parseInt(url.searchParams.get('offset') || '0');
+    const search = url.searchParams.get('search') || '';
+    const grade = url.searchParams.get('grade') || '';
 
-    const sessions = await env.DB.prepare(
-      'SELECT * FROM chat_sessions WHERE user_id = ? ORDER BY updated_at DESC LIMIT 50'
-    )
-      .bind(userId)
-      .all();
+    let query = 'SELECT * FROM chat_sessions WHERE user_id = ?';
+    const params = [userId];
+
+    if (search) {
+      query += ' AND (title LIKE ? OR json_extract(messages, "$[*].content") LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+    if (grade) {
+      query += ' AND grade = ?';
+      params.push(grade);
+    }
+
+    query += ' ORDER BY updated_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+
+    const sessions = await env.DB.prepare(query).bind(...params).all();
 
     return successResponse({
       sessions: sessions.results.map((s: any) => ({
         ...s,
         messages: JSON.parse(s.messages),
       })),
+      total: sessions.meta.count || 0,
     });
   } catch (error: any) {
     return errorResponse(error.message);
@@ -673,7 +684,7 @@ router.get('/api/chat/sessions/:id', async (request, env: Env) => {
 
 router.put('/api/chat/sessions/:id', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
     const { id } = request.params;
     const body: any = await request.json();
     const { messages } = body;
@@ -709,7 +720,7 @@ router.delete('/api/chat/sessions/:id', async (request, env: Env) => {
 
 router.post('/api/progress/sessions', async (request, env: Env) => {
   try {
-    const userId = requireAuth(request);
+    const userId = requireAuthOld(request);
     await ensureUser(env.DB, userId);
 
     const body: any = await request.json();
@@ -795,6 +806,222 @@ router.get('/api/leaderboard', async (request, env: Env) => {
       .all();
 
     return successResponse({ leaderboard: leaderboard.results });
+    const userId = await requireAuthNew(request, env.DB);
+    const body: any = await request.json();
+    const now = Date.now();
+
+    const exams = Array.isArray(body.exams) ? body.exams : [];
+    const decks = Array.isArray(body.decks) ? body.decks : [];
+    const cards = Array.isArray(body.cards) ? body.cards : [];
+    const chats = Array.isArray(body.chats) ? body.chats : [];
+    const sessions = Array.isArray(body.sessions) ? body.sessions : [];
+
+    // Upsert exams
+    for (const e of exams) {
+      const completed_at = e.completed_at || now;
+      await env.DB.prepare(
+        `INSERT INTO exams (id, user_id, title, category, grade, questions, answers, score, total_questions, duration, completed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           title = excluded.title,
+           category = excluded.category,
+           grade = excluded.grade,
+           questions = excluded.questions,
+           answers = excluded.answers,
+           score = excluded.score,
+           total_questions = excluded.total_questions,
+           duration = excluded.duration,
+           completed_at = excluded.completed_at`)
+        .bind(
+          e.id,
+          userId,
+          e.title,
+          e.category,
+          e.grade,
+          JSON.stringify(e.questions || []),
+          e.answers ? JSON.stringify(e.answers) : null,
+          e.score ?? null,
+          e.total_questions ?? null,
+          e.duration ?? null,
+          completed_at
+        )
+        .run();
+    }
+
+    // Upsert flashcard decks
+    for (const d of decks) {
+      const created_at = d.created_at || now;
+      const updated_at = d.updated_at || now;
+      await env.DB.prepare(
+        `INSERT INTO flashcard_decks (id, user_id, title, description, category, grade, is_public, color, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           title = excluded.title,
+           description = excluded.description,
+           category = excluded.category,
+           grade = excluded.grade,
+           is_public = excluded.is_public,
+           color = excluded.color,
+           updated_at = excluded.updated_at`)
+        .bind(
+          d.id,
+          userId,
+          d.title,
+          d.description ?? null,
+          d.category ?? null,
+          d.grade ?? null,
+          d.is_public ? 1 : 0,
+          d.color ?? null,
+          created_at,
+          updated_at
+        )
+        .run();
+    }
+
+    // Upsert flashcards
+    for (const c of cards) {
+      const created_at = c.created_at || now;
+      await env.DB.prepare(
+        `INSERT INTO flashcards (id, deck_id, question, answer, difficulty, tags, ease_factor, interval, repetitions, mastery_level, review_count, correct_count, next_review, last_reviewed, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           deck_id = excluded.deck_id,
+           question = excluded.question,
+           answer = excluded.answer,
+           difficulty = excluded.difficulty,
+           tags = excluded.tags,
+           ease_factor = excluded.ease_factor,
+           interval = excluded.interval,
+           repetitions = excluded.repetitions,
+           mastery_level = excluded.mastery_level,
+           review_count = excluded.review_count,
+           correct_count = excluded.correct_count,
+           next_review = excluded.next_review,
+           last_reviewed = excluded.last_reviewed`)
+        .bind(
+          c.id,
+          c.deck_id,
+          c.question,
+          c.answer,
+          c.difficulty ?? 'medium',
+          c.tags ? JSON.stringify(c.tags) : null,
+          c.ease_factor ?? 2.5,
+          c.interval ?? 0,
+          c.repetitions ?? 0,
+          c.mastery_level ?? 0,
+          c.review_count ?? 0,
+          c.correct_count ?? 0,
+          c.next_review ?? null,
+          c.last_reviewed ?? null,
+          created_at
+        )
+        .run();
+    }
+
+    // Upsert chat sessions
+    for (const s of chats) {
+      const created_at = s.created_at || now;
+      const updated_at = s.updated_at || now;
+      await env.DB.prepare(
+        `INSERT INTO chat_sessions (id, user_id, title, category, grade, messages, message_count, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           title = excluded.title,
+           category = excluded.category,
+           grade = excluded.grade,
+           messages = excluded.messages,
+           message_count = excluded.message_count,
+           updated_at = excluded.updated_at`)
+        .bind(
+          s.id,
+          userId,
+          s.title,
+          s.category ?? null,
+          s.grade ?? null,
+          JSON.stringify(s.messages || []),
+          Array.isArray(s.messages) ? s.messages.length : (s.message_count ?? 0),
+          created_at,
+          updated_at
+        )
+        .run();
+    }
+
+    // Upsert study sessions
+    for (const ss of sessions) {
+      const session_date = ss.session_date ?? now;
+      await env.DB.prepare(
+        `INSERT INTO study_sessions (id, user_id, activity, duration, score, cards_studied, questions_asked, subject, grade, session_date)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           activity = excluded.activity,
+           duration = excluded.duration,
+           score = excluded.score,
+           cards_studied = excluded.cards_studied,
+           questions_asked = excluded.questions_asked,
+           subject = excluded.subject,
+           grade = excluded.grade,
+           session_date = excluded.session_date`)
+        .bind(
+          ss.id,
+          userId,
+          ss.activity,
+          ss.duration ?? 0,
+          ss.score ?? null,
+          ss.cards_studied ?? 0,
+          ss.questions_asked ?? 0,
+          ss.subject ?? null,
+          ss.grade ?? null,
+          session_date
+        )
+        .run();
+    }
+
+    return successResponse({ synced: { exams: exams.length, decks: decks.length, cards: cards.length, chats: chats.length, sessions: sessions.length } }, 'Sync completed');
+  } catch (error: any) {
+    return errorResponse(error.message);
+  }
+});
+
+// Get changes since a timestamp (milliseconds since epoch)
+router.get('/api/sync/changes', async (request, env: Env) => {
+  try {
+    const userId = await requireAuthNew(request, env.DB);
+    const url = new URL(request.url);
+    const since = parseInt(url.searchParams.get('since') || '0');
+
+    const result: any = {};
+
+    // Exams - use completed_at as a proxy for updated time
+    const examsRes = await env.DB.prepare('SELECT * FROM exams WHERE user_id = ? AND completed_at >= ? ORDER BY completed_at ASC')
+      .bind(userId, since)
+      .all();
+    result.exams = examsRes.results.map((r: any) => ({ ...r, questions: JSON.parse(r.questions), answers: r.answers ? JSON.parse(r.answers) : null }));
+
+    // Decks
+    const decksRes = await env.DB.prepare('SELECT * FROM flashcard_decks WHERE user_id = ? AND updated_at >= ? ORDER BY updated_at ASC')
+      .bind(userId, since)
+      .all();
+    result.decks = decksRes.results;
+
+    // Cards - use last_reviewed or created_at
+    const cardsRes = await env.DB.prepare('SELECT * FROM flashcards WHERE deck_id IN (SELECT id FROM flashcard_decks WHERE user_id = ?) AND (COALESCE(last_reviewed, created_at) >= ?) ORDER BY COALESCE(last_reviewed, created_at) ASC')
+      .bind(userId, since)
+      .all();
+    result.cards = cardsRes.results.map((c: any) => ({ ...c, tags: c.tags ? JSON.parse(c.tags) : [] }));
+
+    // Chats
+    const chatsRes = await env.DB.prepare('SELECT * FROM chat_sessions WHERE user_id = ? AND updated_at >= ? ORDER BY updated_at ASC')
+      .bind(userId, since)
+      .all();
+    result.chats = chatsRes.results.map((s: any) => ({ ...s, messages: JSON.parse(s.messages) }));
+
+    // Study sessions
+    const sessionsRes = await env.DB.prepare('SELECT * FROM study_sessions WHERE user_id = ? AND session_date >= ? ORDER BY session_date ASC')
+      .bind(userId, since)
+      .all();
+    result.sessions = sessionsRes.results;
+
+    return successResponse(result);
   } catch (error: any) {
     return errorResponse(error.message);
   }

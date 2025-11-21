@@ -6,6 +6,27 @@ import LoadingSpinner from './LoadingSpinner';
 import { ExamSkeleton } from './Skeleton';
 import CountdownTimer from './CountdownTimer';
 import ExamReviewModal from './ExamReviewModal';
+import {
+  Sprout,
+  FileText,
+  History,
+  Plus,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  Printer,
+  Download,
+  Trash2,
+  Eye,
+  Trophy,
+  BarChart2,
+  Info,
+  Check,
+  Play,
+  RefreshCw,
+  Loader2,
+  BookOpen
+} from 'lucide-react';
 
 interface Question {
   id: number;
@@ -127,48 +148,6 @@ const Product4: React.FC = () => {
 6. ✅ Ngôn ngữ: Khoa học, súc tích, rõ ràng, không mơ hồ
 7. ✅ YCCĐ: Ghi cụ thể theo SGK Cánh Diều
 
-🔢 VÍ DỤ CÂU HỎI CHUẨN:
-
-**Câu trắc nghiệm trồng trọt:**
-"Trong công thức phân bón NPK 16-16-8, ý nghĩa của ba số 16-16-8 lần lượt là"
-A. % nitơ, photpho, kali ✓
-B. g/kg nitơ, photpho, kali
-C. % protein, photpho, khoáng
-D. mg/l nitơ, photpho, kali
-
-**Câu trắc nghiệm chăn nuôi:**
-"Trong chăn nuôi gia cầm, nhiệt độ tối ưu trong chuồng nuôi gà thịt giai đoạn 1-7 ngày tuổi là"
-A. 18-22°C
-B. 24-26°C
-C. 32-35°C ✓
-D. 38-40°C
-
-**Câu Đúng/Sai trồng trọt (QUAN TRỌNG - FORMAT BẮT BUỘC):**
-"Câu 25. Cho các phát biểu về kỹ thuật trồng lúa trong điều kiện Việt Nam. Các phát biểu sau đúng hay sai?
-a) Giống lúa lai F1 có ưu thế lai nên năng suất cao hơn giống thuần từ 15-20%
-b) Để tăng năng suất, nên gieo sạ với mật độ dày đặc 250-300 hạt/m²
-c) Thời kỳ làm đòng (trổ bông và chín sữa) là giai đoạn cần tưới nước nhiều nhất
-d) Phân đạm nên bón toàn bộ một lần vào lúc bón lót để cây hấp thụ tốt
-
-ĐÁP ÁN:
-a) ĐÚNG (Lúa F1 lai có ưu thế lai vượt trội về năng suất, theo SGK Kết nối tri thức)
-b) SAI (Mật độ quá dày làm cây chống đổ, sâu bệnh, năng suất thấp. Nên gieo 100-120 hạt/m²)
-c) ĐÚNG (Giai đoạn đòng nước tiêu hao nước nhiều nhất, thiếu nước làm giảm năng suất nghiêm trọng)
-d) SAI (Phân đạm phải chia làm 2-3 lần: lót, trước khi đẻ nhánh, và trước khi trổ)"
-
-**Câu Đúng/Sai chăn nuôi (QUAN TRỌNG - FORMAT BẮT BUỘC):**
-"Câu 27. Về kỹ thuật chăn nuôi lợn thịt theo tiêu chuẩn VietGAP. Các phát biểu sau đúng hay sai?
-a) Hàm lượng protein thô trong khẩu phần cần đạt 14-18% tùy giai đoạn sinh trưởng
-b) Chuồng nuôi nên kín bốn phía để giữ ấm và tránh gió lùa cho lợn
-c) Lợn phải được tiêm phòng vacxin dịch tả lợn, tai xanh định kỳ theo lịch
-d) Lợn nái mang thai nên cho ăn thả ga để tăng số con/lứa
-
-ĐÁP ÁN:
-a) ĐÚNG (Lợn con cần 18%, lợn thịt 14-16% protein theo khuyến cáo)
-b) SAI (Chuồng phải thoáng khí, có cửa sổ thông gió để tránh ẩm ướt, khí độc)
-c) ĐÚNG (Vacxin là biện pháp phòng bệnh bắt buộc trong chăn nuôi an toàn)
-d) SAI (Nái mang thai ăn vừa đủ 2-2.5kg/ngày, ăn nhiều dễ béo, khó đẻ)"
-
 📝 OUTPUT FORMAT (JSON):
 \`\`\`json
 {
@@ -231,7 +210,7 @@ d) SAI (Nái mang thai ăn vừa đủ 2-2.5kg/ngày, ăn nhiều dễ béo, kh�
       setExamTitle('');
 
       const response = await generateContent(prompt);
-      
+
       if (!response.success) {
         setError(response.error || 'Có lỗi xảy ra');
         setLoading(false);
@@ -248,7 +227,7 @@ d) SAI (Nái mang thai ăn vừa đủ 2-2.5kg/ngày, ăn nhiều dễ béo, kh�
 
       const data = JSON.parse(jsonMatch[0]);
       setExamTitle(data.examTitle || 'ĐỀ THI MÔ PHỎNG NÔNG NGHIỆP');
-      
+
       // Convert questions
       const parsedQuestions = data.questions.map((q: any) => {
         if (q.type === 'mc') {
@@ -300,7 +279,7 @@ d) SAI (Nái mang thai ăn vừa đủ 2-2.5kg/ngày, ăn nhiều dễ béo, kh�
 
   const handleSubmit = () => {
     setIsSubmitted(true);
-    
+
     // Tính điểm
     let correctCount = 0;
     questions.forEach(q => {
@@ -349,7 +328,7 @@ d) SAI (Nái mang thai ăn vừa đủ 2-2.5kg/ngày, ăn nhiều dễ béo, kh�
 
   const handleDownload = () => {
     let content = examTitle + '\n\n';
-    
+
     questions.forEach(q => {
       content += `Câu ${q.id}: ${q.question}\n`;
       if (q.type === 'mc' && q.options) {
@@ -369,41 +348,51 @@ d) SAI (Nái mang thai ăn vừa đủ 2-2.5kg/ngày, ăn nhiều dễ béo, kh�
     URL.revokeObjectURL(url);
   };
 
+  const handleDeleteExam = (id: string) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa đề thi này không?')) {
+      deleteExamFromHistory(id);
+      setExamHistory(prev => prev.filter(e => e.id !== id));
+    }
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-teal-600 p-6 rounded-lg shadow-lg text-white">
-        <h2 className="text-3xl font-bold text-center mb-2">
-          <i className="fas fa-tractor mr-2"></i>
-          Sản Phẩm 4: Tạo Đề Thi THPT - Chuyên Đề Nông Nghiệp
-        </h2>
-        <p className="text-center text-green-100">
-          Tạo đề thi mô phỏng chính thức với 24 câu (20 MC + 4 Đúng/Sai)
-        </p>
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 rounded-2xl shadow-lg text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
+          <Sprout size={200} />
+        </div>
+        <div className="relative z-10">
+          <h2 className="text-3xl font-bold text-center mb-3 flex items-center justify-center gap-3">
+            <Sprout className="w-8 h-8" />
+            Sản Phẩm 4: Tạo Đề Thi THPT - Chuyên Đề Nông Nghiệp
+          </h2>
+          <p className="text-center text-blue-100 max-w-2xl mx-auto text-lg">
+            Tạo đề thi mô phỏng chính thức với 24 câu (20 MC + 4 Đúng/Sai)
+          </p>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-white rounded-lg shadow-md p-2">
+      <div className="flex gap-2 bg-white rounded-xl shadow-sm p-2 border border-gray-200">
         <button
           onClick={() => setActiveTab('create')}
-          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
-            activeTab === 'create'
-              ? 'bg-gradient-to-r from-green-600 to-teal-600 text-white shadow-lg'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
+          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${activeTab === 'create'
+            ? 'bg-blue-600 text-white shadow-md'
+            : 'text-gray-600 hover:bg-gray-50'
+            }`}
         >
-          <i className="fas fa-plus-circle mr-2"></i>
+          <Plus size={20} />
           Tạo đề mới
         </button>
         <button
           onClick={() => setActiveTab('history')}
-          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
-            activeTab === 'history'
-              ? 'bg-gradient-to-r from-green-600 to-teal-600 text-white shadow-lg'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
+          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${activeTab === 'history'
+            ? 'bg-blue-600 text-white shadow-md'
+            : 'text-gray-600 hover:bg-gray-50'
+            }`}
         >
-          <i className="fas fa-history mr-2"></i>
+          <History size={20} />
           Lịch sử thi ({examHistory.length})
         </button>
       </div>
@@ -412,287 +401,314 @@ d) SAI (Nái mang thai ăn vừa đủ 2-2.5kg/ngày, ăn nhiều dễ béo, kh�
       {activeTab === 'create' && (
         <>
           {/* Instructions */}
-      <div className="bg-green-50 dark:bg-green-900 p-6 rounded-lg">
-        <h3 className="text-xl font-semibold mb-3 text-green-800 dark:text-green-200 flex items-center">
-          <i className="fas fa-seedling mr-2"></i>
-          Cấu trúc đề thi
-        </h3>
-        <div className="space-y-3 text-gray-700 dark:text-gray-300">
-          <div className="border-l-4 border-green-500 pl-4">
-            <h4 className="font-semibold text-green-700 dark:text-green-300">📌 PHẦN I: 20 câu trắc nghiệm 4 lựa chọn</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm ml-4 mt-2">
-              <li><strong>Câu 1-8:</strong> Công nghệ 10-11 (Bản vẽ, Vật liệu, Máy nông nghiệp)</li>
-              <li><strong>Câu 9-14:</strong> Trồng trọt lớp 12 (Giống, Kỹ thuật, Phân bón, Tưới tiêu, BVTV)</li>
-              <li><strong>Câu 15-20:</strong> Chăn nuôi lớp 12 (Giống vật nuôi, Thức ăn, Chuồng trại, Phòng bệnh)</li>
-            </ul>
-          </div>
-          <div className="border-l-4 border-teal-500 pl-4">
-            <h4 className="font-semibold text-teal-700 dark:text-teal-300">📌 PHẦN II: 4 câu Đúng/Sai</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm ml-4 mt-2">
-              <li><strong>Câu 21-22:</strong> Trồng trọt (mỗi câu 4 ý a,b,c,d)</li>
-              <li><strong>Câu 23-24:</strong> Chăn nuôi (mỗi câu 4 ý a,b,c,d)</li>
-            </ul>
-          </div>
-          <div className="bg-yellow-50 dark:bg-yellow-900 p-3 rounded border-l-4 border-yellow-500">
-            <p className="text-sm"><strong>⏱️ Thời gian:</strong> 50 phút</p>
-            <p className="text-sm"><strong>📊 Phân bố:</strong> 42% Nhận biết • 42% Thông hiểu • 16% Vận dụng</p>
-          </div>
-        </div>
-      </div>
+          <div className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+            <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+              <BookOpen className="w-6 h-6 text-blue-600" />
+              Cấu trúc đề thi
+            </h3>
+            <div className="space-y-4 text-gray-700">
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <h4 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  PHẦN I: 20 câu trắc nghiệm 4 lựa chọn
+                </h4>
+                <ul className="list-disc list-inside space-y-1 text-sm ml-6 text-blue-900">
+                  <li><strong>Câu 1-8:</strong> Công nghệ 10-11 (Bản vẽ, Vật liệu, Máy nông nghiệp)</li>
+                  <li><strong>Câu 9-14:</strong> Trồng trọt lớp 12 (Giống, Kỹ thuật, Phân bón, Tưới tiêu, BVTV)</li>
+                  <li><strong>Câu 15-20:</strong> Chăn nuôi lớp 12 (Giống vật nuôi, Thức ăn, Chuồng trại, Phòng bệnh)</li>
+                </ul>
+              </div>
 
-      {/* Generate Button */}
-      <div className="text-center">
-        <button
-          onClick={generateExam}
-          disabled={loading}
-          className="px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white font-bold rounded-lg hover:from-green-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl text-lg"
-        >
-          {loading ? (
+              <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                <h4 className="font-bold text-indigo-800 mb-2 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  PHẦN II: 4 câu Đúng/Sai
+                </h4>
+                <ul className="list-disc list-inside space-y-1 text-sm ml-6 text-indigo-900">
+                  <li><strong>Câu 21-22:</strong> Trồng trọt (mỗi câu 4 ý a,b,c,d)</li>
+                  <li><strong>Câu 23-24:</strong> Chăn nuôi (mỗi câu 4 ý a,b,c,d)</li>
+                </ul>
+              </div>
+
+              <div className="flex items-center gap-4 p-4 bg-yellow-50 rounded-xl border border-yellow-100 text-yellow-800">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  <span className="font-semibold">Thời gian: 50 phút</span>
+                </div>
+                <div className="h-4 w-px bg-yellow-200"></div>
+                <div className="flex items-center gap-2">
+                  <BarChart2 className="w-5 h-5" />
+                  <span className="font-semibold">Phân bố: 42% Nhận biết • 42% Thông hiểu • 16% Vận dụng</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Generate Button */}
+          <div className="text-center py-4">
+            <button
+              onClick={generateExam}
+              disabled={loading}
+              className="px-10 py-5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl text-lg flex items-center justify-center mx-auto gap-3 transform hover:-translate-y-1"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin w-6 h-6" />
+                  Đang tạo đề thi...
+                </>
+              ) : (
+                <>
+                  <Sprout className="w-6 h-6" />
+                  Tạo Đề Thi Nông Nghiệp
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Loading Skeleton */}
+          {loading && (
+            <div className="space-y-6">
+              <LoadingSpinner
+                size="lg"
+                text="AI Gemini đang tạo đề thi Nông nghiệp..."
+                showProgress={true}
+                progress={50}
+              />
+              <ExamSkeleton />
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 p-4 rounded-xl flex items-center gap-3 text-red-700">
+              <AlertTriangle className="w-6 h-6 shrink-0" />
+              {error}
+            </div>
+          )}
+
+          {/* Countdown Timer */}
+          {!loading && questions.length > 0 && !isSubmitted && (
+            <CountdownTimer
+              initialMinutes={50}
+              onTimeUp={() => {
+                if (!isSubmitted) {
+                  handleSubmit();
+                  alert('⏰ Hết giờ! Bài thi đã được tự động nộp.');
+                }
+              }}
+              onWarning={(minutes) => {
+                alert(`⚠️ Chỉ còn ${minutes} phút! Hãy chuẩn bị nộp bài.`);
+              }}
+              autoStart={true}
+            />
+          )}
+
+          {/* Exam Display */}
+          {!loading && questions.length > 0 && (
             <>
-              <i className="fas fa-spinner fa-spin mr-2"></i>
-              Đang tạo đề thi...
-            </>
-          ) : (
-            <>
-              <i className="fas fa-tractor mr-2"></i>
-              Tạo Đề Thi Nông Nghiệp
+              {/* Exam Content */}
+              <div className="bg-white p-10 rounded-2xl shadow-lg border border-gray-200 exam-content">
+                <div className="text-center mb-10 border-b border-gray-100 pb-8">
+                  <h2 className="text-2xl font-bold mb-3 text-gray-900 whitespace-pre-line leading-relaxed">
+                    {examTitle}
+                  </h2>
+                  <p className="text-gray-500 font-medium">
+                    (Đề thi có 24 câu, gồm 4 trang)
+                  </p>
+                </div>
+
+                {/* Part I: Multiple Choice */}
+                <div className="mb-12">
+                  <h3 className="text-xl font-bold mb-6 text-blue-800 bg-blue-50 p-4 rounded-lg inline-block">
+                    PHẦN I: TRẮC NGHIỆM 4 LỰA CHỌN (20 câu)
+                  </h3>
+                  <div className="space-y-8">
+                    {questions.filter(q => q.type === 'mc').map(q => (
+                      <div key={q.id} className="pl-4 border-l-4 border-blue-500">
+                        <QuestionCard
+                          question={q}
+                          type="mc"
+                          onAnswerChange={handleAnswerChange}
+                          userAnswer={userAnswers[q.id]}
+                          isSubmitted={isSubmitted}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Part II: True/False */}
+                <div>
+                  <h3 className="text-xl font-bold mb-6 text-indigo-800 bg-indigo-50 p-4 rounded-lg inline-block">
+                    PHẦN II: TRẮC NGHIỆM ĐÚNG/SAI (4 câu)
+                  </h3>
+                  <div className="space-y-8">
+                    {questions.filter(q => q.type === 'tf').map(q => (
+                      <div key={q.id} className="pl-4 border-l-4 border-indigo-500">
+                        <QuestionCard
+                          question={q}
+                          type="tf"
+                          onAnswerChange={handleAnswerChange}
+                          userAnswer={userAnswers[q.id]}
+                          isSubmitted={isSubmitted}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button and Results */}
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                {!isSubmitted ? (
+                  <div className="flex flex-wrap justify-center gap-4">
+                    <button
+                      onClick={handleSubmit}
+                      className="bg-blue-600 text-white font-bold py-4 px-10 rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2"
+                    >
+                      <CheckCircle className="w-5 h-5" />
+                      Nộp bài
+                    </button>
+                    <button
+                      onClick={handlePrint}
+                      className="bg-white text-gray-700 font-bold py-4 px-8 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                    >
+                      <Printer className="w-5 h-5" />
+                      In đề thi
+                    </button>
+                    <button
+                      onClick={handleDownload}
+                      className="bg-white text-gray-700 font-bold py-4 px-8 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                    >
+                      <Download className="w-5 h-5" />
+                      Tải kết quả
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-2xl shadow-inner mb-8 border border-blue-100">
+                      <h3 className="text-2xl font-bold text-center mb-6 text-blue-900 flex items-center justify-center gap-3">
+                        <Trophy className="w-8 h-8 text-yellow-500" />
+                        Kết Quả Bài Thi
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                        <div className="bg-white p-4 rounded-xl shadow-sm">
+                          <p className="text-gray-500 mb-1">Số câu đúng</p>
+                          <p className="text-3xl font-bold text-blue-600">
+                            {Object.keys(userAnswers).filter(key => {
+                              const q = questions.find(q => q.id === parseInt(key));
+                              if (!q) return false;
+                              if (q.type === 'mc') {
+                                return userAnswers[parseInt(key)] === q.answer;
+                              } else {
+                                const correctAnswer = q.answer as { a: boolean; b: boolean; c: boolean; d: boolean };
+                                const userAnswer = userAnswers[parseInt(key)];
+                                return userAnswer?.a === correctAnswer.a &&
+                                  userAnswer?.b === correctAnswer.b &&
+                                  userAnswer?.c === correctAnswer.c &&
+                                  userAnswer?.d === correctAnswer.d;
+                              }
+                            }).length}/{questions.length}
+                          </p>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm">
+                          <p className="text-gray-500 mb-1">Điểm số</p>
+                          <p className="text-3xl font-bold text-indigo-600">
+                            {((Object.keys(userAnswers).filter(key => {
+                              const q = questions.find(q => q.id === parseInt(key));
+                              if (!q) return false;
+                              if (q.type === 'mc') {
+                                return userAnswers[parseInt(key)] === q.answer;
+                              } else {
+                                const correctAnswer = q.answer as { a: boolean; b: boolean; c: boolean; d: boolean };
+                                const userAnswer = userAnswers[parseInt(key)];
+                                return userAnswer?.a === correctAnswer.a &&
+                                  userAnswer?.b === correctAnswer.b &&
+                                  userAnswer?.c === correctAnswer.c &&
+                                  userAnswer?.d === correctAnswer.d;
+                              }
+                            }).length / questions.length) * 10).toFixed(1)}/10
+                          </p>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm">
+                          <p className="text-gray-500 mb-1">Thời gian</p>
+                          <p className="text-3xl font-bold text-purple-600">
+                            {startTime ? Math.floor((Date.now() - startTime) / 60000) : 0} phút
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-center gap-4">
+                      <button
+                        onClick={() => {
+                          setIsSubmitted(false);
+                          setUserAnswers({});
+                          setStartTime(Date.now());
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="bg-white text-blue-600 font-bold py-4 px-10 rounded-xl border-2 border-blue-600 hover:bg-blue-50 transition-all flex items-center gap-2"
+                      >
+                        <RefreshCw className="w-5 h-5" />
+                        Làm lại
+                      </button>
+                      <button
+                        onClick={() => {
+                          setQuestions([]);
+                          setUserAnswers({});
+                          setIsSubmitted(false);
+                          setStartTime(null);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="bg-blue-600 text-white font-bold py-4 px-10 rounded-xl hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg"
+                      >
+                        <Plus className="w-5 h-5" />
+                        Tạo đề mới
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Benefits */}
+              <div className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm mt-8">
+                <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+                  <Trophy className="w-6 h-6 text-yellow-500" />
+                  Lợi ích của việc làm đề thi mô phỏng
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                    <div>
+                      <strong className="text-gray-900">Làm quen format</strong>
+                      <p className="text-sm text-gray-600">Đúng cấu trúc 24 câu của đề thi THPT Quốc Gia</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                    <div>
+                      <strong className="text-gray-900">Bám sát SGK</strong>
+                      <p className="text-sm text-gray-600">Nội dung theo chương trình GDPT 2018 - SGK Cánh Diều Nông nghiệp</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                    <div>
+                      <strong className="text-gray-900">Phân bố chuẩn</strong>
+                      <p className="text-sm text-gray-600">Trồng trọt (8 câu) + Chăn nuôi (8 câu) + Cơ sở (8 câu)</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                    <div>
+                      <strong className="text-gray-900">Tiết kiệm thời gian</strong>
+                      <p className="text-sm text-gray-600">Tạo đề chỉ trong ~30 giây với AI Gemini 2.5 Pro</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </>
           )}
-        </button>
-      </div>
-
-      {/* Loading Skeleton */}
-      {loading && (
-        <div className="space-y-6">
-          <LoadingSpinner 
-            size="lg"
-            text="AI Gemini đang tạo đề thi Nông nghiệp..."
-            showProgress={true}
-            progress={50}
-          />
-          <ExamSkeleton />
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900 border-l-4 border-red-500 p-4 rounded">
-          <p className="text-red-700 dark:text-red-300">
-            <i className="fas fa-exclamation-circle mr-2"></i>
-            {error}
-          </p>
-        </div>
-      )}
-
-      {/* Countdown Timer */}
-      {!loading && questions.length > 0 && !isSubmitted && (
-        <CountdownTimer
-          initialMinutes={50}
-          onTimeUp={() => {
-            if (!isSubmitted) {
-              handleSubmit();
-              alert('⏰ Hết giờ! Bài thi đã được tự động nộp.');
-            }
-          }}
-          onWarning={(minutes) => {
-            alert(`⚠️ Chỉ còn ${minutes} phút! Hãy chuẩn bị nộp bài.`);
-          }}
-          autoStart={true}
-        />
-      )}
-
-      {/* Exam Display */}
-      {!loading && questions.length > 0 && (
-        <>
-          {/* Exam Content */}
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg exam-content">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold mb-2 text-gray-800 dark:text-white whitespace-pre-line">
-                {examTitle}
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                (Đề thi có 24 câu, gồm 4 trang)
-              </p>
-            </div>
-
-            {/* Part I: Multiple Choice */}
-            <div className="mb-8">
-              <h3 className="text-xl font-bold mb-4 text-green-700 dark:text-green-400">
-                PHẦN I: TRẮC NGHIỆM 4 LỰA CHỌN (20 câu)
-              </h3>
-              <div className="space-y-6">
-                {questions.filter(q => q.type === 'mc').map(q => (
-                  <div key={q.id} className="border-l-4 border-green-500 pl-4">
-                    <QuestionCard
-                      question={q}
-                      type="mc"
-                      onAnswerChange={handleAnswerChange}
-                      userAnswer={userAnswers[q.id]}
-                      isSubmitted={isSubmitted}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Part II: True/False */}
-            <div>
-              <h3 className="text-xl font-bold mb-4 text-teal-700 dark:text-teal-400">
-                PHẦN II: TRẮC NGHIỆM ĐÚNG/SAI (4 câu)
-              </h3>
-              <div className="space-y-6">
-                {questions.filter(q => q.type === 'tf').map(q => (
-                  <div key={q.id} className="border-l-4 border-teal-500 pl-4">
-                    <QuestionCard
-                      question={q}
-                      type="tf"
-                      onAnswerChange={handleAnswerChange}
-                      userAnswer={userAnswers[q.id]}
-                      isSubmitted={isSubmitted}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Submit Button and Results */}
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-            {!isSubmitted ? (
-              <div className="flex flex-wrap justify-center gap-4">
-                <button
-                  onClick={handleSubmit}
-                  className="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition-transform transform hover:scale-105 shadow-lg"
-                >
-                  <i className="fas fa-check-circle mr-2"></i>Nộp bài
-                </button>
-                <button
-                  onClick={handlePrint}
-                  className="bg-purple-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-purple-700 transition-transform transform hover:scale-105"
-                >
-                  <i className="fas fa-print mr-2"></i>In đề thi
-                </button>
-                <button
-                  onClick={handleDownload}
-                  className="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
-                >
-                  <i className="fas fa-download mr-2"></i>Tải kết quả
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="bg-gradient-to-r from-green-100 to-teal-100 dark:from-green-900 dark:to-teal-900 p-8 rounded-lg shadow-lg mb-6">
-                  <h3 className="text-2xl font-bold text-center mb-4 text-green-800 dark:text-green-200">
-                    <i className="fas fa-trophy mr-2"></i>Kết Quả Bài Thi
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400">Số câu đúng</p>
-                      <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                        {Object.keys(userAnswers).filter(key => {
-                          const q = questions.find(q => q.id === parseInt(key));
-                          if (!q) return false;
-                          if (q.type === 'mc') {
-                            return userAnswers[parseInt(key)] === q.answer;
-                          } else {
-                            const correctAnswer = q.answer as { a: boolean; b: boolean; c: boolean; d: boolean };
-                            const userAnswer = userAnswers[parseInt(key)];
-                            return userAnswer?.a === correctAnswer.a &&
-                                   userAnswer?.b === correctAnswer.b &&
-                                   userAnswer?.c === correctAnswer.c &&
-                                   userAnswer?.d === correctAnswer.d;
-                          }
-                        }).length}/{questions.length}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400">Điểm số</p>
-                      <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                        {((Object.keys(userAnswers).filter(key => {
-                          const q = questions.find(q => q.id === parseInt(key));
-                          if (!q) return false;
-                          if (q.type === 'mc') {
-                            return userAnswers[parseInt(key)] === q.answer;
-                          } else {
-                            const correctAnswer = q.answer as { a: boolean; b: boolean; c: boolean; d: boolean };
-                            const userAnswer = userAnswers[parseInt(key)];
-                            return userAnswer?.a === correctAnswer.a &&
-                                   userAnswer?.b === correctAnswer.b &&
-                                   userAnswer?.c === correctAnswer.c &&
-                                   userAnswer?.d === correctAnswer.d;
-                          }
-                        }).length / questions.length) * 10).toFixed(1)}/10
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 dark:text-gray-400">Thời gian</p>
-                      <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                        {startTime ? Math.floor((Date.now() - startTime) / 60000) : 0} phút
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-center gap-4">
-                  <button
-                    onClick={() => {
-                      setIsSubmitted(false);
-                      setUserAnswers({});
-                      setStartTime(Date.now());
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
-                  >
-                    <i className="fas fa-redo mr-2"></i>Làm lại
-                  </button>
-                  <button
-                    onClick={() => {
-                      setQuestions([]);
-                      setUserAnswers({});
-                      setIsSubmitted(false);
-                      setStartTime(null);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition-transform transform hover:scale-105"
-                  >
-                    <i className="fas fa-plus mr-2"></i>Tạo đề mới
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Benefits */}
-          <div className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-gray-800 dark:to-gray-700 p-6 rounded-lg">
-            <h3 className="text-xl font-semibold mb-4 text-green-800 dark:text-green-300 flex items-center">
-              <i className="fas fa-star mr-2"></i>
-              Lợi ích của việc làm đề thi mô phỏng
-            </h3>
-            <ul className="space-y-2 text-gray-700 dark:text-gray-300">
-              <li className="flex items-start">
-                <i className="fas fa-check-circle text-green-600 mr-2 mt-1"></i>
-                <span><strong>Làm quen format:</strong> Đúng cấu trúc 24 câu của đề thi THPT Quốc Gia</span>
-              </li>
-              <li className="flex items-start">
-                <i className="fas fa-check-circle text-green-600 mr-2 mt-1"></i>
-                <span><strong>Bám sát SGK:</strong> Nội dung theo chương trình GDPT 2018 - SGK Cánh Diều Nông nghiệp</span>
-              </li>
-              <li className="flex items-start">
-                <i className="fas fa-check-circle text-green-600 mr-2 mt-1"></i>
-                <span><strong>Phân bố chuẩn:</strong> Trồng trọt (8 câu) + Chăn nuôi (8 câu) + Cơ sở (8 câu)</span>
-              </li>
-              <li className="flex items-start">
-                <i className="fas fa-check-circle text-green-600 mr-2 mt-1"></i>
-                <span><strong>In và luyện tập:</strong> Dễ dàng in ra giấy để luyện tập như thi thật</span>
-              </li>
-              <li className="flex items-start">
-                <i className="fas fa-check-circle text-green-600 mr-2 mt-1"></i>
-                <span><strong>Tiết kiệm thời gian:</strong> Tạo đề chỉ trong ~30 giây với AI Gemini 2.0</span>
-              </li>
-            </ul>
-          </div>
         </>
-      )}
-      </>
       )}
 
       {/* History Tab */}
@@ -700,48 +716,50 @@ d) SAI (Nái mang thai ăn vừa đủ 2-2.5kg/ngày, ăn nhiều dễ béo, kh�
         <div className="space-y-6">
           {/* Overall Statistics */}
           {examHistory.length > 0 && (
-            <div className="bg-gradient-to-r from-green-50 to-teal-50 rounded-lg shadow-lg p-6 animate-fade-in">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
-                <i className="fas fa-chart-line text-green-600"></i>
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-lg p-8 text-white animate-fade-in">
+              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <BarChart2 className="w-6 h-6" />
                 Thống kê tổng quan
               </h3>
-              <div className="grid grid-cols-4 gap-4">
-                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
-                  <div className="text-3xl font-bold text-green-600">{examHistory.length}</div>
-                  <div className="text-sm text-gray-600 mt-1">Đề đã làm</div>
+              <div className="grid grid-cols-4 gap-6">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20">
+                  <div className="text-3xl font-bold">{examHistory.length}</div>
+                  <div className="text-sm text-blue-100 mt-1">Đề đã làm</div>
                 </div>
-                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
-                  <div className="text-3xl font-bold text-teal-600">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20">
+                  <div className="text-3xl font-bold">
                     {(examHistory.reduce((sum, e) => sum + e.percentage, 0) / examHistory.length).toFixed(1)}%
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">Điểm TB</div>
+                  <div className="text-sm text-blue-100 mt-1">Điểm TB</div>
                 </div>
-                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
-                  <div className="text-3xl font-bold text-emerald-600">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20">
+                  <div className="text-3xl font-bold">
                     {Math.max(...examHistory.map(e => e.percentage)).toFixed(1)}%
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">Cao nhất</div>
+                  <div className="text-sm text-blue-100 mt-1">Cao nhất</div>
                 </div>
-                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
-                  <div className="text-3xl font-bold text-orange-600">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20">
+                  <div className="text-3xl font-bold">
                     {examHistory.reduce((sum, e) => sum + e.timeSpent, 0)}
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">Tổng phút</div>
+                  <div className="text-sm text-blue-100 mt-1">Tổng phút</div>
                 </div>
               </div>
             </div>
           )}
 
           {examHistory.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-md p-12 text-center">
-              <i className="fas fa-history text-gray-300 text-6xl mb-4"></i>
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">Chưa có đề thi nào</h3>
-              <p className="text-gray-500 mb-6">Hãy tạo đề thi đầu tiên của bạn!</p>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-16 text-center">
+              <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <History className="w-10 h-10 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Chưa có đề thi nào</h3>
+              <p className="text-gray-500 mb-8">Hãy tạo đề thi đầu tiên của bạn để bắt đầu luyện tập!</p>
               <button
                 onClick={() => setActiveTab('create')}
-                className="px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:shadow-lg transition-all"
+                className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all flex items-center mx-auto gap-2 font-bold shadow-lg"
               >
-                <i className="fas fa-plus-circle mr-2"></i>
+                <Plus className="w-5 h-5" />
                 Tạo đề mới
               </button>
             </div>
@@ -750,83 +768,71 @@ d) SAI (Nái mang thai ăn vừa đủ 2-2.5kg/ngày, ăn nhiều dễ béo, kh�
               {examHistory.map((exam, idx) => (
                 <div
                   key={exam.id}
-                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all animate-fade-in"
-                  style={{ animationDelay: `${idx * 0.1}s` }}
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all animate-fade-in group"
+                  style={{ animationDelay: `${idx * 0.05}s` }}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-800 mb-2">
-                        <i className="fas fa-tractor text-green-600 mr-2"></i>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
                         {exam.examTitle}
                       </h3>
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
-                        <span>
-                          <i className="fas fa-calendar mr-1"></i>
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-3">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
                           {new Date(exam.createdAt).toLocaleDateString('vi-VN')}
                         </span>
-                        <span>
-                          <i className="fas fa-clock mr-1"></i>
+                        <span className="flex items-center gap-1">
+                          <History className="w-4 h-4" />
                           {exam.timeSpent} phút
                         </span>
                       </div>
-                      
+
                       {/* Progress Bar */}
-                      <div className="mb-3">
+                      <div className="mb-1">
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="text-gray-600">Độ chính xác</span>
-                          <span className={`font-bold ${
-                            exam.percentage >= 80 ? 'text-green-600' :
+                          <span className="text-gray-500">Độ chính xác</span>
+                          <span className={`font-bold ${exam.percentage >= 80 ? 'text-green-600' :
                             exam.percentage >= 50 ? 'text-yellow-600' : 'text-red-600'
-                          }`}>
+                            }`}>
                             {exam.score}/{exam.totalQuestions} ({exam.percentage.toFixed(1)}%)
                           </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-1000 ${
-                              exam.percentage >= 80 ? 'bg-gradient-to-r from-green-500 to-green-600' :
-                              exam.percentage >= 50 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
-                              'bg-gradient-to-r from-red-500 to-red-600'
-                            }`}
+                            className={`h-full rounded-full transition-all duration-1000 ${exam.percentage >= 80 ? 'bg-green-500' :
+                              exam.percentage >= 50 ? 'bg-yellow-500' :
+                                'bg-red-500'
+                              }`}
                             style={{ width: `${exam.percentage}%` }}
                           ></div>
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Score Badge */}
-                    <div className={`ml-4 px-4 py-2 rounded-full font-bold text-white text-center min-w-[80px] ${
-                      exam.percentage >= 80 ? 'bg-gradient-to-r from-green-500 to-green-600' :
-                      exam.percentage >= 50 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
-                      'bg-gradient-to-r from-red-500 to-red-600'
-                    }`}>
-                      <div className="text-2xl">{exam.percentage.toFixed(0)}%</div>
-                      <div className="text-xs opacity-90">
-                        {exam.percentage >= 80 ? 'Xuất sắc' :
-                         exam.percentage >= 50 ? 'Khá' : 'Cần cố gắng'}
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setSelectedExam(exam)}
-                      className="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:shadow-lg transition-all"
-                    >
-                      <i className="fas fa-eye mr-2"></i>
-                      Xem chi tiết
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm('Bạn có chắc muốn xóa đề thi này?')) {
-                          deleteExamFromHistory(exam.id);
-                          setExamHistory(getExamHistory().filter(e => e.examType === 'agriculture'));
-                        }
-                      }}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all"
-                    >
-                      <i className="fas fa-trash"></i>
-                    </button>
+                    {/* Score Badge */}
+                    <div className={`ml-6 px-4 py-2 rounded-lg font-bold text-white text-center min-w-[80px] ${exam.percentage >= 80 ? 'bg-green-500' :
+                      exam.percentage >= 50 ? 'bg-yellow-500' :
+                        'bg-red-500'
+                      }`}>
+                      {exam.percentage.toFixed(0)}%
+                    </div>
+
+                    <div className="flex flex-col gap-2 ml-4">
+                      <button
+                        onClick={() => setSelectedExam(exam)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Xem chi tiết"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteExam(exam.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Xóa"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

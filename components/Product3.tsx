@@ -7,25 +7,42 @@ import LoadingSpinner from './LoadingSpinner';
 import { ExamSkeleton } from './Skeleton';
 import CountdownTimer from './CountdownTimer';
 import ExamReviewModal from './ExamReviewModal';
+import {
+  FileText,
+  History,
+  Plus,
+  Settings,
+  Info,
+  AlertTriangle,
+  Play,
+  CheckCircle,
+  Printer,
+  RefreshCw,
+  Download,
+  Trash2,
+  Eye,
+  Clock,
+  Calendar,
+  BarChart2
+} from 'lucide-react';
 
 const Product3: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'create' | 'history'>('create');
   const [grade, setGrade] = useState('12');
-  const [examType, setExamType] = useState('full'); // full: 24 câu, custom: tùy chỉnh
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Câu hỏi được tạo
   const [questions, setQuestions] = useState<(QuestionMC | QuestionTF)[]>([]);
   const [hasGenerated, setHasGenerated] = useState(false);
   const [examTitle, setExamTitle] = useState('');
-  
+
   // Trả lời
   const [userAnswers, setUserAnswers] = useState<{ [key: number]: string | boolean }>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [endTime, setEndTime] = useState<number | null>(null);
-  
+
   // History & Review
   const [examHistory, setExamHistory] = useState<ExamHistory[]>([]);
   const [selectedExam, setSelectedExam] = useState<ExamHistory | null>(null);
@@ -152,28 +169,6 @@ const Product3: React.FC = () => {
 6. ✅ Ngôn ngữ: Khoa học, súc tích, rõ ràng, không mơ hồ
 7. ✅ YCCĐ: Ghi cụ thể theo SGK Cánh Diều
 
-🔢 VÍ DỤ CÂU HỎI CHUẨN:
-
-**Câu trắc nghiệm:**
-"Một máy biến áp lý tưởng có tỷ số vòng dây n₁/n₂ = 10. Khi đặt vào cuộn sơ cấp điện áp 220V thì điện áp ở cuộn thứ cấp là"
-A. 22V ✓
-B. 2200V
-C. 110V
-D. 440V
-
-**Câu Đúng/Sai (QUAN TRỌNG - FORMAT BẮT BUỘC):**
-"Câu 25. Cho mạch điện xoay chiều ba pha đối xứng, điện áp pha Up = 220V. Các phát biểu sau đúng hay sai?
-a) Khi đấu hình sao (Y), điện áp dây Ud = 220V
-b) Khi đấu hình tam giác (Δ), dòng điện dây Id = √3·Ipha
-c) Công suất tổng của mạch ba pha được tính: P = 3·Up·Ip·cosφ
-d) Tần số của mỗi pha trong lưới điện Việt Nam là 100Hz
-
-ĐÁP ÁN:
-a) SAI (Vì Ud = √3·Up = 380V khi đấu Y)
-b) ĐÚNG (Theo công thức dòng dây trong đấu Δ)
-c) ĐÚNG (Công thức công suất ba pha đối xứng)
-d) SAI (Tần số lưới điện VN là f = 50Hz)"
-
 📝 OUTPUT FORMAT (JSON):
 \`\`\`json
 {
@@ -230,7 +225,7 @@ d) SAI (Tần số lưới điện VN là f = 50Hz)"
 
     try {
       const response = await generateContent(prompt);
-      
+
       if (!response.success) {
         setError(response.error || 'Có lỗi xảy ra');
         setLoading(false);
@@ -240,14 +235,14 @@ d) SAI (Tần số lưới điện VN là f = 50Hz)"
       // Parse JSON
       const jsonMatch = response.text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        setError('AI chưa trả về đúng định dạng. Vui lòng thử lại.');
+        setError('Hệ thống chưa trả về đúng định dạng. Vui lòng thử lại.');
         setLoading(false);
         return;
       }
 
       const data = JSON.parse(jsonMatch[0]);
       setExamTitle(data.examTitle || 'ĐỀ THI MÔ PHỎNG');
-      
+
       // Convert questions
       const parsedQuestions = data.questions.map((q: any) => {
         if (q.type === 'mc') {
@@ -297,16 +292,16 @@ d) SAI (Tần số lưới điện VN là f = 50Hz)"
     const currentEndTime = Date.now();
     setIsSubmitted(true);
     setEndTime(currentEndTime);
-    
+
     // Calculate score
     const currentScore = questions.reduce((acc, q) => {
       if (userAnswers[q.id] === q.answer) return acc + 1;
       return acc;
     }, 0);
-    
+
     const percentage = (currentScore / questions.length) * 100;
     const timeSpent = startTime ? Math.round((currentEndTime - startTime) / 1000 / 60) : 0;
-    
+
     // Save to history
     saveExamToHistory({
       id: `exam_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -321,7 +316,7 @@ d) SAI (Tần số lưới điện VN là f = 50Hz)"
       createdAt: new Date().toISOString(),
       isSubmitted: true
     });
-    
+
     window.scrollTo(0, 0);
   };
 
@@ -349,44 +344,49 @@ d) SAI (Tần số lưới điện VN là f = 50Hz)"
 
   const timeSpent = startTime && endTime ? Math.round((endTime - startTime) / 1000 / 60) : 0;
 
+  const handleDeleteExam = (id: string) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa đề thi này không?')) {
+      deleteExamFromHistory(id);
+      setExamHistory(prev => prev.filter(e => e.id !== id));
+    }
+  };
+
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-lg shadow-lg text-white">
-        <h2 className="text-3xl font-bold text-center mb-2">
-          <i className="fas fa-file-alt mr-2"></i>
+    <div className="space-y-8">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+        <h2 className="text-3xl font-bold text-center mb-2 text-gray-800 flex items-center justify-center gap-3">
+          <FileText className="text-blue-600" size={32} />
           Sản phẩm học tập số 3: Tạo đề thi mô phỏng
         </h2>
-        <p className="text-center text-blue-100">
+        <p className="text-center text-gray-600">
           Đề thi chuẩn tốt nghiệp THPT Quốc Gia - 28 câu (24 TN + 4 Đ/S), 50 phút
         </p>
-        <p className="text-center text-blue-50 text-sm mt-2">
-          <i className="fas fa-info-circle mr-1"></i>
+        <p className="text-center text-blue-600 text-sm mt-2 flex items-center justify-center gap-2">
+          <Info size={16} />
           Công cụ hỗ trợ học tập - Nội dung mang tính tham khảo
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-white rounded-lg shadow-md p-2">
+      <div className="flex gap-2 bg-white rounded-lg shadow-sm p-2 border border-gray-200">
         <button
           onClick={() => setActiveTab('create')}
-          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
-            activeTab === 'create'
-              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
+          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${activeTab === 'create'
+            ? 'bg-blue-600 text-white shadow-md'
+            : 'text-gray-600 hover:bg-gray-50'
+            }`}
         >
-          <i className="fas fa-plus-circle mr-2"></i>
+          <Plus size={20} />
           Tạo đề mới
         </button>
         <button
           onClick={() => setActiveTab('history')}
-          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
-            activeTab === 'history'
-              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
+          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${activeTab === 'history'
+            ? 'bg-blue-600 text-white shadow-md'
+            : 'text-gray-600 hover:bg-gray-50'
+            }`}
         >
-          <i className="fas fa-history mr-2"></i>
+          <History size={20} />
           Lịch sử thi ({examHistory.length})
         </button>
       </div>
@@ -396,231 +396,231 @@ d) SAI (Tần số lưới điện VN là f = 50Hz)"
         <>
           {/* Form tạo đề */}
           {!hasGenerated && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-          <h3 className="text-2xl font-semibold mb-4 border-b pb-2 border-gray-300 dark:border-gray-600 flex items-center">
-            <i className="fas fa-cog text-blue-500 mr-3"></i>Cấu hình đề thi
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Chọn lớp ôn tập
-              </label>
-              <select 
-                value={grade}
-                onChange={(e) => setGrade(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                disabled={loading}
-              >
-                <option value="10">Lớp 10 (Trọng tâm: Bản vẽ, Vật liệu)</option>
-                <option value="11">Lớp 11 (Trọng tâm: Động cơ, Máy công cụ)</option>
-                <option value="12">Lớp 12 (Trọng tâm: Điện, Điện tử)</option>
-              </select>
-            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              <h3 className="text-2xl font-semibold mb-4 border-b pb-2 border-gray-200 flex items-center gap-3 text-gray-800">
+                <Settings className="text-blue-500" size={24} /> Cấu hình đề thi
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Chọn lớp ôn tập
+                  </label>
+                  <select
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    disabled={loading}
+                  >
+                    <option value="10">Lớp 10 (Trọng tâm: Bản vẽ, Vật liệu)</option>
+                    <option value="11">Lớp 11 (Trọng tâm: Động cơ, Máy công cụ)</option>
+                    <option value="12">Lớp 12 (Trọng tâm: Điện, Điện tử)</option>
+                  </select>
+                </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-md">
-              <h4 className="font-semibold mb-2 flex items-center">
-                <i className="fas fa-info-circle mr-2"></i>
-                Cấu trúc đề thi chuẩn THPT:
-              </h4>
-              <ul className="space-y-1 text-sm">
-                <li>✅ <strong>Phần I:</strong> 24 câu trắc nghiệm 4 lựa chọn</li>
-                <li className="ml-6">• Câu 1-8: Công nghệ 10-11 (Phần 1)</li>
-                <li className="ml-6">• Câu 9-14: Công nghệ điện lớp 12</li>
-                <li className="ml-6">• Câu 15-20: Công nghệ điện tử lớp 12</li>
-                <li className="ml-6">• Câu 21-24: Công nghệ 10-11 (Phần 2)</li>
-                <li>✅ <strong>Phần II:</strong> 4 câu Đúng/Sai (Câu 25-28)</li>
-                <li className="ml-6">• Câu 25-26: Công nghệ điện</li>
-                <li className="ml-6">• Câu 27-28: Công nghệ điện tử</li>
-                <li className="mt-2 text-xs text-blue-600 dark:text-blue-400">
-                  <i className="fas fa-book mr-1"></i>Dựa trên SGK Kết nối tri thức & Cánh Diều
-                </li>
-              </ul>
-            </div>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2 text-blue-800">
+                    <Info size={18} />
+                    Cấu trúc đề thi chuẩn THPT:
+                  </h4>
+                  <ul className="space-y-1 text-sm text-blue-700">
+                    <li className="flex items-center gap-2"><CheckCircle size={14} /> <strong>Phần I:</strong> 24 câu trắc nghiệm 4 lựa chọn</li>
+                    <li className="ml-6">• Câu 1-8: Công nghệ 10-11 (Phần 1)</li>
+                    <li className="ml-6">• Câu 9-14: Công nghệ điện lớp 12</li>
+                    <li className="ml-6">• Câu 15-20: Công nghệ điện tử lớp 12</li>
+                    <li className="ml-6">• Câu 21-24: Công nghệ 10-11 (Phần 2)</li>
+                    <li className="flex items-center gap-2"><CheckCircle size={14} /> <strong>Phần II:</strong> 4 câu Đúng/Sai (Câu 25-28)</li>
+                    <li className="ml-6">• Câu 25-26: Công nghệ điện</li>
+                    <li className="ml-6">• Câu 27-28: Công nghệ điện tử</li>
+                    <li className="mt-2 text-xs text-blue-600 flex items-center gap-1">
+                      <Info size={12} /> Dựa trên SGK Kết nối tri thức & Cánh Diều
+                    </li>
+                  </ul>
+                </div>
 
-            {error && (
-              <div className="bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 px-4 py-3 rounded relative">
-                <i className="fas fa-exclamation-circle mr-2"></i>
-                {error}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg relative flex items-center gap-2">
+                    <AlertTriangle size={20} />
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleGenerate}
+                  disabled={loading}
+                  className="w-full bg-blue-600 text-white font-bold py-4 px-6 rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <span className="animate-spin"><RefreshCw size={20} /></span>
+                      Đang thiết lập đề thi... (30-60 giây)
+                    </>
+                  ) : (
+                    <>
+                      <Play size={20} />
+                      Tạo đề thi mô phỏng
+                    </>
+                  )}
+                </button>
               </div>
-            )}
-
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-4 px-6 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              {loading ? (
-                <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i>
-                  AI đang tạo đề thi... (30-60 giây)
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-magic mr-2"></i>
-                  Tạo đề thi mô phỏng với AI
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Loading Skeleton */}
-      {loading && (
-        <div className="space-y-6">
-          <LoadingSpinner 
-            size="lg"
-            text="AI Gemini đang tạo đề thi Công nghiệp..."
-            showProgress={true}
-            progress={50}
-          />
-          <ExamSkeleton />
-        </div>
-      )}
-
-      {/* Countdown Timer */}
-      {hasGenerated && questions.length > 0 && !isSubmitted && (
-        <CountdownTimer
-          initialMinutes={50}
-          onTimeUp={() => {
-            if (!isSubmitted) {
-              handleSubmit();
-              alert('⏰ Hết giờ! Bài thi đã được tự động nộp.');
-            }
-          }}
-          onWarning={(minutes) => {
-            alert(`⚠️ Chỉ còn ${minutes} phút! Hãy chuẩn bị nộp bài.`);
-          }}
-          autoStart={true}
-        />
-      )}
-
-      {/* Hiển thị kết quả */}
-      {isSubmitted && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg sticky top-20 z-40">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div className="p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
-              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {score}/{questions.length}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Số câu đúng</div>
             </div>
-            <div className="p-4 bg-green-50 dark:bg-green-900 rounded-lg">
-              <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {((score / questions.length) * 10).toFixed(1)}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Điểm (thang 10)</div>
-            </div>
-            <div className="p-4 bg-purple-50 dark:bg-purple-900 rounded-lg">
-              <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                {timeSpent} phút
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Thời gian làm bài</div>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Đề thi */}
-      {hasGenerated && questions.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-          <div className="text-center mb-6 border-b-2 pb-4">
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-              {examTitle}
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              <i className="fas fa-clock mr-2"></i>Thời gian làm bài: 50 phút
-              <span className="mx-3">|</span>
-              <i className="fas fa-book mr-2"></i>28 câu hỏi (24 TN + 4 Đ/S)
-            </p>
-          </div>
+          {/* Loading Skeleton */}
+          {loading && (
+            <div className="space-y-6">
+              <LoadingSpinner
+                size="lg"
+                text="Hệ thống đang tạo đề thi..."
+                showProgress={true}
+                progress={50}
+              />
+              <ExamSkeleton />
+            </div>
+          )}
 
-          <div className="mb-6 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900 dark:to-orange-900 rounded-lg border-l-4 border-yellow-500">
-            <div className="flex items-start space-x-3">
-              <i className="fas fa-info-circle text-yellow-600 dark:text-yellow-400 text-xl mt-0.5"></i>
-              <div>
-                <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
-                  Công cụ hỗ trợ học tập môn Công nghệ THPT
+          {/* Countdown Timer */}
+          {hasGenerated && questions.length > 0 && !isSubmitted && (
+            <CountdownTimer
+              initialMinutes={50}
+              onTimeUp={() => {
+                if (!isSubmitted) {
+                  handleSubmit();
+                  alert('⏰ Hết giờ! Bài thi đã được tự động nộp.');
+                }
+              }}
+              onWarning={(minutes) => {
+                alert(`⚠️ Chỉ còn ${minutes} phút! Hãy chuẩn bị nộp bài.`);
+              }}
+              autoStart={true}
+            />
+          )}
+
+          {/* Hiển thị kết quả */}
+          {isSubmitted && (
+            <div className="bg-white p-6 rounded-xl shadow-lg sticky top-20 z-40 border border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <div className="text-3xl font-bold text-blue-600">
+                    {score}/{questions.length}
+                  </div>
+                  <div className="text-sm text-gray-600">Số câu đúng</div>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+                  <div className="text-3xl font-bold text-green-600">
+                    {((score / questions.length) * 10).toFixed(1)}
+                  </div>
+                  <div className="text-sm text-gray-600">Điểm (thang 10)</div>
+                </div>
+                <div className="p-4 bg-purple-50 rounded-lg border border-purple-100">
+                  <div className="text-3xl font-bold text-purple-600">
+                    {timeSpent} phút
+                  </div>
+                  <div className="text-sm text-gray-600">Thời gian làm bài</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Đề thi */}
+          {hasGenerated && questions.length > 0 && (
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              <div className="text-center mb-6 border-b pb-4 border-gray-200">
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                  {examTitle}
+                </h3>
+                <p className="text-gray-600 flex items-center justify-center gap-4">
+                  <span className="flex items-center gap-2"><Clock size={18} />Thời gian làm bài: 50 phút</span>
+                  <span className="mx-3">|</span>
+                  <span className="flex items-center gap-2"><FileText size={18} />28 câu hỏi (24 TN + 4 Đ/S)</span>
                 </p>
-                <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1">
-                  <li>• Đề thi do AI tạo dựa trên SGK <strong>Kết nối tri thức</strong> và <strong>Cánh Diều</strong></li>
-                  <li>• Nội dung mang tính tham khảo, hỗ trợ ôn tập và làm quen format đề thi</li>
-                  <li>• Đây là phiên bản demo, có thể chưa chính xác 100%</li>
-                </ul>
               </div>
-            </div>
-          </div>
 
-          {/* Phần I */}
-          <div className="mb-8">
-            <h4 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">
-              PHẦN I: Trắc nghiệm 4 lựa chọn (Câu 1-24)
-            </h4>
-            <div className="space-y-6">
-              {questions.filter((q): q is QuestionMC => 'options' in q).map((q, idx) => (
-                <div key={q.id} className="border-l-4 border-blue-500 pl-4">
-                  <QuestionCard
-                    question={q}
-                    type="mc"
-                    onAnswerChange={handleAnswerChange}
-                    userAnswer={userAnswers[q.id]}
-                    isSubmitted={isSubmitted}
-                  />
+              <div className="mb-6 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
+                <div className="flex items-start space-x-3">
+                  <AlertTriangle className="text-yellow-600 mt-0.5" size={20} />
+                  <div>
+                    <p className="text-sm font-semibold text-yellow-800 mb-1">
+                      Công cụ hỗ trợ học tập môn Công nghệ THPT
+                    </p>
+                    <ul className="text-xs text-yellow-700 space-y-1">
+                      <li>• Đề thi được tạo dựa trên SGK <strong>Kết nối tri thức</strong> và <strong>Cánh Diều</strong></li>
+                      <li>• Nội dung mang tính tham khảo, hỗ trợ ôn tập và làm quen format đề thi</li>
+                      <li>• Đây là phiên bản demo, có thể chưa chính xác 100%</li>
+                    </ul>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          {/* Phần II */}
-          <div className="mb-8">
-            <h4 className="text-xl font-bold mb-4 text-green-600 dark:text-green-400">
-              PHẦN II: Trắc nghiệm Đúng/Sai (Câu 25-28)
-            </h4>
-            <div className="space-y-6">
-              {questions.filter((q): q is QuestionTF => !('options' in q)).map((q) => (
-                <div key={q.id} className="border-l-4 border-green-500 pl-4">
-                  <QuestionCard
-                    question={q}
-                    type="tf"
-                    onAnswerChange={handleAnswerChange}
-                    userAnswer={userAnswers[q.id]}
-                    isSubmitted={isSubmitted}
-                  />
+              {/* Phần I */}
+              <div className="mb-8">
+                <h4 className="text-xl font-bold mb-4 text-blue-600">
+                  PHẦN I: Trắc nghiệm 4 lựa chọn (Câu 1-24)
+                </h4>
+                <div className="space-y-6">
+                  {questions.filter((q): q is QuestionMC => 'options' in q).map((q, idx) => (
+                    <div key={q.id} className="border-l-4 border-blue-500 pl-4">
+                      <QuestionCard
+                        question={q}
+                        type="mc"
+                        onAnswerChange={handleAnswerChange}
+                        userAnswer={userAnswers[q.id]}
+                        isSubmitted={isSubmitted}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-center gap-4">
-            {!isSubmitted ? (
-              <>
-                <button
-                  onClick={handleSubmit}
-                  className="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition-transform transform hover:scale-105 shadow-lg"
-                  aria-label="Nộp bài thi (Ctrl+Enter)"
-                  title="Nhấn Ctrl+Enter để nộp nhanh"
-                >
-                  <i className="fas fa-check-circle mr-2" aria-hidden="true"></i>Nộp bài
-                </button>
-                <button
-                  onClick={() => window.print()}
-                  className="bg-purple-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-purple-700 transition-transform transform hover:scale-105"
-                  aria-label="In đề thi"
-                >
-                  <i className="fas fa-print mr-2" aria-hidden="true"></i>In đề thi
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={handleReset}
-                  className="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
-                >
-                  <i className="fas fa-redo mr-2"></i>Làm lại
-                </button>
-                <button
-                  onClick={() => {
-                    const resultText = `
+              {/* Phần II */}
+              <div className="mb-8">
+                <h4 className="text-xl font-bold mb-4 text-green-600">
+                  PHẦN II: Trắc nghiệm Đúng/Sai (Câu 25-28)
+                </h4>
+                <div className="space-y-6">
+                  {questions.filter((q): q is QuestionTF => !('options' in q)).map((q) => (
+                    <div key={q.id} className="border-l-4 border-green-500 pl-4">
+                      <QuestionCard
+                        question={q}
+                        type="tf"
+                        onAnswerChange={handleAnswerChange}
+                        userAnswer={userAnswers[q.id]}
+                        isSubmitted={isSubmitted}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-gray-200 flex flex-wrap justify-center gap-4">
+                {!isSubmitted ? (
+                  <>
+                    <button
+                      onClick={handleSubmit}
+                      className="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition-all shadow-md flex items-center gap-2"
+                      aria-label="Nộp bài thi (Ctrl+Enter)"
+                      title="Nhấn Ctrl+Enter để nộp nhanh"
+                    >
+                      <CheckCircle size={20} />Nộp bài
+                    </button>
+                    <button
+                      onClick={() => window.print()}
+                      className="bg-purple-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-purple-700 transition-all flex items-center gap-2"
+                      aria-label="In đề thi"
+                    >
+                      <Printer size={20} />In đề thi
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleReset}
+                      className="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2"
+                    >
+                      <RefreshCw size={20} />Làm lại
+                    </button>
+                    <button
+                      onClick={() => {
+                        const resultText = `
 KẾT QUẢ THI THỬ THPT QUỐC GIA - MÔN CÔNG NGHỆ
 ${examTitle}
 
@@ -630,73 +630,73 @@ Thời gian làm bài: ${timeSpent} phút
 
 CHI TIẾT:
 ${questions.map((q, idx) => {
-  const userAns = userAnswers[q.id];
-  const isCorrect = userAns === q.answer;
-  return `Câu ${q.id}: ${isCorrect ? '✓ ĐÚNG' : '✗ SAI'} - Đáp án: ${q.answer}`;
-}).join('\n')}
+                          const userAns = userAnswers[q.id];
+                          const isCorrect = userAns === q.answer;
+                          return `Câu ${q.id}: ${isCorrect ? '✓ ĐÚNG' : '✗ SAI'} - Đáp án: ${q.answer}`;
+                        }).join('\n')}
 `;
-                    const blob = new Blob([resultText], { type: 'text/plain' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `KetQua_ThiThu_${Date.now()}.txt`;
-                    a.click();
-                  }}
-                  className="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 transition-transform transform hover:scale-105"
+                        const blob = new Blob([resultText], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `KetQua_ThiThu_${Date.now()}.txt`;
+                        a.click();
+                      }}
+                      className="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 transition-all flex items-center gap-2"
+                    >
+                      <Download size={20} />Tải kết quả
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={handleResetAll}
+                  className="bg-gray-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-gray-700 transition-all flex items-center gap-2"
                 >
-                  <i className="fas fa-download mr-2"></i>Tải kết quả
+                  <Plus size={20} />Tạo đề mới
                 </button>
-              </>
-            )}
-            <button
-              onClick={handleResetAll}
-              className="bg-gray-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-gray-700 transition-transform transform hover:scale-105"
-            >
-              <i className="fas fa-plus-circle mr-2"></i>Tạo đề mới
-            </button>
-          </div>
-        </div>
-      )}
+              </div>
+            </div>
+          )}
 
-      {/* Hướng dẫn */}
-      {!hasGenerated && (
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900 dark:to-blue-900 p-6 rounded-lg shadow-lg">
-          <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white flex items-center">
-            <i className="fas fa-graduation-cap mr-2"></i>
-            Lợi ích của đề thi mô phỏng
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-start space-x-3">
-              <i className="fas fa-check-circle text-green-500 text-xl mt-1"></i>
-              <div>
-                <p className="font-semibold">Làm quen format đề thi</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Cấu trúc giống 95% đề thi thật của Bộ GD&ĐT</p>
+          {/* Hướng dẫn */}
+          {!hasGenerated && (
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              <h3 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                <Info size={24} className="text-blue-500" />
+                Lợi ích của đề thi mô phỏng
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="text-green-500 mt-1" size={20} />
+                  <div>
+                    <p className="font-semibold text-gray-800">Làm quen format đề thi</p>
+                    <p className="text-sm text-gray-600">Cấu trúc giống 95% đề thi thật của Bộ GD&ĐT</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <Clock className="text-blue-500 mt-1" size={20} />
+                  <div>
+                    <p className="font-semibold text-gray-800">Rèn kỹ năng quản lý thời gian</p>
+                    <p className="text-sm text-gray-600">50 phút cho 24 câu, trung bình 2 phút/câu</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <BarChart2 className="text-purple-500 mt-1" size={20} />
+                  <div>
+                    <p className="font-semibold text-gray-800">Ôn tập kiến thức toàn diện</p>
+                    <p className="text-sm text-gray-600">Bao gồm cả 3 lớp 10, 11, 12 theo SGK KNTT & Cánh Diều</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <Trophy className="text-red-500 mt-1" size={20} />
+                  <div>
+                    <p className="font-semibold text-gray-800">Đánh giá năng lực thực tế</p>
+                    <p className="text-sm text-gray-600">Xem kết quả ngay, biết điểm mạnh/yếu để cải thiện</p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex items-start space-x-3">
-              <i className="fas fa-clock text-blue-500 text-xl mt-1"></i>
-              <div>
-                <p className="font-semibold">Rèn kỹ năng quản lý thời gian</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">50 phút cho 24 câu, trung bình 2 phút/câu</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <i className="fas fa-brain text-purple-500 text-xl mt-1"></i>
-              <div>
-                <p className="font-semibold">Ôn tập kiến thức toàn diện</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Bao gồm cả 3 lớp 10, 11, 12 theo SGK KNTT & Cánh Diều</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <i className="fas fa-chart-line text-red-500 text-xl mt-1"></i>
-              <div>
-                <p className="font-semibold">Đánh giá năng lực thực tế</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Xem kết quả ngay, biết điểm mạnh/yếu để cải thiện</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
         </>
       )}
 
@@ -705,29 +705,29 @@ ${questions.map((q, idx) => {
         <div className="space-y-6">
           {/* Overall Statistics */}
           {examHistory.length > 0 && (
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg shadow-lg p-6 animate-fade-in">
+            <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-6">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
-                <i className="fas fa-chart-line text-blue-600"></i>
+                <BarChart2 className="text-blue-600" size={24} />
                 Thống kê tổng quan
               </h3>
               <div className="grid grid-cols-4 gap-4">
-                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
+                <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
                   <div className="text-3xl font-bold text-blue-600">{examHistory.length}</div>
                   <div className="text-sm text-gray-600 mt-1">Đề đã làm</div>
                 </div>
-                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
+                <div className="bg-green-50 rounded-xl p-4 text-center border border-green-100">
                   <div className="text-3xl font-bold text-green-600">
                     {(examHistory.reduce((sum, e) => sum + e.percentage, 0) / examHistory.length).toFixed(1)}%
                   </div>
                   <div className="text-sm text-gray-600 mt-1">Điểm TB</div>
                 </div>
-                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
+                <div className="bg-purple-50 rounded-xl p-4 text-center border border-purple-100">
                   <div className="text-3xl font-bold text-purple-600">
                     {Math.max(...examHistory.map(e => e.percentage)).toFixed(1)}%
                   </div>
                   <div className="text-sm text-gray-600 mt-1">Cao nhất</div>
                 </div>
-                <div className="bg-white rounded-xl p-4 text-center shadow-md transform transition-all hover:scale-105">
+                <div className="bg-orange-50 rounded-xl p-4 text-center border border-orange-100">
                   <div className="text-3xl font-bold text-orange-600">
                     {examHistory.reduce((sum, e) => sum + e.timeSpent, 0)}
                   </div>
@@ -737,22 +737,24 @@ ${questions.map((q, idx) => {
             </div>
           )}
 
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800">
-              <i className="fas fa-history text-blue-600"></i>
+              <History className="text-blue-600" size={24} />
               Lịch sử làm bài
             </h3>
-            
+
             {examHistory.length === 0 ? (
               <div className="text-center py-12">
-                <i className="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+                <div className="flex justify-center mb-4">
+                  <History className="text-gray-300" size={64} />
+                </div>
                 <p className="text-gray-600 text-lg">Chưa có lịch sử thi</p>
                 <p className="text-gray-500 text-sm mt-2">Tạo và làm đề thi để xem lịch sử tại đây</p>
                 <button
                   onClick={() => setActiveTab('create')}
-                  className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all"
+                  className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all flex items-center mx-auto gap-2"
                 >
-                  <i className="fas fa-plus mr-2"></i>
+                  <Plus size={20} />
                   Tạo đề thi ngay
                 </button>
               </div>
@@ -761,80 +763,60 @@ ${questions.map((q, idx) => {
                 {examHistory.map((exam, idx) => (
                   <div
                     key={exam.id}
-                    className="border-2 border-gray-200 rounded-xl p-5 hover:shadow-xl transition-all hover:border-blue-400 animate-fade-in"
-                    style={{ animationDelay: `${idx * 0.1}s` }}
+                    className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all hover:border-blue-300"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <h4 className="font-bold text-lg text-gray-800 mb-2">{exam.examTitle}</h4>
                         <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                          <span>
-                            <i className="fas fa-calendar mr-1 text-blue-500"></i>
+                          <span className="flex items-center gap-1">
+                            <Calendar size={16} className="text-blue-500" />
                             {new Date(exam.createdAt).toLocaleString('vi-VN')}
                           </span>
-                          <span>
-                            <i className="fas fa-clock mr-1 text-purple-500"></i>
+                          <span className="flex items-center gap-1">
+                            <Clock size={16} className="text-purple-500" />
                             {exam.timeSpent} phút
                           </span>
                         </div>
-                        
+
                         {/* Progress Bar */}
                         <div className="mb-3">
                           <div className="flex justify-between text-xs mb-1">
                             <span className="text-gray-600">Độ chính xác</span>
-                            <span className={`font-bold ${
-                              exam.percentage >= 80 ? 'text-green-600' :
+                            <span className={`font-bold ${exam.percentage >= 80 ? 'text-green-600' :
                               exam.percentage >= 50 ? 'text-yellow-600' : 'text-red-600'
-                            }`}>
+                              }`}>
                               {exam.score}/{exam.totalQuestions} ({exam.percentage.toFixed(1)}%)
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                             <div
-                              className={`h-full rounded-full transition-all duration-1000 ${
-                                exam.percentage >= 80 ? 'bg-gradient-to-r from-green-500 to-green-600' :
-                                exam.percentage >= 50 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
-                                'bg-gradient-to-r from-red-500 to-red-600'
-                              }`}
+                              className={`h-full rounded-full transition-all duration-1000 ${exam.percentage >= 80 ? 'bg-green-500' :
+                                exam.percentage >= 50 ? 'bg-yellow-500' :
+                                  'bg-red-500'
+                                }`}
                               style={{ width: `${exam.percentage}%` }}
                             ></div>
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Score Badge */}
-                      <div className={`ml-4 px-4 py-2 rounded-full font-bold text-white text-center min-w-[80px] ${
-                        exam.percentage >= 80 ? 'bg-gradient-to-r from-green-500 to-green-600' :
-                        exam.percentage >= 50 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
-                        'bg-gradient-to-r from-red-500 to-red-600'
-                      }`}>
-                        <div className="text-2xl">{exam.percentage.toFixed(0)}%</div>
-                        <div className="text-xs opacity-90">
-                          {exam.percentage >= 80 ? 'Xuất sắc' :
-                           exam.percentage >= 50 ? 'Khá' : 'Cần cố gắng'}
-                        </div>
+
+                      <div className="flex flex-col gap-2 ml-4">
+                        <button
+                          onClick={() => setSelectedExam(exam)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Xem chi tiết"
+                        >
+                          <Eye size={20} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteExam(exam.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Xóa"
+                        >
+                          <Trash2 size={20} />
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setSelectedExam(exam)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all text-sm font-semibold"
-                      >
-                        <i className="fas fa-eye mr-2"></i>
-                        Xem lại đề & Đáp án
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm('Bạn có chắc muốn xóa lịch sử thi này?')) {
-                            deleteExamFromHistory(exam.id);
-                            setExamHistory(prev => prev.filter(e => e.id !== exam.id));
-                          }
-                        }}
-                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all text-sm font-semibold"
-                      >
-                        <i className="fas fa-trash mr-2"></i>
-                        Xóa
-                      </button>
                     </div>
                   </div>
                 ))}

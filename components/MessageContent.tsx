@@ -112,7 +112,7 @@ const formatMarkdown = (text: string): string => {
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-lg shadow-lg my-4 border-2 border-gray-200 hover:scale-105 transition-transform cursor-pointer" onclick="window.open(\'$2\', \'_blank\')" />');
 
   // Links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-500 hover:underline font-medium" target="_blank" rel="noopener noreferrer">$1 <i class="fas fa-external-link-alt text-xs"></i></a>');
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-500 hover:underline font-medium" target="_blank" rel="noopener noreferrer">$1 🔗</a>');
 
   // Lists - Unordered
   html = html.replace(/^\s*[-•]\s+(.*)$/gim, '<li class="ml-6 my-1 flex items-start gap-2"><span class="text-blue-500 font-bold">•</span><span>$1</span></li>');

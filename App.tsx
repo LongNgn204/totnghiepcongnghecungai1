@@ -1,244 +1,293 @@
-
-import React, { useState, lazy, Suspense } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+// Initialize sync manager in App component
+import React from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
-import ScrollToTop from './components/ScrollToTop';
-import TechBadge from './components/TechBadge';
-import LoadingSpinner from './components/LoadingSpinner';
-import SyncStatus from './components/SyncStatus';
-import { AuthProvider } from './contexts/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-
-// Lazy load components for code splitting
-const Home = lazy(() => import('./components/Home'));
-const Dashboard = lazy(() => import('./components/Dashboard'));
-const APITester = lazy(() => import('./components/APITester'));
-const Product1 = lazy(() => import('./components/Product1'));
-const Product2 = lazy(() => import('./components/Product2'));
-const Product3 = lazy(() => import('./components/Product3'));
-const Product4 = lazy(() => import('./components/Product4'));
-const Product5 = lazy(() => import('./components/Product5'));
-const Product6 = lazy(() => import('./components/Product6'));
-const Product7 = lazy(() => import('./components/Product7'));
-const Leaderboard = lazy(() => import('./components/Leaderboard'));
-const PWASettings = lazy(() => import('./components/PWASettings'));
-const SyncSettings = lazy(() => import('./components/SyncSettings'));
-const ExamHistory = lazy(() => import('./components/ExamHistory'));
-const ExamReview = lazy(() => import('./components/ExamReview'));
-const AuthPage = lazy(() => import('./components/auth/AuthPage'));
-const ForgotPassword = lazy(() => import('./components/auth/ForgotPassword'));
-const Profile = lazy(() => import('./components/Profile'));
+import Home from './components/Home';
+import Product1 from './components/Product1';
+import Product2 from './components/Product2';
+import Product3 from './components/Product3';
+import Product4 from './components/Product4';
+import Product5 from './components/Product5';
+import Product6 from './components/Product6';
+import Product7 from './components/Product7';
+import Dashboard from './components/Dashboard';
+import Flashcards from './components/Flashcards';
+import Leaderboard from './components/Leaderboard';
+import ExamHistory from './components/ExamHistory';
+import Profile from './components/Profile';
+import PWASettings from './components/PWASettings';
+import syncManager from './utils/syncManager';
+import {
+  Facebook,
+  Youtube,
+  Mail,
+  Phone,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Info,
+  Cloud,
+  CloudOff,
+  RefreshCw
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const App: React.FC = () => {
-  const [showDisclaimer, setShowDisclaimer] = useState(() => {
-    return localStorage.getItem('disclaimer_accepted') !== 'true';
-  });
+  // Firebase authentication removed - not needed for this educational app
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [syncStatus, setSyncStatus] = React.useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [lastSyncTime, setLastSyncTime] = React.useState<number>(0);
+  const [isOnline, setIsOnline] = React.useState(navigator.onLine);
 
-  const acceptDisclaimer = () => {
-    localStorage.setItem('disclaimer_accepted', 'true');
-    setShowDisclaimer(false);
+  // Scroll to top on route change
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location]);
+
+  // Initialize sync manager
+  React.useEffect(() => {
+    // Load last sync time
+    setLastSyncTime(syncManager.getLastSyncTime());
+
+    // Listen for sync events
+    const handleSyncComplete = (e: CustomEvent) => {
+      setSyncStatus('success');
+      setLastSyncTime(e.detail.lastSyncTime);
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    };
+
+    const handleSyncError = () => {
+      setSyncStatus('error');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    };
+
+    window.addEventListener('sync-completed', handleSyncComplete as EventListener);
+    window.addEventListener('sync-error', handleSyncError);
+
+    // Listen for online/offline
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Initial sync if online
+    if (navigator.onLine && syncManager.isEnabled()) {
+      setTimeout(() => {
+        setSyncStatus('syncing');
+        syncManager.syncAll().then(() => {
+          setSyncStatus('success');
+          setTimeout(() => setSyncStatus('idle'), 3000);
+        }).catch(() => {
+          setSyncStatus('error');
+          setTimeout(() => setSyncStatus('idle'), 3000);
+        });
+      }, 1000);
+    }
+
+    return () => {
+      window.removeEventListener('sync-completed', handleSyncComplete as EventListener);
+      window.removeEventListener('sync-error', handleSyncError);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const handleManualSync = () => {
+    if (syncStatus === 'syncing') return;
+
+    setSyncStatus('syncing');
+    syncManager.syncAll().then(() => {
+      setSyncStatus('success');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    }).catch(() => {
+      setSyncStatus('error');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    });
+  };
+
+  const formatLastSync = () => {
+    if (!lastSyncTime) return 'Chưa đồng bộ';
+
+    const diff = Date.now() - lastSyncTime;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+
+    if (minutes < 1) return 'Vừa xong';
+    if (minutes < 60) return `${minutes} phút trước`;
+    if (hours < 24) return `${hours} giờ trước`;
+    return new Date(lastSyncTime).toLocaleDateString('vi-VN');
   };
 
   return (
-    <AuthProvider>
-    <HashRouter>
-      <div className="min-h-screen flex flex-col font-sans text-gray-800 bg-gray-50">
-        {/* Skip to main content for accessibility */}
-        <a href="#main-content" className="skip-to-main">
-          Nhảy đến nội dung chính
-        </a>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Header />
+
+      <main className="flex-1">
         {/* Disclaimer Banner */}
-        {showDisclaimer && (
-          <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white py-4 px-4 shadow-2xl sticky top-0 z-50 border-b-2 border-white/30 animate-slideDown">
-            <div className="container mx-auto flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-start gap-4 flex-1 min-w-0">
-                <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 flex-shrink-0">
-                  <i className="fas fa-exclamation-triangle text-3xl"></i>
+        <div className="bg-blue-50 border-b border-blue-100 py-3 px-4">
+          <div className="max-w-7xl mx-auto flex items-start gap-3">
+            <Info className="text-blue-600 flex-shrink-0 mt-0.5" size={20} />
+            <div className="flex-1">
+              <p className="text-sm text-blue-900 font-medium">
+                Hệ thống ôn thi THPT môn Công nghệ - Phiên bản thử nghiệm
+              </p>
+              <p className="text-xs text-blue-700 mt-1">
+                Nội dung được hỗ trợ bởi AI Gemini 2.5 Pro. Vui lòng đối chiếu với SGK để đảm bảo độ chính xác tuyệt đối.
+              </p>
+            </div>
+
+            {/* Sync Status */}
+            <div className="flex items-center gap-3">
+              {isOnline ? (
+                <div className="flex items-center gap-2 text-xs text-green-600">
+                  <Cloud size={16} />
+                  <span className="hidden sm:inline">Online</span>
                 </div>
-                <div className="text-sm">
-                  <p className="font-bold mb-2 text-lg flex items-center gap-2">
-                    🎓 Công cụ hỗ trợ học tập môn Công nghệ THPT
-                  </p>
-                  <p className="text-orange-50 leading-relaxed">
-                    Website sử dụng <span className="font-bold bg-white/20 px-2 py-0.5 rounded">AI Gemini 2.0</span> để tạo đề thi dựa trên SGK <strong>Kết nối tri thức</strong> và <strong>Cánh Diều</strong>. 
-                    Đây là <span className="font-bold bg-white/20 px-2 py-0.5 rounded">phiên bản demo</span>, nội dung mang tính tham khảo, chưa chính xác 100%. 
-                    Vui lòng kết hợp với tài liệu chính thức của Bộ GD&ĐT.
-                  </p>
+              ) : (
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <CloudOff size={16} />
+                  <span className="hidden sm:inline">Offline</span>
                 </div>
-              </div>
+              )}
+
               <button
-                onClick={acceptDisclaimer}
-                className="px-6 py-3 bg-white text-orange-600 font-bold rounded-xl hover:bg-orange-50 hover:scale-105 transition-all whitespace-nowrap shadow-lg"
+                onClick={handleManualSync}
+                disabled={!isOnline || syncStatus === 'syncing'}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${syncStatus === 'syncing'
+                  ? 'bg-blue-100 text-blue-600 cursor-wait'
+                  : syncStatus === 'success'
+                    ? 'bg-green-100 text-green-600'
+                    : syncStatus === 'error'
+                      ? 'bg-red-100 text-red-600'
+                      : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                  } disabled:opacity-50`}
+                title={`Lần cuối: ${formatLastSync()}`}
               >
-                <i className="fas fa-check-circle mr-2"></i>Đã hiểu
+                <RefreshCw size={14} className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
+                <span className="hidden sm:inline">
+                  {syncStatus === 'syncing' ? 'Đang đồng bộ...' :
+                    syncStatus === 'success' ? 'Đã đồng bộ' :
+                      syncStatus === 'error' ? 'Lỗi sync' :
+                        'Đồng bộ'}
+                </span>
               </button>
             </div>
           </div>
-        )}
+        </div>
 
-        <Header />
-        <main id="main-content" className="flex-grow container mx-auto px-4 py-8" role="main">
-          <Suspense fallback={
-            <div className="flex items-center justify-center min-h-screen">
-              <LoadingSpinner 
-                size="lg" 
-                text="Đang tải trang..." 
-                color="blue"
-              />
-            </div>
-          }>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<AuthPage />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/api-tester" element={<APITester />} />
-              
-              {/* Protected routes */}
-              
-                            <Route path="/san-pham-1" element={<ProtectedRoute><Product1 /></ProtectedRoute>} />
-              <Route path="/san-pham-2" element={<ProtectedRoute><Product2 /></ProtectedRoute>} />
-              <Route path="/san-pham-3" element={<ProtectedRoute><Product3 /></ProtectedRoute>} />
-              <Route path="/san-pham-4" element={<ProtectedRoute><Product4 /></ProtectedRoute>} />
-              <Route path="/san-pham-5" element={<ProtectedRoute><Product5 /></ProtectedRoute>} />
-              <Route path="/san-pham-6" element={<ProtectedRoute><Product6 /></ProtectedRoute>} />
-              <Route path="/san-pham-7" element={<ProtectedRoute><Product7 /></ProtectedRoute>} />
-              <Route path="/bang-xep-hang" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
-              <Route path="/pwa-settings" element={<ProtectedRoute><PWASettings /></ProtectedRoute>} />
-              <Route path="/sync-settings" element={<ProtectedRoute><SyncSettings /></ProtectedRoute>} />
-              <Route path="/lich-su" element={<ProtectedRoute><ExamHistory /></ProtectedRoute>} />
-              <Route path="/xem-lai/:id" element={<ProtectedRoute><ExamReview /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            </Routes>
-          </Suspense>
-        </main>
-        <ScrollToTop />
-        <TechBadge />
-        <SyncStatus />
-        <footer className="bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 shadow-2xl mt-auto border-t-2 border-blue-500/30">
-            <div className="container mx-auto px-4 py-10">
-              <div className="grid md:grid-cols-4 gap-8 text-white mb-8">
-                <div className="space-y-4">
-                  <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                    <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-lg">
-                      <i className="fas fa-graduation-cap text-white"></i>
-                    </div>
-                    Về Chúng Tôi
-                  </h3>
-                  <p className="text-sm text-gray-300 leading-relaxed">
-                    Nền tảng học tập thông minh sử dụng <span className="font-semibold text-blue-400">AI Gemini 2.0</span> để hỗ trợ học sinh luyện thi THPT môn Công Nghệ.
-                  </p>
-                  <div className="flex gap-3 mt-4">
-                    <a href="#" className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center hover:scale-110 transition-transform">
-                      <i className="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="#" className="w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-red-500 flex items-center justify-center hover:scale-110 transition-transform">
-                      <i className="fab fa-youtube"></i>
-                    </a>
-                    <a href="#" className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-cyan-400 flex items-center justify-center hover:scale-110 transition-transform">
-                      <i className="fab fa-telegram"></i>
-                    </a>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-400">
-                    <div className="bg-gradient-to-r from-green-500 to-blue-500 p-2 rounded-lg">
-                      <i className="fas fa-link text-white"></i>
-                    </div>
-                    Liên Kết
-                  </h3>
-                  <ul className="space-y-3 text-sm text-gray-300">
-                    <li><a href="/#/" className="hover:text-white transition-colors hover:translate-x-2 inline-block"><i className="fas fa-chevron-right text-xs mr-2 text-blue-400"></i> Trang Chủ</a></li>
-                    <li><a href="/#/san-pham-1" className="hover:text-white transition-colors hover:translate-x-2 inline-block"><i className="fas fa-chevron-right text-xs mr-2 text-purple-400"></i> Chat AI</a></li>
-                    <li><a href="/#/san-pham-2" className="hover:text-white transition-colors hover:translate-x-2 inline-block"><i className="fas fa-chevron-right text-xs mr-2 text-green-400"></i> Tạo Câu Hỏi</a></li>
-                    <li><a href="/#/lich-su" className="hover:text-white transition-colors hover:translate-x-2 inline-block"><i className="fas fa-chevron-right text-xs mr-2 text-pink-400"></i> Lịch Sử Đề Thi</a></li>
-                    <li><a href="/#/san-pham-3" className="hover:text-white transition-colors hover:translate-x-2 inline-block"><i className="fas fa-chevron-right text-xs mr-2 text-purple-400"></i> Đề Thi Công Nghiệp</a></li>
-                    <li><a href="/#/san-pham-4" className="hover:text-white transition-colors hover:translate-x-2 inline-block"><i className="fas fa-chevron-right text-xs mr-2 text-green-400"></i> Đề Thi Nông Nghiệp</a></li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-orange-400">
-                    <div className="bg-gradient-to-r from-pink-500 to-orange-500 p-2 rounded-lg">
-                      <i className="fas fa-envelope text-white"></i>
-                    </div>
-                    Liên Hệ
-                  </h3>
-                  <ul className="space-y-3 text-sm text-gray-300">
-                    <li className="flex items-center gap-2">
-                      <i className="fas fa-envelope text-blue-400"></i>
-                      <a href="mailto:longhngn.hnue@gmail.com" className="hover:text-white transition-colors">longhngn.hnue@gmail.com</a>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <i className="fas fa-phone text-green-400"></i>
-                      <a href="tel:0896636181" className="hover:text-white transition-colors">0896636181</a>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <i className="fas fa-clock text-purple-400"></i>
-                      8:00 - 22:00 hàng ngày
-                    </li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
-                    <div className="bg-gradient-to-r from-cyan-500 to-blue-500 p-2 rounded-lg">
-                      <i className="fas fa-robot text-white"></i>
-                    </div>
-                    Công Nghệ
-                  </h3>
-                  <ul className="space-y-3 text-sm text-gray-300">
-                    <li className="flex items-center gap-2">
-                      <i className="fas fa-check-circle text-green-400"></i>
-                      Google Gemini 2.0
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <i className="fab fa-react text-blue-400"></i>
-                      React 19 + TypeScript
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <i className="fas fa-bolt text-yellow-400"></i>
-                      Vite + Tailwind CSS
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <i className="fas fa-book text-pink-400"></i>
-                      SGK KNTT & Cánh Diều
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              
-              <div className="border-t border-blue-500/30 pt-6 text-center space-y-3">
-                <p className="text-sm text-white font-semibold">
-                  <i className="fas fa-graduation-cap mr-2 text-blue-400"></i>
-                  Ôn Thi THPT Quốc Gia - Công Nghệ với AI | Chương trình GDPT 2018
-                </p>
-                <p className="text-xs text-gray-400">
-                  &copy; 2025 - Ý tưởng và phát triển bởi <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 font-bold">Long Nguyễn 204</span>
-                </p>
-                <div className="flex justify-center gap-4 text-xs text-gray-500 mt-4">
-                  <span className="flex items-center gap-1">
-                    <i className="fas fa-heart text-red-400"></i>
-                    Made with Love
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <i className="fas fa-code text-purple-400"></i>
-                    Open Source
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <i className="fas fa-shield-alt text-green-400"></i>
-                    Safe & Secure
-                  </span>
-                </div>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/san-pham-1" element={<Product1 />} />
+          <Route path="/san-pham-2" element={<Product2 />} />
+          <Route path="/san-pham-3" element={<Product3 />} />
+          <Route path="/san-pham-4" element={<Product4 />} />
+          <Route path="/san-pham-5" element={<Product5 />} />
+          <Route path="/san-pham-6" element={<Product6 />} />
+          <Route path="/san-pham-7" element={<Product7 />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/flashcards" element={<Flashcards />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/history" element={<ExamHistory />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<PWASettings />} />
+        </Routes>
+      </main>
+
+      {/* Professional Footer */}
+      <footer className="bg-white border-t border-gray-200 pt-12 pb-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            {/* About */}
+            <div className="col-span-1 md:col-span-1">
+              <h3 className="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
+                <span className="bg-blue-600 text-white p-1 rounded">OT</span>
+                Về Chúng Tôi
+              </h3>
+              <p className="text-gray-500 text-sm leading-relaxed mb-4">
+                <span className="text-blue-600 font-bold">Ôn Thi THPT QG môn Công Nghệ</span> - Nền tảng học tập thông minh sử dụng <span className="text-blue-600 font-medium">Gemini 2.5 Pro</span>.
+              </p>
+              <p className="text-gray-500 text-xs mb-4">
+                Dựa trên 2 bộ sách <span className="font-semibold">KẾT NỐI TRI THỨC VỚI CUỘC SỐNG</span> & <span className="font-semibold">CÁNH DIỀU</span>
+              </p>
+              <div className="flex gap-3">
+                <a href="#" className="p-2 bg-gray-100 rounded-full text-blue-600 hover:bg-blue-600 hover:text-white transition-all">
+                  <Facebook size={18} />
+                </a>
+                <a href="#" className="p-2 bg-gray-100 rounded-full text-red-600 hover:bg-red-600 hover:text-white transition-all">
+                  <Youtube size={18} />
+                </a>
               </div>
             </div>
-        </footer>
-      </div>
-    </HashRouter>
-    </AuthProvider>
+
+            {/* Quick Links */}
+            <div>
+              <h3 className="font-bold text-gray-900 text-lg mb-4">Liên Kết</h3>
+              <ul className="space-y-2">
+                <li><Link to="/" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">Trang chủ</Link></li>
+                <li><Link to="/san-pham-1" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">Chat AI</Link></li>
+                <li><Link to="/san-pham-2" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">Tạo đề</Link></li>
+                <li><Link to="/flashcards" className="text-gray-500 hover:text-blue-600 transition-colors text-sm">Flashcards</Link></li>
+              </ul>
+            </div>
+
+            {/* Features */}
+            <div>
+              <h3 className="font-bold text-gray-900 text-lg mb-4">Tính Năng</h3>
+              <ul className="space-y-2">
+                <li className="text-gray-500 text-sm flex items-center gap-2">
+                  <CheckCircle size={16} className="text-green-500" />
+                  Tạo đề thi tự động
+                </li>
+                <li className="text-gray-500 text-sm flex items-center gap-2">
+                  <CheckCircle size={16} className="text-green-500" />
+                  Chat với AI
+                </li>
+                <li className="text-gray-500 text-sm flex items-center gap-2">
+                  <CheckCircle size={16} className="text-green-500" />
+                  Flashcards thông minh
+                </li>
+                <li className="text-gray-500 text-sm flex items-center gap-2">
+                  <CheckCircle size={16} className="text-green-500" />
+                  Theo dõi tiến độ
+                </li>
+                <li className="text-gray-500 text-sm flex items-center gap-2">
+                  <Cloud size={16} className="text-blue-500" />
+                  Đồng bộ đa thiết bị
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h3 className="font-bold text-gray-900 text-lg mb-4">Liên Hệ</h3>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-2 text-gray-500 text-sm">
+                  <Mail size={16} className="mt-1 text-blue-600 flex-shrink-0" />
+                  <span>stu725114073@hnue.edu.vn</span>
+                </li>
+                <li className="flex items-start gap-2 text-gray-500 text-sm">
+                  <Phone size={16} className="mt-1 text-blue-600 flex-shrink-0" />
+                  <span>0896636181</span>
+                </li>
+                <li className="flex items-start gap-2 text-gray-500 text-sm">
+                  <Clock size={16} className="mt-1 text-blue-600 flex-shrink-0" />
+                  <span>T2-T7: 8:00 - 21:00</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="pt-6 border-t border-gray-200 text-center">
+            <p className="text-gray-500 text-sm">
+              © 2025 <span className="text-blue-600 font-medium">Ôn Thi THPT QG môn Công Nghệ</span>. Được hỗ trợ bởi <span className="text-blue-600 font-medium">Google Gemini 2.5 Pro</span>.
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 };
 

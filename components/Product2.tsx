@@ -1,8 +1,21 @@
 import React, { useState, useMemo } from 'react';
-import { QuestionMC, QuestionTF, QuestionLevel, MemberAssignment } from '../types';
+import { QuestionMC, QuestionTF, QuestionLevel } from '../types';
 import QuestionCard from './QuestionCard';
-import MemberTable from './MemberTable';
 import { generateContent } from '../utils/geminiAPI';
+import {
+    BookOpen,
+    Settings,
+    AlertTriangle,
+    Loader2,
+    Sparkles,
+    RefreshCw,
+    ClipboardList,
+    CheckCircle,
+    Info,
+    Check,
+    Trophy,
+    Play
+} from 'lucide-react';
 
 // Dữ liệu mẫu dựa trên sách giáo khoa Cánh Diều
 const defaultMcQuestionsData: QuestionMC[] = [
@@ -41,12 +54,12 @@ const Product2: React.FC = () => {
     const [numTF, setNumTF] = useState('4');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    
+
     // State cho câu hỏi được tạo
     const [mcQuestionsData, setMcQuestionsData] = useState<QuestionMC[]>(defaultMcQuestionsData);
     const [tfQuestionsData, setTfQuestionsData] = useState<QuestionTF[]>(defaultTfQuestionsData);
     const [hasGenerated, setHasGenerated] = useState(false);
-    
+
     // State cho trả lời
     const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -116,7 +129,7 @@ Chủ đề: "${topic}"
 
         try {
             const response = await generateContent(prompt);
-            
+
             if (!response.success) {
                 setError(response.error || 'Có lỗi xảy ra');
                 setLoading(false);
@@ -132,7 +145,7 @@ Chủ đề: "${topic}"
             }
 
             const data = JSON.parse(jsonMatch[0]);
-            
+
             // Chuyển đổi dữ liệu
             const mcQuestions: QuestionMC[] = data.mcQuestions.map((q: any, idx: number) => ({
                 id: idx + 1,
@@ -171,7 +184,7 @@ Chủ đề: "${topic}"
         setIsSubmitted(true);
         window.scrollTo(0, 0);
     };
-    
+
     const handleResetAnswers = () => {
         setUserAnswers({});
         setIsSubmitted(false);
@@ -199,23 +212,38 @@ Chủ đề: "${topic}"
 
     return (
         <div className="space-y-12 animate-fade-in">
-            <h2 className="text-3xl font-bold text-center text-blue-600 dark:text-blue-400">Sản phẩm học tập số 2: Xây dựng ngân hàng câu hỏi trắc nghiệm</h2>
-            
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 rounded-2xl shadow-lg text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
+                    <BookOpen size={200} />
+                </div>
+                <div className="relative z-10">
+                    <h2 className="text-3xl font-bold text-center mb-3 flex items-center justify-center gap-3">
+                        <BookOpen className="w-8 h-8" />
+                        Sản phẩm học tập số 2: Ngân hàng câu hỏi
+                    </h2>
+                    <p className="text-center text-blue-100 max-w-2xl mx-auto text-lg">
+                        Tạo bộ câu hỏi trắc nghiệm và đúng/sai tự động từ SGK với AI Gemini 2.5 Pro
+                    </p>
+                </div>
+            </div>
+
             {/* Form nhập liệu */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-                <h3 className="text-2xl font-semibold mb-4 border-b pb-2 border-gray-300 dark:border-gray-600 flex items-center">
-                    <i className="fas fa-keyboard text-indigo-500 mr-3"></i>Nhập thông tin để tạo câu hỏi
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                <h3 className="text-xl font-bold mb-6 border-b border-gray-100 pb-4 flex items-center gap-2 text-gray-900">
+                    <Settings className="w-6 h-6 text-blue-600" />
+                    Cấu hình tạo câu hỏi
                 </h3>
-                <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Chọn lớp
                             </label>
-                            <select 
+                            <select
                                 value={grade}
                                 onChange={(e) => setGrade(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50"
                                 disabled={loading}
                             >
                                 <option value="10">Lớp 10</option>
@@ -224,7 +252,7 @@ Chủ đề: "${topic}"
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Số câu 4 lựa chọn
                             </label>
                             <input
@@ -233,12 +261,12 @@ Chủ đề: "${topic}"
                                 onChange={(e) => setNumMC(e.target.value)}
                                 min="1"
                                 max="20"
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50"
                                 disabled={loading}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Số câu Đúng/Sai
                             </label>
                             <input
@@ -247,13 +275,13 @@ Chủ đề: "${topic}"
                                 onChange={(e) => setNumTF(e.target.value)}
                                 min="1"
                                 max="20"
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50"
                                 disabled={loading}
                             />
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                             Chủ đề cần tạo câu hỏi (ví dụ: Công nghệ điện, Mạch điện ba pha, Động cơ đốt trong...)
                         </label>
                         <input
@@ -261,32 +289,32 @@ Chủ đề: "${topic}"
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
                             placeholder="Nhập chủ đề..."
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50"
                             disabled={loading}
                         />
                     </div>
-                    
+
                     {error && (
-                        <div className="bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 px-4 py-3 rounded relative">
-                            <i className="fas fa-exclamation-circle mr-2"></i>
+                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
+                            <AlertTriangle className="w-5 h-5" />
                             {error}
                         </div>
                     )}
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-4 pt-2">
                         <button
                             onClick={handleGenerate}
                             disabled={loading}
-                            className="flex-1 bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 bg-blue-600 text-white font-bold py-4 px-6 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                         >
                             {loading ? (
                                 <>
-                                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                                    <Loader2 className="mr-2 animate-spin" />
                                     AI đang tạo câu hỏi...
                                 </>
                             ) : (
                                 <>
-                                    <i className="fas fa-magic mr-2"></i>
+                                    <Sparkles className="mr-2" />
                                     Tạo câu hỏi với AI
                                 </>
                             )}
@@ -294,9 +322,9 @@ Chủ đề: "${topic}"
                         {hasGenerated && (
                             <button
                                 onClick={handleResetAll}
-                                className="bg-gray-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-700 transition-transform transform hover:scale-105"
+                                className="bg-white text-gray-700 font-bold py-4 px-6 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all flex items-center justify-center shadow-sm hover:shadow-md"
                             >
-                                <i className="fas fa-redo mr-2"></i>
+                                <RefreshCw className="mr-2" />
                                 Làm mới
                             </button>
                         )}
@@ -305,26 +333,30 @@ Chủ đề: "${topic}"
             </div>
 
             {isSubmitted && (
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg text-center sticky top-20 z-40">
-                    <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-                        Kết quả: <span className="text-green-500">{score}</span> / <span className="text-blue-500">{allQuestions.length}</span>
+                <div className="bg-white p-6 rounded-xl shadow-lg text-center sticky top-24 z-40 border border-blue-100 animate-fade-in-down">
+                    <h3 className="text-2xl font-bold text-gray-800 flex items-center justify-center gap-3">
+                        <Trophy className="text-yellow-500 w-8 h-8" />
+                        Kết quả: <span className="text-blue-600 text-3xl">{score}</span> / <span className="text-gray-500">{allQuestions.length}</span>
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mt-2">Bạn đã hoàn thành bài kiểm tra. Hãy xem lại kết quả chi tiết bên dưới.</p>
+                    <p className="text-gray-600 mt-2">Bạn đã hoàn thành bài kiểm tra. Hãy xem lại kết quả chi tiết bên dưới.</p>
                 </div>
             )}
 
             {/* Hiển thị câu hỏi khi đã tạo */}
             {hasGenerated && mcQuestionsData.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-                    <h3 className="text-2xl font-semibold mb-4 border-b pb-2 border-gray-300 dark:border-gray-600"><i className="fas fa-list-ol mr-3"></i>Hệ thống câu hỏi trắc nghiệm</h3>
-                    
-                    <h4 className="text-xl font-semibold mt-6 mb-4 text-gray-700 dark:text-gray-300">A. Trắc nghiệm nhiều lựa chọn</h4>
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                    <h3 className="text-xl font-bold mb-6 border-b border-gray-100 pb-4 flex items-center gap-2 text-gray-900">
+                        <ClipboardList className="w-6 h-6 text-blue-600" />
+                        Hệ thống câu hỏi trắc nghiệm
+                    </h3>
+
+                    <h4 className="text-lg font-bold mt-6 mb-4 text-blue-800 bg-blue-50 p-3 rounded-lg inline-block">A. Trắc nghiệm nhiều lựa chọn</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {mcQuestionsData.map(q => 
-                            <QuestionCard 
-                                key={q.id} 
-                                question={q} 
-                                type="mc" 
+                        {mcQuestionsData.map(q =>
+                            <QuestionCard
+                                key={q.id}
+                                question={q}
+                                type="mc"
                                 onAnswerChange={handleAnswerChange}
                                 userAnswer={userAnswers[q.id]}
                                 isSubmitted={isSubmitted}
@@ -333,13 +365,13 @@ Chủ đề: "${topic}"
 
                     {tfQuestionsData.length > 0 && (
                         <>
-                            <h4 className="text-xl font-semibold mt-8 mb-4 text-gray-700 dark:text-gray-300">B. Trắc nghiệm Đúng/Sai</h4>
+                            <h4 className="text-lg font-bold mt-10 mb-4 text-blue-800 bg-blue-50 p-3 rounded-lg inline-block">B. Trắc nghiệm Đúng/Sai</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {tfQuestionsData.map(q => 
-                                    <QuestionCard 
-                                        key={q.id} 
-                                        question={q} 
-                                        type="tf" 
+                                {tfQuestionsData.map(q =>
+                                    <QuestionCard
+                                        key={q.id}
+                                        question={q}
+                                        type="tf"
                                         onAnswerChange={handleAnswerChange}
                                         userAnswer={userAnswers[q.id]}
                                         isSubmitted={isSubmitted}
@@ -347,15 +379,15 @@ Chủ đề: "${topic}"
                             </div>
                         </>
                     )}
-                    
-                    <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-center space-x-4">
+
+                    <div className="mt-10 pt-8 border-t border-gray-100 flex justify-center space-x-4">
                         {!isSubmitted ? (
-                            <button onClick={handleSubmit} className="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
-                                <i className="fas fa-check-circle mr-2"></i>Kiểm tra đáp án
+                            <button onClick={handleSubmit} className="bg-blue-600 text-white font-bold py-4 px-12 rounded-xl hover:bg-blue-700 transition-all flex items-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                                <CheckCircle className="mr-2" /> Kiểm tra đáp án
                             </button>
                         ) : (
-                            <button onClick={handleResetAnswers} className="bg-gray-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-gray-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
-                                <i className="fas fa-redo mr-2"></i>Làm lại
+                            <button onClick={handleResetAnswers} className="bg-white text-blue-600 font-bold py-4 px-12 rounded-xl border-2 border-blue-600 hover:bg-blue-50 transition-all flex items-center shadow-md">
+                                <RefreshCw className="mr-2" /> Làm lại
                             </button>
                         )}
                     </div>
@@ -364,15 +396,36 @@ Chủ đề: "${topic}"
 
             {/* Hướng dẫn sử dụng */}
             {!hasGenerated && (
-                <div className="bg-blue-50 dark:bg-blue-900 p-6 rounded-lg shadow-lg">
-                    <h3 className="text-xl font-semibold mb-3 text-blue-800 dark:text-blue-200 flex items-center">
-                        <i className="fas fa-info-circle mr-2"></i>Hướng dẫn sử dụng
+                <div className="bg-blue-50 p-8 rounded-2xl border border-blue-100">
+                    <h3 className="text-xl font-bold mb-4 text-blue-900 flex items-center gap-2">
+                        <Info className="w-6 h-6" />
+                        Hướng dẫn sử dụng
                     </h3>
-                    <ul className="space-y-2 text-gray-700 dark:text-gray-300">
-                        <li><i className="fas fa-check text-green-500 mr-2"></i>Chọn lớp học và số lượng câu hỏi mong muốn</li>
-                        <li><i className="fas fa-check text-green-500 mr-2"></i>Nhập chủ đề cần tạo câu hỏi (ví dụ: "Công nghệ điện", "Mạch điện ba pha"...)</li>
-                        <li><i className="fas fa-check text-green-500 mr-2"></i>Nhấn "Tạo câu hỏi với AI" và chờ AI xử lý</li>
-                        <li><i className="fas fa-check text-green-500 mr-2"></i>Làm bài trắc nghiệm và kiểm tra đáp án</li>
+                    <ul className="space-y-3 text-blue-800">
+                        <li className="flex items-center gap-3 bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                            <div className="bg-blue-100 p-1 rounded-full">
+                                <Check className="w-4 h-4 text-blue-600" />
+                            </div>
+                            Chọn lớp học và số lượng câu hỏi mong muốn
+                        </li>
+                        <li className="flex items-center gap-3 bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                            <div className="bg-blue-100 p-1 rounded-full">
+                                <Check className="w-4 h-4 text-blue-600" />
+                            </div>
+                            Nhập chủ đề cần tạo câu hỏi (ví dụ: "Công nghệ điện", "Mạch điện ba pha"...)
+                        </li>
+                        <li className="flex items-center gap-3 bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                            <div className="bg-blue-100 p-1 rounded-full">
+                                <Check className="w-4 h-4 text-blue-600" />
+                            </div>
+                            Nhấn "Tạo câu hỏi với AI" và chờ AI xử lý
+                        </li>
+                        <li className="flex items-center gap-3 bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                            <div className="bg-blue-100 p-1 rounded-full">
+                                <Check className="w-4 h-4 text-blue-600" />
+                            </div>
+                            Làm bài trắc nghiệm và kiểm tra đáp án
+                        </li>
                     </ul>
                 </div>
             )}
