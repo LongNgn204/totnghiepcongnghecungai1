@@ -38,6 +38,7 @@ const Header: React.FC = () => {
     { path: '/flashcards', label: 'Flashcards', icon: Layers },
     { path: '/dashboard', label: 'Thống kê', icon: BarChart3 },
     { path: '/groups', label: 'Nhóm', icon: Users },
+    { path: '/product8', label: 'Tủ sách', icon: BookOpen },
     { path: '/leaderboard', label: 'BXH', icon: Trophy },
     { path: '/history', label: 'Lịch sử', icon: HistoryIcon },
   ];
