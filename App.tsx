@@ -11,12 +11,14 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Product5 from './components/Product5';
 import Product6 from './components/Product6';
 import Product7 from './components/Product7';
+import Product8 from './components/Product8';
 import Dashboard from './components/Dashboard';
 import Flashcards from './components/Flashcards';
 import Leaderboard from './components/Leaderboard';
 import ExamHistory from './components/ExamHistory';
 import Profile from './components/Profile';
 import PWASettings from './components/PWASettings';
+import ProtectedRoute from './components/ProtectedRoute';
 import syncManager from './utils/syncManager';
 import {
   Facebook,
@@ -189,13 +191,14 @@ const App: React.FC = () => {
           } />
           <Route path="/san-pham-4" element={<Product4 />} />
           <Route path="/san-pham-5" element={<Product5 />} />
-          <Route path="/san-pham-6" element={<Product6 />} />
-          <Route path="/san-pham-7" element={<Product7 />} />
+          <Route path="/product6" element={<ProtectedRoute><Product6 /></ProtectedRoute>} />
+          <Route path="/product7" element={<ProtectedRoute><Product7 /></ProtectedRoute>} />
+          <Route path="/product8" element={<ProtectedRoute><Product8 /></ProtectedRoute>} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/history" element={<ExamHistory />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/settings" element={<PWASettings />} />
         </Routes>
       </main>
