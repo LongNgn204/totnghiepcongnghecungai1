@@ -78,12 +78,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(data.error || 'Đăng ký thất bại');
       }
 
+      // Validate response data
+      if (!data.user || !data.token) {
+        throw new Error('Dữ liệu đăng ký không hợp lệ');
+      }
+
       // Auto login after register
       setUser(data.user);
       setToken(data.token);
       localStorage.setItem('auth_token', data.token);
       localStorage.setItem('user_id', data.user.id);
     } catch (error: any) {
+      console.error('Register error:', error);
       throw new Error(error.message || 'Đăng ký thất bại');
     }
   };
@@ -110,11 +116,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(data.error || 'Đăng nhập thất bại');
       }
 
+      // Validate response data
+      if (!data.user || !data.token) {
+        throw new Error('Dữ liệu đăng nhập không hợp lệ');
+      }
+
       setUser(data.user);
       setToken(data.token);
       localStorage.setItem('auth_token', data.token);
       localStorage.setItem('user_id', data.user.id);
     } catch (error: any) {
+      console.error('Login error:', error);
       throw new Error(error.message || 'Đăng nhập thất bại');
     }
   };
