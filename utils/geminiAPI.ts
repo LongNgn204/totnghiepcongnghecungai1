@@ -1,4 +1,3 @@
-// Tích hợp Gemini API để tương tác với AI
 
 export interface GeminiResponse {
   text: string;
@@ -7,9 +6,8 @@ export interface GeminiResponse {
 }
 
 export const AVAILABLE_MODELS = [
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Recommended)', description: 'Mô hình mạnh mẽ nhất, tốt cho logic phức tạp' },
-  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', description: 'Phản hồi nhanh, tốt cho tác vụ đơn giản' },
-  { id: 'gemini-1.0-pro', name: 'Gemini 1.0 Pro', description: 'Phiên bản ổn định' },
+  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'Mô hình mạnh mẽ nhất cho các tác vụ phức tạp' },
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Phản hồi nhanh, độ trễ thấp' },
 ];
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
@@ -18,7 +16,7 @@ const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 /**
  * Gọi Gemini API để tạo nội dung
  */
-export async function generateContent(prompt: string, modelId: string = 'gemini-1.5-pro'): Promise<GeminiResponse> {
+export async function generateContent(prompt: string, modelId: string = 'gemini-2.5-pro'): Promise<GeminiResponse> {
   if (!API_KEY || API_KEY === 'your_gemini_api_key_here') {
     return {
       text: '',
@@ -123,7 +121,8 @@ export async function fileToGenerativePart(file: File) {
 export async function sendChatMessage(
   message: string,
   files?: File[],
-  modelId: string = 'gemini-1.5-pro'
+  modelId: string = 'gemini-2.5-pro',
+  history: any[] = []
 ): Promise<GeminiResponse> {
   if (!API_KEY || API_KEY === 'your_gemini_api_key_here') {
     return {
@@ -134,16 +133,27 @@ export async function sendChatMessage(
   }
 
   try {
-    // Chuẩn bị parts cho request
-    const parts: any[] = [{ text: message }];
+    // Construct the contents array from history
+    const contents = history.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }]
+    }));
 
-    // Thêm files nếu có
+    // Add the current message
+    const currentParts: any[] = [{ text: message }];
+
+    // Add files to the current message if any
     if (files && files.length > 0) {
       for (const file of files) {
         const filePart = await fileToGenerativePart(file);
-        parts.push(filePart);
+        currentParts.push(filePart);
       }
     }
+
+    contents.push({
+      role: 'user',
+      parts: currentParts
+    });
 
     const response = await fetch(`${BASE_URL}/${modelId}:generateContent?key=${API_KEY}`, {
       method: 'POST',
@@ -151,9 +161,7 @@ export async function sendChatMessage(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        contents: [{
-          parts: parts
-        }],
+        contents: contents,
         generationConfig: {
           temperature: 0.7,
           topK: 40,
