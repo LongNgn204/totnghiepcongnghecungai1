@@ -7,7 +7,7 @@ export interface GeminiResponse {
 }
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-pro:generateContent';
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent';
 
 /**
  * Gọi Gemini API để tạo nội dung
