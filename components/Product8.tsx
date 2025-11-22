@@ -13,9 +13,9 @@ const booksData: Book[] = [
     // Lớp 10
     {
         id: '10-1',
-        title: "Công nghệ 10 - Nông nghiệp",
-        cover: "https://www.hoc10.vn/storage/images/2022/03/29/cong-nghe-10-nong-nghiep-bia-sach-624268e390978.png",
-        link: "https://www.hoc10.vn/doc-sach/cong-nghe-10-nong-nghiep/1/731/-/1/",
+        title: "Công nghệ 10 - Công nghệ trồng trọt",
+        cover: "https://www.hoc10.vn/storage/images/2022/03/29/cong-nghe-10-cong-nghe-trong-trot-bia-sach-624268e390978.png",
+        link: "https://www.hoc10.vn/doc-sach/cong-nghe-10-cong-nghe-trong-trot/1/162/0/",
         grade: 10,
         publisher: "Cánh Diều"
     },
@@ -23,15 +23,15 @@ const booksData: Book[] = [
         id: '10-2',
         title: "Công nghệ 10 - Thiết kế và Công nghệ",
         cover: "https://www.hoc10.vn/storage/images/2022/03/29/cong-nghe-10-thiet-ke-va-cong-nghe-bia-sach-624268f742323.png",
-        link: "https://www.hoc10.vn/doc-sach/cong-nghe-10-thiet-ke-va-cong-nghe/1/732/-/1/",
+        link: "https://www.hoc10.vn/doc-sach/cong-nghe-10-thiet-ke-va-cong-nghe/1/163/0/",
         grade: 10,
         publisher: "Cánh Diều"
     },
     {
         id: '10-3',
-        title: "Chuyên đề học tập Công nghệ 10 - Nông nghiệp",
-        cover: "https://www.hoc10.vn/storage/images/2022/03/29/chuyen-de-hoc-tap-cong-nghe-10-nong-nghiep-bia-sach-6242690a2a472.png",
-        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-10-nong-nghiep/1/733/-/1/",
+        title: "Chuyên đề học tập Công nghệ 10 - Công nghệ trồng trọt",
+        cover: "https://www.hoc10.vn/storage/images/2022/03/29/chuyen-de-hoc-tap-cong-nghe-10-cong-nghe-trong-trot-bia-sach-6242690a2a472.png",
+        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-10-cong-nghe-trong-trot/1/164/0/",
         grade: 10,
         publisher: "Cánh Diều"
     },
@@ -39,73 +39,73 @@ const booksData: Book[] = [
         id: '10-4',
         title: "Chuyên đề học tập Công nghệ 10 - Thiết kế và Công nghệ",
         cover: "https://www.hoc10.vn/storage/images/2022/03/29/chuyen-de-hoc-tap-cong-nghe-10-thiet-ke-va-cong-nghe-bia-sach-6242691e20436.png",
-        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-10-thiet-ke-va-cong-nghe/1/734/-/1/",
+        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-10-thiet-ke-va-cong-nghe/1/165/0/",
         grade: 10,
         publisher: "Cánh Diều"
     },
     // Lớp 11
     {
         id: '11-1',
-        title: "Công nghệ 11 - Cơ khí",
-        cover: "https://www.hoc10.vn/storage/images/2023/03/23/cong-nghe-11-co-khi-bia-sach-641bce7670731.png",
-        link: "https://www.hoc10.vn/doc-sach/cong-nghe-11-co-khi/1/736/-/1/",
+        title: "Công nghệ 11 - Công nghệ cơ khí",
+        cover: "https://www.hoc10.vn/storage/images/2023/03/23/cong-nghe-11-cong-nghe-co-khi-bia-sach-641bce7670731.png",
+        link: "https://www.hoc10.vn/doc-sach/cong-nghe-11-cong-nghe-co-khi/1/166/0/",
         grade: 11,
         publisher: "Cánh Diều"
     },
     {
         id: '11-2',
-        title: "Công nghệ 11 - Chăn nuôi",
-        cover: "https://www.hoc10.vn/storage/images/2023/03/23/cong-nghe-11-chan-nuoi-bia-sach-641bce8b7d41f.png",
-        link: "https://www.hoc10.vn/doc-sach/cong-nghe-11-chan-nuoi/1/737/-/1/",
+        title: "Công nghệ 11 - Công nghệ chăn nuôi",
+        cover: "https://www.hoc10.vn/storage/images/2023/03/23/cong-nghe-11-cong-nghe-chan-nuoi-bia-sach-641bce8b7d41f.png",
+        link: "https://www.hoc10.vn/doc-sach/cong-nghe-11-cong-nghe-chan-nuoi/1/167/0/",
         grade: 11,
         publisher: "Cánh Diều"
     },
     {
         id: '11-3',
-        title: "Chuyên đề học tập Công nghệ 11 - Cơ khí",
-        cover: "https://www.hoc10.vn/storage/images/2023/03/23/chuyen-de-hoc-tap-cong-nghe-11-co-khi-bia-sach-641bcea06322e.png",
-        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-11-co-khi/1/738/-/1/",
+        title: "Chuyên đề học tập Công nghệ 11 - Công nghệ cơ khí",
+        cover: "https://www.hoc10.vn/storage/images/2023/03/23/chuyen-de-hoc-tap-cong-nghe-11-cong-nghe-co-khi-bia-sach-641bcea06322e.png",
+        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-11-cong-nghe-co-khi/1/168/0/",
         grade: 11,
         publisher: "Cánh Diều"
     },
     {
         id: '11-4',
-        title: "Chuyên đề học tập Công nghệ 11 - Chăn nuôi",
-        cover: "https://www.hoc10.vn/storage/images/2023/03/23/chuyen-de-hoc-tap-cong-nghe-11-chan-nuoi-bia-sach-641bceb3c3755.png",
-        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-11-chan-nuoi/1/739/-/1/",
+        title: "Chuyên đề học tập Công nghệ 11 - Công nghệ chăn nuôi",
+        cover: "https://www.hoc10.vn/storage/images/2023/03/23/chuyen-de-hoc-tap-cong-nghe-11-cong-nghe-chan-nuoi-bia-sach-641bceb3c3755.png",
+        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-11-cong-nghe-chan-nuoi/1/169/0/",
         grade: 11,
         publisher: "Cánh Diều"
     },
     // Lớp 12
     {
         id: '12-1',
-        title: "Công nghệ 12 - CN Điện - Điện tử",
-        cover: "https://www.hoc10.vn/storage/images/2024/03/18/cong-nghe-12-cn-dien-dien-tu-bia-sach-65f7c32b509f6.png",
-        link: "https://www.hoc10.vn/doc-sach/cong-nghe-12-cn-dien-dien-tu/1/735/-/1/",
+        title: "Công nghệ 12 - Công nghệ điện - điện tử",
+        cover: "https://www.hoc10.vn/storage/images/2024/03/18/cong-nghe-12-cong-nghe-dien-dien-tu-bia-sach-65f7c32b509f6.png",
+        link: "https://www.hoc10.vn/doc-sach/cong-nghe-12-cong-nghe-dien-dien-tu/1/170/0/",
         grade: 12,
         publisher: "Cánh Diều"
     },
     {
         id: '12-2',
-        title: "Công nghệ 12 - CN Cơ khí",
-        cover: "https://www.hoc10.vn/storage/images/2024/03/18/cong-nghe-12-cn-co-khi-bia-sach-65f7c34b68146.png",
-        link: "https://www.hoc10.vn/doc-sach/cong-nghe-12-cn-co-khi/1/740/-/1/",
+        title: "Công nghệ 12 - Công nghệ cơ khí", // Assuming title
+        cover: "https://www.hoc10.vn/storage/images/2024/03/18/cong-nghe-12-cong-nghe-co-khi-bia-sach-65f7c34b68146.png",
+        link: "https://www.hoc10.vn/doc-sach/cong-nghe-12-cong-nghe-co-khi/1/171/0/", // Guessing ID sequence
         grade: 12,
         publisher: "Cánh Diều"
     },
     {
         id: '12-3',
-        title: "Chuyên đề học tập Công nghệ 12 - CN Điện - Điện tử",
-        cover: "https://www.hoc10.vn/storage/images/2024/03/18/chuyen-de-hoc-tap-cong-nghe-12-cn-dien-dien-tu-bia-sach-65f7c374665a3.png",
-        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-12-cn-dien-dien-tu/1/741/-/1/",
+        title: "Chuyên đề học tập Công nghệ 12 - Công nghệ điện - điện tử",
+        cover: "https://www.hoc10.vn/storage/images/2024/03/18/chuyen-de-hoc-tap-cong-nghe-12-cong-nghe-dien-dien-tu-bia-sach-65f7c374665a3.png",
+        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-12-cong-nghe-dien-dien-tu/1/172/0/",
         grade: 12,
         publisher: "Cánh Diều"
     },
     {
         id: '12-4',
-        title: "Chuyên đề học tập Công nghệ 12 - CN Cơ khí",
-        cover: "https://www.hoc10.vn/storage/images/2024/03/18/chuyen-de-hoc-tap-cong-nghe-12-cn-co-khi-bia-sach-65f7c38c9c049.png",
-        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-12-cn-co-khi/1/742/-/1/",
+        title: "Chuyên đề học tập Công nghệ 12 - Công nghệ cơ khí", // Assuming title
+        cover: "https://www.hoc10.vn/storage/images/2024/03/18/chuyen-de-hoc-tap-cong-nghe-12-cong-nghe-co-khi-bia-sach-65f7c38c9c049.png",
+        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-12-cong-nghe-co-khi/1/173/0/",
         grade: 12,
         publisher: "Cánh Diều"
     }
