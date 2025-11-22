@@ -13,7 +13,8 @@ import {
   deleteCard,
   recordReview,
   getCardsForReview,
-  getDeckStats
+  getDeckStats,
+  syncDecksFromBackend
 } from '../utils/flashcardStorage';
 
 const Product5: React.FC = () => {
@@ -25,6 +26,7 @@ const Product5: React.FC = () => {
   const [showCreateDeck, setShowCreateDeck] = useState(false);
   const [showCreateCard, setShowCreateCard] = useState(false);
   const [generatedCards, setGeneratedCards] = useState<GeneratedFlashcard[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Form states
   const [deckForm, setDeckForm] = useState({
@@ -46,8 +48,14 @@ const Product5: React.FC = () => {
     loadDecks();
   }, []);
 
-  const loadDecks = () => {
+  const loadDecks = async () => {
+    setLoading(true);
+    // Load local first for immediate UI
     setDecks(getAllDecks());
+    // Then sync
+    const syncedDecks = await syncDecksFromBackend();
+    setDecks(syncedDecks);
+    setLoading(false);
   };
 
   const handleCreateDeck = () => {

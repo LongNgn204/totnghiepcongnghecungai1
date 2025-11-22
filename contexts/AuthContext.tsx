@@ -7,7 +7,9 @@ interface User {
   username: string;
   avatar?: string;
   bio?: string;
-  createdAt: string;
+  createdAt: number;
+  lastLogin?: number;
+  isAdmin?: boolean;
 }
 
 interface AuthContextType {
@@ -18,6 +20,7 @@ interface AuthContextType {
   register: (email: string, password: string, displayName: string) => Promise<void>;
   logout: () => void;
   updateProfile: (data: Partial<User>) => Promise<void>;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,9 +36,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = localStorage.getItem('auth_token');
+      const storedUser = localStorage.getItem('user_data');
+
       if (storedToken) {
+        setToken(storedToken);
+        // Optimistically set user if available
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch (e) {
+            console.error('Error parsing stored user:', e);
+          }
+        }
+
         try {
-          // Verify token and get user info
+          // Verify token and get latest user info
           const response = await fetch(`${API_URL}/api/auth/me`, {
             headers: {
               'Authorization': `Bearer ${storedToken}`,
@@ -46,14 +61,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (response.ok) {
             const data = await response.json();
             setUser(data.user);
-            setToken(storedToken);
+            // Update stored user data
+            localStorage.setItem('user_data', JSON.stringify(data.user));
           } else {
             // Token invalid, clear it
-            localStorage.removeItem('auth_token');
+            // localStorage.removeItem('auth_token');
+            // localStorage.removeItem('user_data');
+            // setUser(null);
+            // setToken(null);
+            // Keep the local state for now to prevent flashing, let the API calls fail if needed
+            // or maybe we should logout? Let's logout to be safe if token is definitely invalid
+            if (response.status === 401) {
+              localStorage.removeItem('auth_token');
+              localStorage.removeItem('user_data');
+              setUser(null);
+              setToken(null);
+            }
           }
         } catch (error) {
           console.error('Error verifying token:', error);
-          localStorage.removeItem('auth_token');
+          // Don't logout on network error, keep offline access if possible
         }
       }
       setLoading(false);
@@ -80,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Backend returns: { success: true, data: { user, token }, message }
       const data = result.data || result;
-      
+
       // Validate response data
       if (!data.user || !data.token) {
         throw new Error('Dữ liệu đăng ký không hợp lệ');
@@ -90,6 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(data.user);
       setToken(data.token);
       localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user_data', JSON.stringify(data.user));
       localStorage.setItem('user_id', data.user.id);
     } catch (error: any) {
       console.error('Register error:', error);
@@ -101,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Determine if identifier is email or username
       const isEmail = identifier.includes('@');
-      const payload = isEmail 
+      const payload = isEmail
         ? { email: identifier, password }
         : { username: identifier, password };
 
@@ -130,6 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(data.user);
       setToken(data.token);
       localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user_data', JSON.stringify(data.user));
       localStorage.setItem('user_id', data.user.id);
     } catch (error: any) {
       console.error('Login error:', error);
@@ -154,6 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setToken(null);
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_data');
       localStorage.removeItem('user_id');
     }
   };
@@ -178,13 +208,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setUser(result.user);
+      localStorage.setItem('user_data', JSON.stringify(result.user));
     } catch (error: any) {
       throw new Error(error.message || 'Cập nhật thất bại');
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{
+      user,
+      token,
+      loading,
+      login,
+      register,
+      logout,
+      updateProfile,
+      isAuthenticated: !!user
+    }}>
       {children}
     </AuthContext.Provider>
   );

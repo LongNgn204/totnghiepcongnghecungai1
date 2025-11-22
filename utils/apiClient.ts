@@ -214,6 +214,14 @@ export const adminAPI = {
   },
 };
 
+// ============= DASHBOARD API =============
+
+export const dashboardAPI = {
+  getStats: async () => {
+    return fetchAPI('/api/dashboard/stats');
+  },
+};
+
 // Export all
 export const api = {
   users: usersAPI,
@@ -222,6 +230,7 @@ export const api = {
   chat: chatAPI,
   progress: progressAPI,
   leaderboard: leaderboardAPI,
+  dashboard: dashboardAPI,
   admin: adminAPI,
 };
 

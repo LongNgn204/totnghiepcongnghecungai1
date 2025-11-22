@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getLeaderboard, LeaderboardEntry } from '../utils/shareUtils';
+import { LeaderboardEntry } from '../utils/shareUtils';
+import { api } from '../utils/apiClient';
 import {
   Trophy,
   Medal,
@@ -21,8 +22,33 @@ const Leaderboard: React.FC = () => {
     loadLeaderboard();
   }, []);
 
-  const loadLeaderboard = () => {
-    setLeaderboard(getLeaderboard());
+  const loadLeaderboard = async () => {
+    try {
+      const data = await api.leaderboard.get();
+      // Ensure data is in correct format or map it
+      // Assuming backend returns { leaderboard: LeaderboardEntry[] } or similar
+      // If backend returns array directly:
+      const entries = Array.isArray(data) ? data : (data.leaderboard || []);
+
+      // Map backend fields to frontend interface if needed
+      // Backend: user_id, name, points, exams_completed, flashcards_learned, study_time
+      // Frontend: userId, userName, points, examsCompleted, flashcardsLearned, studyTime
+
+      const mappedEntries = entries.map((e: any) => ({
+        userId: e.user_id || e.userId,
+        userName: e.name || e.userName,
+        points: e.points || 0,
+        examsCompleted: e.exams_completed || e.examsCompleted || 0,
+        flashcardsLearned: e.flashcards_learned || e.flashcardsLearned || 0,
+        studyTime: e.study_time || e.studyTime || 0,
+        rank: e.rank || 0,
+        badge: e.badge
+      }));
+
+      setLeaderboard(mappedEntries);
+    } catch (error) {
+      console.error('Failed to load leaderboard:', error);
+    }
   };
 
   const formatTime = (minutes: number): string => {

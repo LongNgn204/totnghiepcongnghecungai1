@@ -182,24 +182,26 @@ const App: React.FC = () => {
 
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/san-pham-1" element={<Product1 />} />
-          <Route path="/san-pham-2" element={<Product2 />} />
+          <Route path="/san-pham-1" element={<ProtectedRoute><Product1 /></ProtectedRoute>} />
+          <Route path="/san-pham-2" element={<ProtectedRoute><Product2 /></ProtectedRoute>} />
           <Route path="/san-pham-3" element={
-            <ErrorBoundary componentName="Product3">
-              <Product3 />
-            </ErrorBoundary>
+            <ProtectedRoute>
+              <ErrorBoundary componentName="Product3">
+                <Product3 />
+              </ErrorBoundary>
+            </ProtectedRoute>
           } />
-          <Route path="/san-pham-4" element={<Product4 />} />
-          <Route path="/san-pham-5" element={<Product5 />} />
+          <Route path="/san-pham-4" element={<ProtectedRoute><Product4 /></ProtectedRoute>} />
+          <Route path="/san-pham-5" element={<ProtectedRoute><Product5 /></ProtectedRoute>} />
           <Route path="/product6" element={<ProtectedRoute><Product6 /></ProtectedRoute>} />
           <Route path="/product7" element={<ProtectedRoute><Product7 /></ProtectedRoute>} />
-          <Route path="/product8" element={<Product8 />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/flashcards" element={<Flashcards />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/history" element={<ExamHistory />} />
+          <Route path="/product8" element={<ProtectedRoute><Product8 /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
+          <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+          <Route path="/history" element={<ProtectedRoute><ExamHistory /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/settings" element={<PWASettings />} />
+          <Route path="/settings" element={<ProtectedRoute><PWASettings /></ProtectedRoute>} />
         </Routes>
       </main>
 

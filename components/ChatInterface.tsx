@@ -12,7 +12,6 @@ import {
   exportChatToText
 } from '../utils/chatStorage';
 import ChatSidebar from './ChatSidebar';
-import ChatHeader from './ChatHeader';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
 
@@ -48,8 +47,8 @@ const ChatInterface: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const loadChatHistory = () => {
-    const history = searchQuery ? searchChats(searchQuery) : getChatHistory();
+  const loadChatHistory = async () => {
+    const history = searchQuery ? await searchChats(searchQuery) : await getChatHistory();
     setChatHistory(history);
   };
 
@@ -77,11 +76,11 @@ const ChatInterface: React.FC = () => {
     setAttachedFiles([]);
   };
 
-  const handleDeleteChat = (id: string, e: React.MouseEvent) => {
+  const handleDeleteChat = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Bạn có chắc muốn xóa cuộc trò chuyện này?')) {
-      deleteChatSession(id);
-      loadChatHistory();
+      await deleteChatSession(id);
+      await loadChatHistory();
       if (currentSession?.id === id) setCurrentSession(null);
     }
   };
@@ -170,6 +169,9 @@ const ChatInterface: React.FC = () => {
     const filesToSend = [...attachedFiles];
     setAttachedFiles([]);
 
+    // Save user message immediately
+    await saveChatSession(session);
+
     try {
       const systemInstruction = `
       🌟 **VAI TRÒ CỦA BẠN (SYSTEM PROMPT):**
@@ -207,7 +209,6 @@ const ChatInterface: React.FC = () => {
         content: msg.content
       }));
 
-      // Prepend system instruction to the very first message of the history effectively (or handle via API if supported, but for now we treat it as context)
       const fullPrompt = `${systemInstruction} \n\nUser Question: ${inputMessage} `;
 
       const response = await sendChatMessage(fullPrompt, filesToSend, selectedModel, history);
@@ -223,9 +224,12 @@ const ChatInterface: React.FC = () => {
 
       session.messages.push(aiMessage);
       session.updatedAt = Date.now();
-      saveChatSession(session);
+
+      // Save AI message
+      await saveChatSession(session);
+
       setCurrentSession({ ...session });
-      loadChatHistory();
+      await loadChatHistory();
     } catch (error) {
       const errorMessage: ChatMessage = {
         id: generateId(),

@@ -7,6 +7,8 @@ import LoadingSpinner from './LoadingSpinner';
 import { ExamSkeleton } from './Skeleton';
 import CountdownTimer from './CountdownTimer';
 import ExamReviewModal from './ExamReviewModal';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/apiClient';
 
 
 const Product3: React.FC = () => {
@@ -30,6 +32,8 @@ const Product3: React.FC = () => {
   // History & Review
   const [examHistory, setExamHistory] = useState<ExamHistory[]>([]);
   const [selectedExam, setSelectedExam] = useState<ExamHistory | null>(null);
+
+  const { user } = useAuth();
 
   // Load history when switching to history tab
   useEffect(() => {
@@ -193,21 +197,35 @@ ${difficulty === 'Rất khó' ? '- Tập trung vào vận dụng cao.\n- Các b�
     setUserAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const currentEndTime = Date.now();
     setIsSubmitted(true);
     setEndTime(currentEndTime);
 
-    // Calculate score
-    const currentScore = questions.reduce((acc, q) => {
-      if (userAnswers[q.id] === q.answer) return acc + 1;
-      return acc;
-    }, 0);
+    // Calculate score properly for MC and TF
+    let currentScore = 0;
+    questions.forEach(q => {
+      if ('options' in q) { // MC
+        if (userAnswers[q.id] === q.answer) {
+          currentScore += 1;
+        }
+      } else { // TF
+        const userAns = userAnswers[q.id] as any;
+        if (userAns && q.statements && q.answers && typeof userAns === 'object') {
+          Object.keys(q.statements).forEach(key => {
+            const k = key as keyof typeof q.answers;
+            if (userAns[key] === q.answers![k]) {
+              currentScore += 0.25;
+            }
+          });
+        }
+      }
+    });
 
     const percentage = (currentScore / questions.length) * 100;
     const timeSpent = startTime ? Math.round((currentEndTime - startTime) / 1000 / 60) : 0;
 
-    // Save to history
+    // Save to local history (fallback)
     saveExamToHistory({
       id: `exam_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       examTitle: examTitle,
@@ -221,6 +239,26 @@ ${difficulty === 'Rất khó' ? '- Tập trung vào vận dụng cao.\n- Các b�
       createdAt: new Date().toISOString(),
       isSubmitted: true
     });
+
+    // Save to backend if logged in
+    if (user) {
+      try {
+        await api.exams.create({
+          title: examTitle,
+          category: 'Công nghệ Công nghiệp',
+          grade: parseInt(grade),
+          questions: questions,
+          answers: userAnswers,
+          score: currentScore,
+          total_questions: questions.length,
+          duration: timeSpent * 60, // seconds
+          completed_at: Date.now()
+        });
+        console.log('Exam saved to backend');
+      } catch (e) {
+        console.error('Failed to save exam to backend:', e);
+      }
+    }
 
     window.scrollTo(0, 0);
   };
@@ -243,7 +281,19 @@ ${difficulty === 'Rất khó' ? '- Tập trung vào vận dụng cao.\n- Các b�
   };
 
   const score = questions.reduce((acc, q) => {
-    if (userAnswers[q.id] === q.answer) return acc + 1;
+    if ('options' in q) { // MC
+      if (userAnswers[q.id] === q.answer) return acc + 1;
+    } else { // TF
+      const userAns = userAnswers[q.id] as any;
+      if (userAns && q.statements && q.answers && typeof userAns === 'object') {
+        Object.keys(q.statements).forEach(key => {
+          const k = key as keyof typeof q.answers;
+          if (userAns[key] === q.answers![k]) {
+            acc += 0.25;
+          }
+        });
+      }
+    }
     return acc;
   }, 0);
 

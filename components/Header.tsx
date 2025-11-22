@@ -37,7 +37,6 @@ const Header: React.FC = () => {
     { path: '/san-pham-4', label: 'Nông nghiệp', icon: Tractor },
     { path: '/flashcards', label: 'Flashcards', icon: Layers },
     { path: '/dashboard', label: 'Thống kê', icon: BarChart3 },
-    { path: '/groups', label: 'Nhóm', icon: Users },
     { path: '/product8', label: 'Tủ sách', icon: BookOpen },
     { path: '/leaderboard', label: 'BXH', icon: Trophy },
     { path: '/history', label: 'Lịch sử', icon: HistoryIcon },
@@ -132,13 +131,18 @@ const Header: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <button
-                  onClick={() => setShowLoginModal(true)}
-                  className="hidden md:flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium shadow-md"
-                >
-                  <LogIn size={18} />
-                  Đăng nhập
-                </button>
+                <div className="hidden md:flex items-center gap-3">
+                  <span className="text-sm text-red-500 font-medium animate-pulse">
+                    Vui lòng đăng nhập để sử dụng
+                  </span>
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium shadow-md"
+                  >
+                    <LogIn size={18} />
+                    Đăng nhập
+                  </button>
+                </div>
               )}
 
               {/* Mobile Menu Button */}

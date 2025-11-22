@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  getExamHistory,
-  deleteExamFromHistory,
-  clearExamHistory,
-  getExamStats,
-  ExamHistory as ExamHistoryType
-} from '../utils/examStorage';
+import { api } from '../utils/apiClient';
 import {
   History,
   FileText,
@@ -24,6 +18,19 @@ import {
   Edit
 } from 'lucide-react';
 
+// Define types locally or import from shared types if available
+interface ExamHistoryType {
+  id: string;
+  examTitle: string;
+  examType: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  timeSpent: number;
+  createdAt: string;
+  isSubmitted: boolean;
+}
+
 const ExamHistory: React.FC = () => {
   const [history, setHistory] = useState<ExamHistoryType[]>([]);
   const [stats, setStats] = useState<any>(null);
@@ -35,24 +42,51 @@ const ExamHistory: React.FC = () => {
     loadHistory();
   }, []);
 
-  const loadHistory = () => {
-    const data = getExamHistory();
-    setHistory(data);
-    setStats(getExamStats());
-  };
+  const loadHistory = async () => {
+    try {
+      const [examsResponse, statsResponse] = await Promise.all([
+        api.exams.getAll(100), // Fetch last 100 exams
+        api.exams.getStats()
+      ]);
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Bạn có chắc muốn xóa đề thi này?')) {
-      deleteExamFromHistory(id);
-      loadHistory();
+      // Map backend exams to frontend format
+      const mappedExams = (examsResponse.exams || []).map((e: any) => ({
+        id: e.id,
+        examTitle: e.title,
+        examType: e.subject === 'Công nghiệp' ? 'industrial' : 'agriculture', // Simple mapping
+        score: e.score,
+        totalQuestions: e.total_questions,
+        percentage: (e.score / e.total_questions) * 100,
+        timeSpent: Math.round(e.duration / 60), // Assuming duration is seconds
+        createdAt: new Date(e.created_at).toISOString(),
+        isSubmitted: true // Backend exams are usually submitted
+      }));
+
+      setHistory(mappedExams);
+      setStats(statsResponse);
+    } catch (error) {
+      console.error('Failed to load exam history:', error);
     }
   };
 
-  const handleClearAll = () => {
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Bạn có chắc muốn xóa đề thi này?')) {
+      try {
+        await api.exams.delete(id);
+        loadHistory();
+      } catch (error) {
+        console.error('Failed to delete exam:', error);
+      }
+    }
+  };
+
+  const handleClearAll = async () => {
     if (window.confirm('Bạn có chắc muốn xóa toàn bộ lịch sử? Hành động này không thể hoàn tác!')) {
-      clearExamHistory();
+      // Backend doesn't have clear all yet, or we loop delete
+      // For now, just clear local state or implement clear all endpoint
+      // Assuming we can't clear all easily via API without endpoint
+      alert('Tính năng xóa tất cả đang được cập nhật.');
       setShowDeleteConfirm(false);
-      loadHistory();
     }
   };
 

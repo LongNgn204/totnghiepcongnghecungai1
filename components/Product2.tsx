@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { QuestionMC, QuestionTF, QuestionLevel } from '../types';
 import QuestionCard from './QuestionCard';
 import { generateContent } from '../utils/geminiAPI';
+import { api } from '../utils/apiClient';
 
 // Dữ liệu mẫu dựa trên sách giáo khoa Cánh Diều
 const defaultMcQuestionsData: QuestionMC[] = [
@@ -75,6 +76,7 @@ const Product2: React.FC = () => {
     const [numTF, setNumTF] = useState('4');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [saving, setSaving] = useState(false);
 
     // State cho câu hỏi được tạo
     const [mcQuestionsData, setMcQuestionsData] = useState<QuestionMC[]>(defaultMcQuestionsData);
@@ -206,9 +208,51 @@ ${difficulty === 'Rất khó' ? '- Tập trung vào mức độ VẬN DỤNG và
         setUserAnswers(prev => ({ ...prev, [questionId]: answer }));
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         setIsSubmitted(true);
         window.scrollTo(0, 0);
+
+        // Calculate score for saving
+        let currentScore = 0;
+        mcQuestionsData.forEach(q => {
+            if (userAnswers[q.id] === q.answer) {
+                currentScore += 1;
+            }
+        });
+        tfQuestionsData.forEach(q => {
+            if (q.statements && q.answers) {
+                const userAns = userAnswers[q.id] as { [key: string]: boolean } | undefined;
+                if (userAns) {
+                    Object.keys(q.statements).forEach(key => {
+                        if (userAns[key] === q.answers?.[key as 'a' | 'b' | 'c' | 'd']) {
+                            currentScore += 0.25;
+                        }
+                    });
+                }
+            }
+        });
+
+        const examData = {
+            title: `Đề thi ${topic || 'Tổng hợp'} - Lớp ${grade}`,
+            description: `Độ khó: ${difficulty}`,
+            subject: 'Công nghệ',
+            grade: grade,
+            difficulty: difficulty,
+            duration: 0,
+            score: currentScore,
+            total_questions: mcQuestionsData.length + tfQuestionsData.length,
+            questions: JSON.stringify([...mcQuestionsData, ...tfQuestionsData]),
+            answers: JSON.stringify(userAnswers)
+        };
+
+        try {
+            setSaving(true);
+            await api.exams.create(examData);
+        } catch (error) {
+            console.error('Failed to save exam result:', error);
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleResetAnswers = () => {

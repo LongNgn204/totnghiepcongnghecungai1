@@ -1,4 +1,4 @@
-// Quản lý lưu trữ chat history với LocalStorage
+import { api } from './apiClient';
 
 export interface ChatMessage {
   id: string;
@@ -9,7 +9,7 @@ export interface ChatMessage {
     name: string;
     type: string;
     size: number;
-    preview?: string; // base64 cho hình ảnh nhỏ
+    preview?: string;
   }[];
 }
 
@@ -25,10 +25,6 @@ export interface ChatSession {
   };
 }
 
-const STORAGE_KEY = 'aiChatHistory';
-const MAX_SESSIONS = 50;
-const MAX_AGE_DAYS = 30;
-
 /**
  * Tạo ID unique
  */
@@ -37,13 +33,15 @@ export const generateId = (): string => {
 };
 
 /**
- * Lấy tất cả chat sessions
+ * Lấy tất cả chat sessions từ API
  */
-export const getChatHistory = (): ChatSession[] => {
+export const getChatHistory = async (): Promise<ChatSession[]> => {
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (!data) return [];
-    return JSON.parse(data);
+    const response = await api.chat.getAll();
+    if (response && response.sessions) {
+      return response.sessions;
+    }
+    return [];
   } catch (error) {
     console.error('Error loading chat history:', error);
     return [];
@@ -51,22 +49,25 @@ export const getChatHistory = (): ChatSession[] => {
 };
 
 /**
- * Lưu hoặc cập nhật chat session
+ * Lưu hoặc cập nhật chat session lên API
  */
-export const saveChatSession = (session: ChatSession): void => {
+export const saveChatSession = async (session: ChatSession): Promise<void> => {
   try {
-    const history = getChatHistory();
-    const existingIndex = history.findIndex(s => s.id === session.id);
-    
-    if (existingIndex >= 0) {
-      history[existingIndex] = session;
-    } else {
-      history.unshift(session); // Thêm vào đầu
+    // Check if session exists (simple check by ID or just try create/update)
+    // For simplicity, we can try to get it first or just use create/update endpoints
+    // But our API has create (POST) and update (PUT)
+    // We need to know if it's new or existing.
+    // Usually the UI knows. But here we can check if we can fetch it.
+    // Or better, we can just always use a "save" logic if the backend supports upsert, 
+    // but our backend has distinct POST /api/chat/sessions and PUT /api/chat/sessions/:id
+
+    // We will try to update, if 404 then create.
+    try {
+      await api.chat.update(session.id, session.messages);
+    } catch (e: any) {
+      // If update fails, maybe it doesn't exist, try create
+      await api.chat.create(session);
     }
-    
-    // Cleanup và lưu
-    const cleaned = cleanupHistory(history);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
   } catch (error) {
     console.error('Error saving chat session:', error);
   }
@@ -75,40 +76,25 @@ export const saveChatSession = (session: ChatSession): void => {
 /**
  * Lấy một session cụ thể
  */
-export const getChatSession = (id: string): ChatSession | null => {
-  const history = getChatHistory();
-  return history.find(s => s.id === id) || null;
+export const getChatSession = async (id: string): Promise<ChatSession | null> => {
+  try {
+    const session = await api.chat.getById(id);
+    return session;
+  } catch (error) {
+    console.error('Error getting chat session:', error);
+    return null;
+  }
 };
 
 /**
  * Xóa một session
  */
-export const deleteChatSession = (id: string): void => {
+export const deleteChatSession = async (id: string): Promise<void> => {
   try {
-    const history = getChatHistory().filter(s => s.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    await api.chat.delete(id);
   } catch (error) {
     console.error('Error deleting chat session:', error);
   }
-};
-
-/**
- * Xóa tất cả chat
- */
-export const clearAllChats = (): void => {
-  localStorage.removeItem(STORAGE_KEY);
-};
-
-/**
- * Cleanup: Xóa chat cũ và giới hạn số lượng
- */
-const cleanupHistory = (history: ChatSession[]): ChatSession[] => {
-  const maxAge = Date.now() - (MAX_AGE_DAYS * 24 * 60 * 60 * 1000);
-  
-  return history
-    .filter(s => s.updatedAt > maxAge)
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, MAX_SESSIONS);
 };
 
 /**
@@ -117,11 +103,11 @@ const cleanupHistory = (history: ChatSession[]): ChatSession[] => {
 export const generateChatTitle = (firstMessage: string): string => {
   const maxLength = 50;
   const cleaned = firstMessage.trim().replace(/\n/g, ' ');
-  
+
   if (cleaned.length <= maxLength) {
     return cleaned;
   }
-  
+
   return cleaned.substring(0, maxLength) + '...';
 };
 
@@ -134,7 +120,7 @@ export const groupChatsByTime = (sessions: ChatSession[]) => {
   const yesterday = today - (24 * 60 * 60 * 1000);
   const weekAgo = now - (7 * 24 * 60 * 60 * 1000);
   const monthAgo = now - (30 * 24 * 60 * 60 * 1000);
-  
+
   return {
     today: sessions.filter(s => s.updatedAt >= today),
     yesterday: sessions.filter(s => s.updatedAt >= yesterday && s.updatedAt < today),
@@ -147,13 +133,21 @@ export const groupChatsByTime = (sessions: ChatSession[]) => {
 /**
  * Search chat sessions
  */
-export const searchChats = (query: string): ChatSession[] => {
+export const searchChats = async (query: string): Promise<ChatSession[]> => {
   if (!query.trim()) return getChatHistory();
-  
+
+  // Our API supports search
+  // But for now let's fetch all and filter if API search is not robust enough
+  // Actually API has search param.
+  // return fetchAPI(`/api/chat/sessions?search=${query}`);
+  // But api.chat.getAll doesn't expose params yet in the client wrapper fully (it defaults).
+  // Let's update apiClient to support params or just filter client side for now.
+  // Since we want to be fast, let's fetch all and filter.
+  const sessions = await getChatHistory();
   const lowerQuery = query.toLowerCase();
-  return getChatHistory().filter(session => {
+  return sessions.filter(session => {
     return session.title.toLowerCase().includes(lowerQuery) ||
-           session.messages.some(m => m.content.toLowerCase().includes(lowerQuery));
+      session.messages.some(m => m.content.toLowerCase().includes(lowerQuery));
   });
 };
 
@@ -164,12 +158,12 @@ export const exportChatToText = (session: ChatSession): string => {
   let text = `${session.title}\n`;
   text += `Ngày tạo: ${new Date(session.createdAt).toLocaleString('vi-VN')}\n\n`;
   text += '='.repeat(50) + '\n\n';
-  
+
   session.messages.forEach(msg => {
     const role = msg.role === 'user' ? 'BẠN' : 'AI';
     const time = new Date(msg.timestamp).toLocaleTimeString('vi-VN');
     text += `[${time}] ${role}:\n${msg.content}\n\n`;
   });
-  
+
   return text;
 };

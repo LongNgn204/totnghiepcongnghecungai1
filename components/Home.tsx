@@ -1,5 +1,7 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+﻿import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import LoginModal from './LoginModal';
 import {
   GraduationCap,
   MessageSquare,
@@ -19,6 +21,18 @@ import {
 } from 'lucide-react';
 
 const Home: React.FC = () => {
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleStartLearning = () => {
+    if (user) {
+      navigate('/san-pham-1');
+    } else {
+      setShowLoginModal(true);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Hero Section */}
@@ -41,9 +55,12 @@ const Home: React.FC = () => {
           </h2>
 
           <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <Link to="/san-pham-1" className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200 flex items-center gap-2 transform hover:-translate-y-1">
+            <button 
+              onClick={handleStartLearning}
+              className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200 flex items-center gap-2 transform hover:-translate-y-1"
+            >
               Bắt Đầu Học Ngay <ArrowRight size={20} />
-            </Link>
+            </button>
             <Link to="/san-pham-3" className="bg-white text-gray-700 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-50 transition-all border border-gray-200 shadow-sm hover:shadow-md flex items-center gap-2">
               <FileQuestion size={20} /> Làm Đề Thi Thử
             </Link>
@@ -256,14 +273,26 @@ const Home: React.FC = () => {
             Tham gia cùng hàng ngàn học sinh khác và nâng cao điểm số môn Công nghệ ngay hôm nay.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link to="/san-pham-1" className="bg-white text-blue-600 px-8 py-3 rounded-lg font-bold hover:bg-blue-50 transition-all shadow-md">
+            <button 
+              onClick={handleStartLearning}
+              className="bg-white text-blue-600 px-8 py-3 rounded-lg font-bold hover:bg-blue-50 transition-all shadow-md"
+            >
               Trải Nghiệm Ngay
-            </Link>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <LoginModal 
+          isOpen={showLoginModal} 
+          onClose={() => setShowLoginModal(false)} 
+        />
+      )}
     </div>
   );
 };
 
 export default Home;
+
