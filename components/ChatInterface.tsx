@@ -194,9 +194,9 @@ const ChatInterface: React.FC = () => {
       
       🎨 **TẠO HÌNH ẢNH (IMAGE GENERATION):**
       -   Bạn CÓ THỂ tạo hình ảnh khi người dùng yêu cầu (ví dụ: "vẽ sơ đồ", "tạo ảnh động cơ", "minh họa...").
-      -   Để tạo ảnh, hãy sử dụng cú pháp Markdown sau: `![Mô tả chi tiết](https://image.pollinations.ai/prompt/{Mô_tả_tiếng_Anh_được_URL_Encode}?width=1024&height=768&nologo=true)`
+      -   Để tạo ảnh, hãy sử dụng cú pháp Markdown sau: ![Mô tả chi tiết](https://image.pollinations.ai/prompt/{Mô_tả_tiếng_Anh_được_URL_Encode}?width=1024&height=768&nologo=true)
       -   ** QUAN TRỌNG:** Bạn phải tự dịch mô tả sang tiếng Anh và URL Encode nó.
-      - Ví dụ: Nếu người dùng yêu cầu "vẽ động cơ V8", bạn trả về: `![V8 engine 3d render](https://image.pollinations.ai/prompt/V8%20engine%203d%20render?width=1024&height=768&nologo=true)`
+      - Ví dụ: Nếu người dùng yêu cầu "vẽ động cơ V8", bạn trả về: ![V8 engine 3d render](https://image.pollinations.ai/prompt/V8%20engine%203d%20render?width=1024&height=768&nologo=true)
 
       Bắt đầu cuộc trò chuyện ngay bây giờ.Hãy lắng nghe kỹ câu hỏi của người dùng và phản hồi chính xác nhất.
       `;
@@ -208,7 +208,7 @@ const ChatInterface: React.FC = () => {
       }));
 
       // Prepend system instruction to the very first message of the history effectively (or handle via API if supported, but for now we treat it as context)
-      const fullPrompt = `${ systemInstruction } \n\nUser Question: ${ inputMessage } `;
+      const fullPrompt = `${systemInstruction} \n\nUser Question: ${inputMessage} `;
 
       const response = await sendChatMessage(fullPrompt, filesToSend, selectedModel, history);
 
@@ -231,7 +231,7 @@ const ChatInterface: React.FC = () => {
         id: generateId(),
         timestamp: Date.now(),
         role: 'assistant',
-        content: `❌ Lỗi: ${ error instanceof Error ? error.message : 'Không thể gửi tin nhắn' } `
+        content: `❌ Lỗi: ${error instanceof Error ? error.message : 'Không thể gửi tin nhắn'} `
       };
       session.messages.push(errorMessage);
       setCurrentSession({ ...session });
@@ -247,7 +247,7 @@ const ChatInterface: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `chat - ${ currentSession.id }.txt`;
+    a.download = `chat - ${currentSession.id}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -274,7 +274,7 @@ const ChatInterface: React.FC = () => {
               className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-medium text-gray-700"
             >
               {AVAILABLE_MODELS.find(m => m.id === selectedModel)?.name || selectedModel}
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition - transform ${ showModelSelector ? 'rotate-180' : '' } `}><polyline points="6 9 12 15 18 9"></polyline></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition - transform ${showModelSelector ? 'rotate-180' : ''} `}><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
 
             {showModelSelector && (
@@ -284,7 +284,7 @@ const ChatInterface: React.FC = () => {
                     <button
                       key={model.id}
                       onClick={() => { setSelectedModel(model.id); setShowModelSelector(false); }}
-                      className={`w - full text - left px - 3 py - 2.5 rounded - lg transition - colors flex items - center justify - between ${ selectedModel === model.id ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50 text-gray-700' } `}
+                      className={`w - full text - left px - 3 py - 2.5 rounded - lg transition - colors flex items - center justify - between ${selectedModel === model.id ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50 text-gray-700'} `}
                     >
                       <div>
                         <div className="font-medium text-sm">{model.name}</div>

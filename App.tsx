@@ -193,7 +193,7 @@ const App: React.FC = () => {
           <Route path="/san-pham-5" element={<Product5 />} />
           <Route path="/product6" element={<ProtectedRoute><Product6 /></ProtectedRoute>} />
           <Route path="/product7" element={<ProtectedRoute><Product7 /></ProtectedRoute>} />
-          <Route path="/product8" element={<ProtectedRoute><Product8 /></ProtectedRoute>} />
+          <Route path="/product8" element={<Product8 />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
