@@ -1,18 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Activity,
-  Clock,
-  Target,
-  Zap,
-  BookOpen,
-  Trophy,
-  TrendingUp,
-  Calendar,
-  MoreHorizontal,
-  Play,
-  CheckCircle2,
-  Users,
   Loader2
 } from 'lucide-react';
 import { api } from '../utils/apiClient';
@@ -98,7 +86,7 @@ const Dashboard: React.FC = () => {
                 LIVE LEARNING CENTER
               </span>
               <span className="text-white/90 text-sm font-medium flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
+                <img src="/images/icon-calendar.png" alt="Calendar" className="w-4 h-4 object-contain invert brightness-0 filter" />
                 {currentTime.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}
               </span>
             </div>
@@ -117,7 +105,7 @@ const Dashboard: React.FC = () => {
             <div className="flex flex-wrap gap-4">
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 min-w-[160px] hover:bg-white/20 transition-colors cursor-default">
                 <div className="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
-                  <Clock className="w-3 h-3" /> Thời gian học
+                  <img src="/images/icon-clock.png" alt="Clock" className="w-3 h-3 object-contain invert brightness-0 filter" /> Thời gian học
                 </div>
                 <div className="text-3xl font-mono font-bold tracking-wider">{formatTime(sessionTime)}</div>
               </div>
@@ -143,21 +131,21 @@ const Dashboard: React.FC = () => {
           {/* Live Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatCard
-              icon={<Zap className="w-6 h-6 text-yellow-500" />}
+              image="/images/icon-streak.png"
               label="Chuỗi ngày học"
               value={`${stats?.streak || 0} Ngày`}
               trend={stats?.streak ? "Đang duy trì" : "Bắt đầu ngay"}
               color="bg-yellow-50 text-yellow-700"
             />
             <StatCard
-              icon={<Target className="w-6 h-6 text-red-500" />}
+              image="/images/icon-target.png"
               label="Mục tiêu tuần"
               value={`${stats?.weeklyProgress || 0}%`}
               trend={stats?.weeklyProgress === 100 ? "Hoàn thành" : "Cố lên!"}
               color="bg-red-50 text-red-700"
             />
             <StatCard
-              icon={<Trophy className="w-6 h-6 text-purple-500" />}
+              image="/images/icon-trophy.png"
               label="Điểm trung bình"
               value={stats?.avgScore || "--"}
               trend={stats?.avgScore ? "Điểm số" : "Chưa có điểm"}
@@ -169,7 +157,7 @@ const Dashboard: React.FC = () => {
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-blue-600" />
+                <img src="/images/icon-activity.png" alt="Activity" className="w-5 h-5 object-contain" />
                 Hoạt động học tập (7 ngày qua)
               </h3>
             </div>
@@ -210,15 +198,19 @@ const Dashboard: React.FC = () => {
           {/* Recent Activity Feed */}
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
             <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-orange-500" />
+              <img src="/images/icon-clock.png" alt="Recent" className="w-5 h-5 object-contain" />
               Hoạt động gần đây
             </h3>
             <div className="space-y-6">
               {stats?.recentActivity && stats.recentActivity.length > 0 ? (
                 stats.recentActivity.map((item, i) => (
                   <div key={i} className="flex items-start gap-4 group cursor-pointer p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div className={`p-3 rounded-2xl ${item.type === 'exam' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'} group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
-                      {item.type === 'exam' ? <BookOpen size={20} /> : <Zap size={20} />}
+                    <div className={`p-3 rounded-2xl ${item.type === 'exam' ? 'bg-blue-50' : 'bg-purple-50'} group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
+                      <img
+                        src={item.type === 'exam' ? "/images/icon-activity-exam.png" : "/images/icon-activity-learn.png"}
+                        alt="Activity Icon"
+                        className="w-8 h-8 object-contain"
+                      />
                     </div>
                     <div className="flex-grow">
                       <h4 className="font-bold text-gray-800 group-hover:text-blue-600 transition-colors">{item.title}</h4>
@@ -249,7 +241,7 @@ const Dashboard: React.FC = () => {
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 relative overflow-hidden hover:shadow-md transition-shadow">
             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-full -mr-16 -mt-16 blur-2xl"></div>
             <h3 className="text-xl font-bold text-gray-800 mb-6 relative z-10 flex items-center gap-2">
-              <Target className="w-5 h-5 text-red-500" />
+              <img src="/images/icon-target.png" alt="Target" className="w-6 h-6 object-contain" />
               Trọng tâm hôm nay
             </h3>
 
@@ -263,12 +255,12 @@ const Dashboard: React.FC = () => {
 
           {/* Quick Access Grid */}
           <div className="grid grid-cols-2 gap-4">
-            <QuickAction to="/san-pham-1" icon="💬" label="Chat AI" color="bg-blue-50 hover:bg-blue-100 text-blue-600" />
-            <QuickAction to="/san-pham-2" icon="❓" label="Tạo Đề" color="bg-green-50 hover:bg-green-100 text-green-600" />
-            <QuickAction to="/san-pham-3" icon="⚙️" label="Công Nghiệp" color="bg-purple-50 hover:bg-purple-100 text-purple-600" />
-            <QuickAction to="/san-pham-4" icon="🌾" label="Nông Nghiệp" color="bg-teal-50 hover:bg-teal-100 text-teal-600" />
-            <QuickAction to="/flashcards" icon="🗂️" label="Flashcards" color="bg-pink-50 hover:bg-pink-100 text-pink-600" />
-            <QuickAction to="/product8" icon="📚" label="Tủ Sách" color="bg-orange-50 hover:bg-orange-100 text-orange-600" />
+            <QuickAction to="/san-pham-1" image="/images/icon-chat-ai.png" label="Chat AI" color="bg-blue-50 hover:bg-blue-100 text-blue-600" />
+            <QuickAction to="/san-pham-2" image="/images/icon-create-questions.png" label="Tạo Đề" color="bg-green-50 hover:bg-green-100 text-green-600" />
+            <QuickAction to="/san-pham-3" image="/images/icon-industrial-tech.png" label="Công Nghiệp" color="bg-purple-50 hover:bg-purple-100 text-purple-600" />
+            <QuickAction to="/san-pham-4" image="/images/icon-agricultural-tech.png" label="Nông Nghiệp" color="bg-teal-50 hover:bg-teal-100 text-teal-600" />
+            <QuickAction to="/flashcards" image="/images/icon-flashcards.png" label="Flashcards" color="bg-pink-50 hover:bg-pink-100 text-pink-600" />
+            <QuickAction to="/product8" image="/images/icon-bookshelf.png" label="Tủ Sách" color="bg-orange-50 hover:bg-orange-100 text-orange-600" />
           </div>
         </div>
       </div>
@@ -277,10 +269,12 @@ const Dashboard: React.FC = () => {
 };
 
 // Helper Components
-const StatCard = ({ icon, label, value, trend, color }: any) => (
+const StatCard = ({ image, label, value, trend, color }: any) => (
   <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1 cursor-default">
     <div className="flex justify-between items-start mb-4">
-      <div className={`p-3 rounded-xl ${color} shadow-sm`}>{icon}</div>
+      <div className={`p-3 rounded-xl ${color} shadow-sm`}>
+        <img src={image} alt={label} className="w-8 h-8 object-contain" />
+      </div>
       <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg border border-green-100">{trend}</span>
     </div>
     <div className="text-2xl font-bold text-gray-800 mb-1">{value}</div>
@@ -288,9 +282,9 @@ const StatCard = ({ icon, label, value, trend, color }: any) => (
   </div>
 );
 
-const QuickAction = ({ to, icon, label, color }: any) => (
+const QuickAction = ({ to, image, label, color }: any) => (
   <Link to={to} className={`flex flex-col items-center justify-center p-4 rounded-2xl transition-all duration-300 ${color} hover:scale-105 hover:shadow-lg border border-transparent hover:border-current/10`}>
-    <span className="text-3xl mb-2 filter drop-shadow-sm">{icon}</span>
+    <img src={image} alt={label} className="w-12 h-12 mb-2 object-contain drop-shadow-sm" />
     <span className="font-bold text-sm">{label}</span>
   </Link>
 );
