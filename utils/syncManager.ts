@@ -1,9 +1,6 @@
 // Sync Manager - Đồng bộ localStorage với backend
 
 import api from './apiClient';
-import { getExamHistory, saveExamToHistory } from './examStorage';
-import { getAllDecks, saveDeck } from './flashcardStorage';
-import { getChatHistory, saveChatSession } from './chatStorage';
 
 interface SyncConfig {
   autoSync: boolean;

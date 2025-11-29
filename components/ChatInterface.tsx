@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { sendChatMessage, AVAILABLE_MODELS } from '../utils/geminiAPI';
+import { recordQuestion, recordAnswer } from '../utils/analyticsTracker';
 import {
   ChatSession,
   ChatMessage,
@@ -14,6 +15,8 @@ import {
 import ChatSidebar from './ChatSidebar';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
+import PromptEnhancementPreview from './PromptEnhancementPreview';
+import { buildContextPrefix } from '../utils/conversationMemory';
 
 const ChatInterface: React.FC = () => {
   // State
@@ -27,6 +30,10 @@ const ChatInterface: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].id);
   const [showModelSelector, setShowModelSelector] = useState(false);
+  const [showEnhancer, setShowEnhancer] = useState(false);
+  const [memoryEnabled, setMemoryEnabled] = useState<boolean>(() => {
+    try { return localStorage.getItem('chat.memoryEnabled') === 'true'; } catch { return false; }
+  });
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -34,7 +41,28 @@ const ChatInterface: React.FC = () => {
   const modelSelectorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { loadChatHistory(); }, []);
+  useEffect(() => { try { localStorage.setItem('chat.memoryEnabled', String(memoryEnabled)); } catch {} }, [memoryEnabled]);
   useEffect(() => { scrollToBottom(); }, [currentSession?.messages]);
+
+  // Listen for auto-fill events from Product1 suggestions
+  useEffect(() => {
+    const handleAutoFill = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { question } = (customEvent.detail || {}) as { question?: string };
+      if (question) {
+        setInputMessage(question);
+      }
+    };
+    const handleOpenFile = () => {
+      fileInputRef.current?.click();
+    };
+    window.addEventListener('auto-fill-question', handleAutoFill as EventListener);
+    window.addEventListener('open-file-picker', handleOpenFile as EventListener);
+    return () => {
+      window.removeEventListener('auto-fill-question', handleAutoFill as EventListener);
+      window.removeEventListener('open-file-picker', handleOpenFile as EventListener);
+    };
+  }, []);
 
   // Close model selector when clicking outside
   useEffect(() => {
@@ -127,11 +155,91 @@ const ChatInterface: React.FC = () => {
   };
 
   const handleSendMessage = async () => {
-    // ... (logic remains the same)
+    const message = inputMessage.trim();
+    if (!message && attachedFiles.length === 0) return;
+    if (!currentSession) {
+      startNewChat();
+      // startNewChat sets state asynchronously; create a session object now to work on
+      const newSession: ChatSession = {
+        id: generateId(),
+        title: 'Chat mới',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        messages: [],
+        metadata: { subject: 'Công nghệ', grade: '12' }
+      };
+      setCurrentSession(newSession);
+    }
+
+    setLoading(true);
+
+    // Use latest session snapshot
+    setCurrentSession(prev => {
+      const session = prev ?? {
+        id: generateId(),
+        title: 'Chat mới',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        messages: [],
+      } as ChatSession;
+      const userMsg: ChatMessage = {
+        id: generateId(),
+        timestamp: Date.now(),
+        role: 'user',
+        content: message,
+      };
+      const next = { ...session, updatedAt: Date.now(), messages: [...session.messages, userMsg] };
+      // Generate title if first message
+      if (!session.messages.length) {
+        next.title = generateChatTitle(message || 'Chat mới');
+      }
+      saveChatSession(next);
+      recordQuestion();
+      return next;
+    });
+
+    setInputMessage('');
+
+    try {
+      const sessionSnapshot = currentSession;
+      const history = (sessionSnapshot?.messages || []).map(m => ({ role: m.role, content: m.content }));
+      const contextPrefix = memoryEnabled ? buildContextPrefix(sessionSnapshot?.messages || []) : '';
+      const composed = contextPrefix + message;
+      const latexGuide = "\n\n[Định dạng] Vui lòng dùng LaTeX cho công thức: inline dùng \\( ... \\), block dùng $ ... $ hoặc \\[ ... \\]. Tránh đặt công thức trong code block. Dùng môi trường align, cases khi phù hợp.";
+      const resp = await sendChatMessage(composed + latexGuide, attachedFiles, selectedModel, history);
+      const assistantText = resp.success ? resp.text : (resp.error || 'Có lỗi xảy ra khi gọi API');
+
+      setCurrentSession(prev => {
+        if (!prev) return prev;
+        const assistantMsg: ChatMessage = {
+          id: generateId(),
+          timestamp: Date.now(),
+          role: 'assistant',
+          content: assistantText,
+        };
+        const next = { ...prev, updatedAt: Date.now(), messages: [...prev.messages, assistantMsg] };
+        saveChatSession(next);
+        if (resp.success) recordAnswer();
+        return next;
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAttachedFiles([]);
+      setLoading(false);
+    }
   };
 
   const handleExportChat = () => {
-    // ... (logic remains the same)
+    if (!currentSession) return;
+    const text = exportChatToText(currentSession);
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentSession.title.replace(/[^a-z0-9\-]+/gi, '_')}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -216,6 +324,16 @@ const ChatInterface: React.FC = () => {
           onFileSelect={handleFileSelect}
           fileInputRef={fileInputRef}
           onPaste={handlePaste}
+          onEnhanceClick={() => setShowEnhancer(true)}
+          memoryEnabled={memoryEnabled}
+          onToggleMemory={() => setMemoryEnabled(v => !v)}
+        />
+
+        <PromptEnhancementPreview
+          open={showEnhancer}
+          onClose={() => setShowEnhancer(false)}
+          original={inputMessage}
+          onApply={setInputMessage}
         />
       </div>
     </div>

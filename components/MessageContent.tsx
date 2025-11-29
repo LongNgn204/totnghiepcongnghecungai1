@@ -74,6 +74,30 @@ const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
   return <div className="message-content">{renderContent()}</div>;
 };
 
+// KaTeX options and common macros
+const katexOptions = {
+  throwOnError: false,
+  trust: true,
+  macros: {
+    "\\RR": "\\mathbb{R}",
+    "\\NN": "\\mathbb{N}",
+    "\\ZZ": "\\mathbb{Z}",
+    "\\QQ": "\\mathbb{Q}",
+    "\\CC": "\\mathbb{C}",
+    "\\vec": "\\boldsymbol{#1}",
+    "\\bm": "\\boldsymbol{#1}",
+    "\\abs": "\\left|#1\\right|",
+    "\\norm": "\\left\\lVert#1\\right\\rVert",
+    "\\set": "\\left\\{#1\\right\\}",
+    "\\inner": "\\left\\langle #1,#2 \\right\\rangle",
+    "\\argmax": "\\operatorname*{arg\\,max}",
+    "\\argmin": "\\operatorname*{arg\\,min}",
+    "\\dv": "\\frac{d \\! #1}{d \\! #2}",
+    "\\pdv": "\\frac{\\partial \\! #1}{\\partial \\! #2}",
+    "\\qty": "\\left( #1 \\right)",
+  } as Record<string, string>,
+};
+
 // Format markdown (without code blocks, handled separately)
 const formatMarkdown = (text: string): string => {
   let html = text;
@@ -81,30 +105,32 @@ const formatMarkdown = (text: string): string => {
   // Escape HTML
   html = escapeHtml(html);
 
-  // Math equations - Block ($$...$$)
-  html = html.replace(/\$\$([\s\S]+?)\$\$/g, (match, equation) => {
-    try {
-      return `<div class="math-block my-4">${katex.renderToString(String(equation).trim(), {
-        displayMode: true,
-        throwOnError: false,
-        trust: true
-      })}</div>`;
-    } catch (e) {
-      return `<div class="math-error bg-red-100 dark:bg-red-900 p-2 rounded">Error rendering: ${escapeHtml(equation)}</div>`;
-    }
+  // Math display blocks: $...$ and \[...\]
+  html = html.replace(/\$\$([\s\S]+?)\$\$/g, (_m, eq) => {
+    try { return `<div class="math-block my-4">${katex.renderToString(String(eq).trim(), { ...katexOptions, displayMode: true })}</div>`; }
+    catch { return `<div class="math-error bg-red-100 dark:bg-red-900 p-2 rounded">${escapeHtml(eq)}</div>`; }
+  });
+  html = html.replace(/\\\[([\s\S]+?)\\\]/g, (_m, eq) => {
+    try { return `<div class="math-block my-4">${katex.renderToString(String(eq).trim(), { ...katexOptions, displayMode: true })}</div>`; }
+    catch { return `<div class="math-error bg-red-100 dark:bg-red-900 p-2 rounded">${escapeHtml(eq)}</div>`; }
   });
 
-  // Math equations - Inline ($...$)
-  html = html.replace(/\$([^\$\n]+?)\$/g, (match, equation) => {
-    try {
-      return `<span class="math-inline">${katex.renderToString(String(equation).trim(), {
-        displayMode: false,
-        throwOnError: false,
-        trust: true
-      })}</span>`;
-    } catch (e) {
-      return `<span class="math-error text-red-600">${escapeHtml(equation)}</span>`;
-    }
+  // Math environments (display)
+  const envs = '(equation\*?|align\*?|aligned|gather\*?|multline\*?|cases|matrix|pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix)';
+  const envBlock = new RegExp('\\\\begin\\{' + envs + '\\}([\\s\\S]*?)\\\\end\\{' + envs + '\\}', 'g');
+  html = html.replace(envBlock, (_m, _env, body) => {
+    try { return `<div class="math-block my-4">${katex.renderToString(String(body).trim(), { ...katexOptions, displayMode: true })}</div>`; }
+    catch { return `<div class="math-error bg-red-100 dark:bg-red-900 p-2 rounded">${escapeHtml(body)}</div>`; }
+  });
+
+  // Math inline: $...$ and \(...\)
+  html = html.replace(/\$([^\$\n]+?)\$/g, (_m, eq) => {
+    try { return `<span class="math-inline">${katex.renderToString(String(eq).trim(), { ...katexOptions, displayMode: false })}</span>`; }
+    catch { return `<span class="math-error text-red-600">${escapeHtml(eq)}</span>`; }
+  });
+  html = html.replace(/\\\(([^\\)\n]+?)\\\)/g, (_m, eq) => {
+    try { return `<span class="math-inline">${katex.renderToString(String(eq).trim(), { ...katexOptions, displayMode: false })}</span>`; }
+    catch { return `<span class="math-error text-red-600">${escapeHtml(eq)}</span>`; }
   });
 
   // Headers
@@ -112,16 +138,14 @@ const formatMarkdown = (text: string): string => {
   html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3 text-gray-800">$1</h2>');
   html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4 text-gray-800">$1</h1>');
 
-  // Bold
+  // Bold / Italic
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-blue-600">$1</strong>');
-
-  // Italic
   html = html.replace(/\*(.*?)\*/g, '<em class="italic text-gray-700">$1</em>');
 
   // Inline code (only single backticks, triple handled separately)
   html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-200 px-2 py-1 rounded text-sm font-mono text-pink-600">$1</code>');
 
-  // Images (sanitize URL, no inline onclick)
+  // Images (sanitize URL)
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt, src) => {
     const safe = isSafeUrl(src) ? src : '';
     const escapedAlt = escapeHtml(alt);
@@ -136,10 +160,8 @@ const formatMarkdown = (text: string): string => {
     return `<a href="${safe}" class="text-blue-500 hover:underline font-medium" target="_blank" rel="noopener noreferrer">${escapedLabel} 🔗</a>`;
   });
 
-  // Lists - Unordered
+  // Lists
   html = html.replace(/^\s*[-•]\s+(.*)$/gim, '<li class="ml-6 my-1 flex items-start gap-2"><span class="text-blue-500 font-bold">•</span><span>$1</span></li>');
-
-  // Lists - Ordered
   html = html.replace(/^\s*(\d+)\.\s+(.*)$/gim, '<li class="ml-6 my-1 flex items-start gap-2"><span class="text-blue-600 font-bold">$1.</span><span>$2</span></li>');
 
   // Blockquotes

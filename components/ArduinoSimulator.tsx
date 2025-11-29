@@ -23,14 +23,14 @@ const ArduinoSimulator: React.FC<ArduinoSimulatorProps> = ({ code, onSimulationO
   const intervalRef = useRef<number | null>(null);
   const [commands, setCommands] = useState<Command[]>([]);
   const [duration, setDuration] = useState<number>(10000);
-  const ledsRef = useRef<LEDState[]>([]);
-  useEffect(()=>{ ledsRef.current = leds; }, [leds]);
   const [leds, setLeds] = useState<LEDState[]>([
     { pin: 8, color: '#ef4444', isOn: false, intensity: 0, label: 'RED (Pin 8)' },
     { pin: 9, color: '#eab308', isOn: false, intensity: 0, label: 'YELLOW (Pin 9)' },
     { pin: 10, color: '#22c55e', isOn: false, intensity: 0, label: 'GREEN (Pin 10)' },
     { pin: 13, color: '#3b82f6', isOn: false, intensity: 0, label: 'LED (Pin 13)' }
   ]);
+  const ledsRef = useRef<LEDState[]>([]);
+  useEffect(()=>{ ledsRef.current = leds; }, [leds]);
 
   const [isRunning, setIsRunning] = useState(false);
   const [output, setOutput] = useState<string>('');

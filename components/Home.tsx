@@ -1,28 +1,35 @@
-﻿import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from './LoginModal';
 import {
-  GraduationCap,
-  MessageSquare,
-  FileQuestion,
-  BookOpen,
-  CheckCircle,
-  Zap,
-  Rocket,
   ArrowRight,
   Cpu,
+  Zap,
+  Globe,
+  Code,
+  Bot,
+  BookOpen,
+  Lightbulb,
+  Layers,
+  Target,
   Users,
-  Phone,
-  Mail,
-  HelpCircle,
-  Sparkles
+  Award
 } from 'lucide-react';
 
 const Home: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleStartLearning = () => {
     if (user) {
@@ -32,257 +39,329 @@ const Home: React.FC = () => {
     }
   };
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20">
-      {/* Hero Section */}
-      <div className="relative rounded-3xl overflow-hidden mb-16 glass-panel border-0 p-1">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-500/10 dark:from-primary-900/20 dark:to-secondary-900/20"></div>
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
-        <div className="relative z-10 px-6 py-16 md:py-24 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-100/50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-sm font-medium mb-8 animate-fade-in border border-primary-200/50 dark:border-primary-700/30 backdrop-blur-sm">
-            <Sparkles size={16} />
-            <span>Hỗ trợ bởi Gemini 2.5 Pro</span>
+  return (
+    <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans selection:bg-blue-500 selection:text-white overflow-x-hidden">
+
+      {/* Fixed Navigation Dots */}
+      <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-50 hidden lg:flex flex-col gap-4">
+        {['hero', 'vision', 'methodology', 'tech', 'future'].map((section) => (
+          <button
+            key={section}
+            onClick={() => scrollToSection(section)}
+            className="w-3 h-3 rounded-full bg-slate-600 hover:bg-blue-500 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            aria-label={`Scroll to ${section}`}
+          />
+        ))}
+      </div>
+
+      {/* Decorative Background Elements */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 rounded-full blur-[120px]"></div>
+        <div className="absolute top-[40%] left-[60%] w-[30%] h-[30%] bg-cyan-600/10 rounded-full blur-[100px]"></div>
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+      </div>
+
+      {/* SECTION 1: HERO */}
+      <section id="hero" className="relative min-h-screen flex flex-col justify-center items-center pt-20 px-6 z-10">
+        <div className="max-w-5xl mx-auto text-center space-y-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium animate-fade-in-up">
+            <Award size={16} />
+            <span>Giáo dục chuẩn 4.0</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight text-gray-900 dark:text-white animate-slide-up">
-            Ôn Thi THPT <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-500 dark:from-primary-400 dark:to-secondary-400">Công Nghệ</span>
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight animate-fade-in-up delay-100">
+            GIÁO DỤC STEM <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-500">
+              TƯ DUY KIẾN TẠO THỰC TẾ
+            </span>
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-10 leading-relaxed animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            Hệ thống luyện thi thông minh, bám sát chương trình GDPT 2018.
-            <br className="hidden md:block" />
-            Biến việc học trở nên thú vị và hiệu quả hơn bao giờ hết.
+          <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto font-light leading-relaxed animate-fade-in-up delay-200">
+            Đồng hành cùng Chương trình Giáo dục Phổ thông 2018: Đánh thức tiềm năng, rèn luyện bản lĩnh và trang bị hành trang số cho thế hệ công dân Việt Nam toàn cầu.
           </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 p-6 rounded-2xl max-w-4xl mx-auto text-left md:text-center animate-fade-in-up delay-300">
+            <p className="text-slate-300 leading-relaxed">
+              Trong kỷ nguyên AI và tự động hóa, học "thuộc lòng" không còn là chìa khóa. Chúng tôi dạy <strong>cách tư duy</strong>. Tích hợp <strong>S-T-E-M</strong> vào thực tiễn, biến công thức khô khan thành giải pháp đời sống. Chuyển dịch từ "biết kiến thức" sang "làm chủ kiến thức".
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4 animate-fade-in-up delay-500">
             <button
               onClick={handleStartLearning}
-              className="btn-primary text-lg px-8 py-4 flex items-center justify-center gap-2 group"
+              className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-3"
             >
-              Bắt Đầu Ngay <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              Tìm hiểu Lộ trình <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
-            <Link to="/san-pham-3" className="btn-secondary text-lg px-8 py-4 flex items-center justify-center gap-2">
-              <FileQuestion size={20} /> Làm Đề Thi Thử
-            </Link>
-          </div>
-
-          <div className="mt-12 flex flex-wrap justify-center gap-6 text-sm font-medium text-gray-500 dark:text-gray-400 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-            <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
-              <CheckCircle size={16} className="text-green-500" /> SGK KNTT & Cánh Diều
-            </span>
-            <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
-              <CheckCircle size={16} className="text-green-500" /> Miễn phí 100%
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Value Proposition Grid */}
-      <div className="grid md:grid-cols-3 gap-8 mb-20">
-        <div className="glass-card p-8 rounded-2xl group hover:-translate-y-2 transition-transform duration-300">
-          <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-6 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-300">
-            <Rocket size={28} />
-          </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Mục Tiêu</h3>
-          <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-            Giúp học sinh nắm vững kiến thức cốt lõi, phát triển tư duy và đạt điểm số tối đa trong kỳ thi THPT Quốc gia.
-          </p>
-        </div>
-
-        <div className="glass-card p-8 rounded-2xl group hover:-translate-y-2 transition-transform duration-300">
-          <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mb-6 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-300">
-            <Users size={28} />
-          </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Đối Tượng</h3>
-          <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-            Học sinh lớp 10, 11, 12 theo học bộ sách Kết nối tri thức hoặc Cánh diều, và giáo viên cần nguồn tài liệu.
-          </p>
-        </div>
-
-        <div className="glass-card p-8 rounded-2xl group hover:-translate-y-2 transition-transform duration-300">
-          <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center mb-6 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform duration-300">
-            <Zap size={28} />
-          </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Phương Pháp</h3>
-          <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-            Kết hợp học lý thuyết qua Chat AI, luyện tập với ngân hàng câu hỏi thông minh và theo dõi tiến độ.
-          </p>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="space-y-24 mb-24">
-        {/* Feature 1 */}
-        <div className="flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1 space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-bold">
-              <BookOpen size={16} /> Chương Trình Chuẩn
-            </div>
-            <h3 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Đầy Đủ Chương Trình Học Tập
-            </h3>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              Hệ thống bao phủ toàn bộ kiến thức của hai bộ sách giáo khoa phổ biến nhất hiện nay, cập nhật liên tục.
-            </p>
-            <ul className="space-y-4">
-              {['Công nghệ Công nghiệp: Điện, Điện tử...', 'Công nghệ Nông nghiệp: Trồng trọt, Lâm nghiệp...', 'Cập nhật theo văn bản mới nhất của Bộ GD&ĐT'].map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
-                  <CheckCircle className="text-green-500 mt-1 flex-shrink-0" size={20} />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="flex-1 glass-panel p-8 rounded-3xl aspect-video flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 overflow-hidden relative group">
-            <img
-              src="/assets/images/feature-1.png"
-              alt="Đầy Đủ Chương Trình Học Tập"
-              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 rounded-2xl shadow-sm"
-            />
+            <button
+              onClick={() => scrollToSection('vision')}
+              className="px-8 py-4 bg-slate-800/50 hover:bg-slate-700/50 text-slate-200 rounded-xl font-medium text-lg transition-all border border-slate-700/50 backdrop-blur-sm"
+            >
+              Khám phá thêm
+            </button>
           </div>
         </div>
 
-        {/* Feature 2 */}
-        <div className="flex flex-col md:flex-row-reverse items-center gap-12">
-          <div className="flex-1 space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-bold">
-              <MessageSquare size={16} /> Trợ Lý Ảo
-            </div>
-            <h3 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Hỏi Đáp Với AI Gemini 2.5 Pro
-            </h3>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              Không còn nỗi lo "bí" bài. Trợ lý AI của chúng tôi sẵn sàng giải đáp mọi thắc mắc 24/7.
-            </p>
-            <ul className="space-y-4">
-              {['Giải thích khái niệm khó hiểu đơn giản, trực quan.', 'Phân tích đề bài và hướng dẫn giải chi tiết.', 'Gợi ý tài liệu tham khảo mở rộng.'].map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
-                  <CheckCircle className="text-blue-500 mt-1 flex-shrink-0" size={20} />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="flex-1 glass-panel p-8 rounded-3xl aspect-video flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 overflow-hidden relative group">
-            <img
-              src="/assets/images/feature-2.png"
-              alt="Hỏi Đáp Với AI Gemini 2.5 Pro"
-              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 rounded-2xl shadow-sm"
-            />
+        <div className="absolute bottom-10 animate-bounce text-slate-500 cursor-pointer" onClick={() => scrollToSection('vision')}>
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-xs uppercase tracking-widest">Cuộn xuống</span>
+            <ArrowRight size={20} className="rotate-90" />
           </div>
         </div>
+      </section>
 
-        {/* Feature 3 */}
-        <div className="flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1 space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full text-sm font-bold">
-              <FileQuestion size={16} /> Luyện Thi
-            </div>
-            <h3 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Tạo Đề Thi Tự Động
-            </h3>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              Công cụ mạnh mẽ giúp bạn làm chủ phòng thi với kho đề vô tận và chấm điểm tức thì.
-            </p>
-            <ul className="space-y-4">
-              {['Tùy chỉnh cấu trúc, độ khó, phạm vi kiến thức.', 'Chấm điểm tự động và nhận xét chi tiết.', 'Lưu lịch sử làm bài để theo dõi tiến bộ.'].map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
-                  <CheckCircle className="text-purple-500 mt-1 flex-shrink-0" size={20} />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="flex-1 glass-panel p-8 rounded-3xl aspect-video flex items-center justify-center bg-gradient-to-br from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20">
-            <FileQuestion size={120} className="text-purple-200 dark:text-purple-800/50" />
-          </div>
-        </div>
-      </div>
-
-      {/* Tech Stack */}
-      <div className="mb-20">
-        <div className="text-center mb-10">
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center justify-center gap-2">
-            <Cpu className="text-primary-600" /> Công Nghệ Lõi
-          </h3>
-        </div>
-        <div className="flex flex-wrap justify-center gap-6">
-          {['Google Gemini 2.5 Pro', 'React 19', 'TypeScript', 'Vite'].map((tech) => (
-            <div key={tech} className="px-6 py-3 glass-panel rounded-full text-gray-600 dark:text-gray-300 font-medium flex items-center gap-2 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-colors">
-              <span className="w-2 h-2 bg-primary-500 rounded-full"></span> {tech}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Contact & FAQ */}
-      <div className="grid md:grid-cols-2 gap-8 mb-20">
-        <div className="glass-card p-8 rounded-2xl">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-            <Phone className="text-primary-600" /> Liên Hệ Hỗ Trợ
-          </h3>
-          <div className="space-y-4">
-            <a href="mailto:longhngn.hnue@gmail.com" className="flex items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
-              <div className="w-10 h-10 bg-primary-50 dark:bg-primary-900/30 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                <Mail size={20} className="text-primary-600 dark:text-primary-400" />
+      {/* SECTION 2: VISION & CONTEXT */}
+      <section id="vision" className="relative py-32 px-6 z-10">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div className="space-y-8">
+              <div className="flex items-center gap-3 text-orange-400 font-bold text-lg">
+                <Globe size={24} />
+                <span>BỐI CẢNH & TẦM NHÌN</span>
               </div>
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
-                <p className="font-medium text-gray-900 dark:text-white">longhngn.hnue@gmail.com</p>
-              </div>
-            </a>
-            <a href="https://zalo.me/0896636181" className="flex items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
-              <div className="w-10 h-10 bg-primary-50 dark:bg-primary-900/30 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                <Phone size={20} className="text-primary-600 dark:text-primary-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Zalo / Hotline</p>
-                <p className="font-medium text-gray-900 dark:text-white">0896636181</p>
-              </div>
-            </a>
-          </div>
-        </div>
-
-        <div className="glass-card p-8 rounded-2xl">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-            <HelpCircle className="text-primary-600" /> Câu Hỏi Thường Gặp
-          </h3>
-          <div className="space-y-4">
-            {[
-              { q: 'Sử dụng có mất phí không?', a: 'Hoàn toàn miễn phí. Dự án phi lợi nhuận hỗ trợ cộng đồng.' },
-              { q: 'Đăng ký tài khoản thế nào?', a: 'Nhấn nút "Đăng nhập" → chọn tab "Đăng ký". Chỉ cần Email.' },
-              { q: 'Đề thi có chuẩn không?', a: 'Đề thi được AI tạo dựa trên SGK chuẩn của Bộ GD&ĐT.' }
-            ].map((item, i) => (
-              <details key={i} className="group bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700/50">
-                <summary className="flex items-center justify-between p-4 cursor-pointer font-medium text-gray-700 dark:text-gray-200">
-                  <span>{item.q}</span>
-                  <span className="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <p className="px-4 pb-4 text-sm text-gray-500 dark:text-gray-400 leading-relaxed border-t border-gray-100 dark:border-gray-700/50 pt-3">
-                  {item.a}
+              <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+                HÀNH TRÌNH TỪ <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
+                  CHỈ THỊ 16 ĐẾN LỚP HỌC 4.0
+                </span>
+              </h2>
+              <div className="prose prose-invert prose-lg text-slate-300">
+                <p>
+                  Từ Chỉ thị 16/CT-TTg đến Công văn 3089/BGDĐT-GDTrH, STEM không còn là trào lưu mà là yêu cầu bắt buộc. Chúng ta đang chứng kiến cuộc chuyển mình lịch sử của giáo dục Việt Nam.
                 </p>
-              </details>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  { title: "Nội dung → Năng lực", desc: "Không chỉ học cái gì, mà làm được gì.", icon: Target, color: "text-blue-400", bg: "bg-blue-400/10" },
+                  { title: "Đơn môn → Liên môn", desc: "Xóa bỏ rào cản Lý - Hóa - Sinh - Tin.", icon: Layers, color: "text-purple-400", bg: "bg-purple-400/10" },
+                  { title: "Lý thuyết → Trải nghiệm", desc: "Sai lầm là một phần của sáng tạo.", icon: Lightbulb, color: "text-orange-400", bg: "bg-orange-400/10" }
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-4 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:border-slate-600 transition-colors">
+                    <div className={`p-3 rounded-lg ${item.bg} ${item.color}`}>
+                      <item.icon size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-100">{item.title}</h4>
+                      <p className="text-sm text-slate-400">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/20 to-red-500/20 rounded-3xl blur-3xl -z-10"></div>
+              <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 p-8 rounded-3xl shadow-2xl">
+                <div className="space-y-8">
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 font-bold text-slate-300">01</div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white mb-2">Chỉ thị & Định hướng</h3>
+                      <p className="text-slate-400">Nền tảng pháp lý vững chắc từ Chính phủ và Bộ GD&ĐT, tạo đà cho đổi mới căn bản, toàn diện.</p>
+                    </div>
+                  </div>
+                  <div className="w-px h-12 bg-slate-800 ml-6"></div>
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 font-bold text-slate-300">02</div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white mb-2">Lan tỏa Ba Miền</h3>
+                      <p className="text-slate-400">Kết nối mạng lưới giáo dục hiện đại từ Hà Nội, Đà Nẵng đến TP.HCM, tạo nên làn sóng đổi mới đồng bộ.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3: METHODOLOGY */}
+      <section id="methodology" className="relative py-32 px-6 z-10 bg-slate-900/30">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-sm font-medium mb-4">
+              <BookOpen size={16} />
+              <span>Phương pháp Sư phạm</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              HỌC THỰC CHIẾN <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">
+                5E & QUY TRÌNH KỸ THUẬT
+              </span>
+            </h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Áp dụng triệt để các phương pháp tiên tiến được Bộ GD&ĐT khuyến nghị.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                title: "Project-Based Learning",
+                subtitle: "Học qua Dự án",
+                desc: "Học sinh đóng vai kỹ sư nhí, giải quyết bài toán thực tế: Lọc nước vùng lũ, Đèn giao thông thông minh.",
+                icon: Users,
+                color: "text-blue-400",
+                border: "border-blue-500/20"
+              },
+              {
+                title: "Mô hình 5E",
+                subtitle: "Quy trình khép kín",
+                desc: "Gắn kết - Khám phá - Giải thích - Áp dụng - Đánh giá. Giúp kiến thức neo sâu vào tư duy.",
+                icon: Zap,
+                color: "text-yellow-400",
+                border: "border-yellow-500/20"
+              },
+              {
+                title: "Engineering Design",
+                subtitle: "Tư duy Kỹ thuật",
+                desc: "Hỏi -> Tưởng tượng -> Kế hoạch -> Chế tạo -> Thử nghiệm -> Cải tiến. Tư duy nhà tuyển dụng cần.",
+                icon: Cpu,
+                color: "text-green-400",
+                border: "border-green-500/20"
+              }
+            ].map((card, idx) => (
+              <div key={idx} className={`group bg-slate-800/40 backdrop-blur-sm border ${card.border} p-8 rounded-2xl hover:bg-slate-800/60 transition-all hover:-translate-y-2`}>
+                <div className={`w-14 h-14 rounded-xl bg-slate-900/50 flex items-center justify-center ${card.color} mb-6 group-hover:scale-110 transition-transform`}>
+                  <card.icon size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-1">{card.title}</h3>
+                <p className={`text-sm font-medium ${card.color} mb-4`}>{card.subtitle}</p>
+                <p className="text-slate-400 leading-relaxed text-sm">
+                  {card.desc}
+                </p>
+              </div>
             ))}
           </div>
-        </div>
-      </div>
 
-      {/* CTA Section */}
-      <div className="relative rounded-3xl overflow-hidden glass-panel border-0 p-12 text-center">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-600 to-secondary-600 opacity-90"></div>
-        <div className="relative z-10">
-          <h3 className="text-3xl font-bold mb-4 text-white">Sẵn Sàng Chinh Phục Kỳ Thi?</h3>
-          <p className="text-blue-100 mb-8 max-w-2xl mx-auto text-lg">
-            Tham gia cùng hàng ngàn học sinh khác và nâng cao điểm số môn Công nghệ ngay hôm nay.
-          </p>
-          <button
-            onClick={handleStartLearning}
-            className="bg-white text-primary-600 px-8 py-3 rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-          >
-            Trải Nghiệm Ngay
-          </button>
+          <div className="mt-16 text-center">
+            <div className="inline-flex flex-wrap justify-center gap-3">
+              {["Nhà chống lũ", "Cầu chịu lực", "Vật liệu tái chế", "Thực tiễn Việt Nam"].map((tag, idx) => (
+                <span key={idx} className="px-4 py-2 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-sm">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* SECTION 4: TECHNOLOGY */}
+      <section id="tech" className="relative py-32 px-6 z-10">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div className="order-2 md:order-1 relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-purple-500/20 rounded-3xl blur-3xl -z-10"></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center aspect-square text-center group hover:border-red-500/50 transition-colors">
+                  <Cpu size={48} className="text-red-500 mb-4 group-hover:scale-110 transition-transform" />
+                  <h4 className="font-bold text-white text-lg">Arduino</h4>
+                  <p className="text-xs text-slate-500 mt-1">Phần cứng & Mạch</p>
+                </div>
+                <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center aspect-square text-center group hover:border-blue-500/50 transition-colors mt-8">
+                  <Code size={48} className="text-blue-500 mb-4 group-hover:scale-110 transition-transform" />
+                  <h4 className="font-bold text-white text-lg">C++</h4>
+                  <p className="text-xs text-slate-500 mt-1">Tư duy Logic</p>
+                </div>
+                <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center aspect-square text-center group hover:border-yellow-500/50 transition-colors -mt-8">
+                  <Bot size={48} className="text-yellow-500 mb-4 group-hover:scale-110 transition-transform" />
+                  <h4 className="font-bold text-white text-lg">Python</h4>
+                  <p className="text-xs text-slate-500 mt-1">Xử lý dữ liệu AI</p>
+                </div>
+                <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center aspect-square text-center group hover:border-purple-500/50 transition-colors">
+                  <Globe size={48} className="text-purple-500 mb-4 group-hover:scale-110 transition-transform" />
+                  <h4 className="font-bold text-white text-lg">IoT</h4>
+                  <p className="text-xs text-slate-500 mt-1">Vạn vật kết nối</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="order-1 md:order-2 space-y-8">
+              <div className="flex items-center gap-3 text-red-400 font-bold text-lg">
+                <Code size={24} />
+                <span>CÔNG NGHỆ CỐT LÕI</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+                LÀM CHỦ NGÔN NGỮ <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-500">
+                  MÁY TÍNH & IoT
+                </span>
+              </h2>
+              <div className="space-y-6 text-lg text-slate-300">
+                <div className="pl-6 border-l-2 border-red-500/30">
+                  <h4 className="text-white font-bold mb-2">Phần Cứng (Hardware)</h4>
+                  <p className="text-sm leading-relaxed text-slate-400">
+                    Bám sát Công nghệ 8 & 10. Sử dụng Arduino/ESP32. Học sinh tự tay xây dựng Smart Home, Robot tránh vật cản, Trạm quan trắc thời tiết. Hiểu sâu về cảm biến và cơ cấu chấp hành.
+                  </p>
+                </div>
+                <div className="pl-6 border-l-2 border-blue-500/30">
+                  <h4 className="text-white font-bold mb-2">Phần Mềm (Software)</h4>
+                  <p className="text-sm leading-relaxed text-slate-400">
+                    Đón đầu Tin học 10 & 11. Tiếp cận Python - ngôn ngữ số 1 thế giới. Từ thuật toán cơ bản đến giải quyết bài toán thực tế. Biến dòng code thành công cụ quyền năng.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5: FUTURE */}
+      <section id="future" className="relative py-32 px-6 z-10 bg-gradient-to-b from-slate-900 to-[#0f172a]">
+        <div className="max-w-4xl mx-auto text-center space-y-10">
+          <div className="inline-block p-4 rounded-full bg-purple-500/10 text-purple-400 mb-4">
+            <Bot size={48} />
+          </div>
+
+          <h2 className="text-4xl md:text-6xl font-bold leading-tight">
+            CHUẨN BỊ CHO TƯƠNG LAI <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
+              NGHỀ NGHIỆP CHƯA TỒN TẠI
+            </span>
+          </h2>
+
+          <p className="text-xl text-slate-300 leading-relaxed">
+            "65% học sinh tiểu học hôm nay sẽ làm những công việc hoàn toàn mới trong tương lai." <br />
+            STEM và AI là tấm vé thông hành vào kỷ nguyên số.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-6 text-left">
+            <div className="bg-slate-800/30 p-6 rounded-xl border border-slate-700/50">
+              <h4 className="font-bold text-white mb-2">Hiểu bản chất AI</h4>
+              <p className="text-sm text-slate-400">Nắm vững Machine Learning và ứng dụng thực tế.</p>
+            </div>
+            <div className="bg-slate-800/30 p-6 rounded-xl border border-slate-700/50">
+              <h4 className="font-bold text-white mb-2">Đạo đức Công nghệ</h4>
+              <p className="text-sm text-slate-400">Sử dụng công nghệ có trách nhiệm và nhân văn.</p>
+            </div>
+            <div className="bg-slate-800/30 p-6 rounded-xl border border-slate-700/50">
+              <h4 className="font-bold text-white mb-2">Tinh thần Việt Nam</h4>
+              <p className="text-sm text-slate-400">Giải quyết thách thức của Việt Nam bằng trí tuệ Việt.</p>
+            </div>
+          </div>
+
+          <div className="pt-12 border-t border-slate-800">
+            <p className="text-3xl font-bold text-blue-400 italic mb-8">
+              "Hôm nay là Học sinh - Ngày mai là Nhà kiến tạo."
+            </p>
+            <button
+              onClick={handleStartLearning}
+              className="px-10 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-full font-bold text-xl transition-all shadow-xl shadow-purple-900/20 transform hover:scale-105"
+            >
+              Bắt Đầu Hành Trình Ngay
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* Login Modal */}
       <LoginModal
@@ -294,4 +373,3 @@ const Home: React.FC = () => {
 };
 
 export default Home;
-

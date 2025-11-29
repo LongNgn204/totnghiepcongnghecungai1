@@ -434,6 +434,22 @@ export const checkAchievements = (): void => {
       case 'total':
         progress = stats.totalTime;
         break;
+
+      case 'lab': {
+        const labSessions = sessions.filter(s => s.activity === 'lab');
+        const labCount = labSessions.length;
+        const labMinutes = labSessions.reduce((sum, s) => sum + (s.duration || 0), 0);
+        if (achievement.id === 'lab_one_hour') {
+          progress = labMinutes; // requirement = 60
+        } else if (achievement.id === 'lab_ten_runs') {
+          progress = labCount; // requirement = 10
+        } else if (achievement.id === 'lab_first_run') {
+          progress = labCount > 0 ? 1 : 0; // requirement = 1
+        } else {
+          progress = labCount;
+        }
+        break;
+      }
     }
     
     achievement.currentProgress = progress;

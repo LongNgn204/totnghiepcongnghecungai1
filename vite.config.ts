@@ -6,6 +6,13 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
+    test: {
+      environment: 'jsdom',
+      globals: true,
+      setupFiles: './vitest.setup.ts',
+      css: true,
+      restoreMocks: true
+    },
     server: {
       port: 3000,
       host: '0.0.0.0',
@@ -75,7 +82,7 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     build: {
-      chunkSizeWarningLimit: 1024,
+      chunkSizeWarningLimit: 2048,
       rollupOptions: {
         output: {
           manualChunks: {

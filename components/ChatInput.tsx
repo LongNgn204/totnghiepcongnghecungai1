@@ -1,4 +1,5 @@
 import React, { ChangeEvent, ClipboardEvent, RefObject, useState, useEffect, useRef } from 'react';
+import { Sparkles, Brain } from 'lucide-react';
 
 interface ChatInputProps {
   inputMessage: string;
@@ -10,6 +11,9 @@ interface ChatInputProps {
   onFileSelect: (e: ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: RefObject<HTMLInputElement>;
   onPaste: (e: ClipboardEvent) => void;
+  onEnhanceClick?: () => void;
+  memoryEnabled?: boolean;
+  onToggleMemory?: () => void;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -21,7 +25,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
   onRemoveFile,
   onFileSelect,
   fileInputRef,
-  onPaste
+  onPaste,
+  onEnhanceClick,
+  memoryEnabled,
+  onToggleMemory
 }) => {
   const [isListening, setIsListening] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -100,9 +107,21 @@ const ChatInput: React.FC<ChatInputProps> = ({
             onClick={() => fileInputRef.current?.click()}
             className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-all mb-0.5"
             title="Đính kèm ảnh/file"
+            aria-label="Đính kèm ảnh hoặc tệp"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
           </button>
+
+          {/* Enhance prompt */}
+          {onEnhanceClick && (
+            <button
+              onClick={onEnhanceClick}
+              className="p-2.5 text-purple-600 hover:text-purple-700 hover:bg-purple-100/60 dark:hover:bg-purple-900/40 rounded-full transition-all mb-0.5"
+              title="Nâng cao prompt"
+            >
+              <Sparkles className="w-5 h-5" />
+            </button>
+          )}
 
           <textarea
             value={inputMessage}
@@ -115,6 +134,18 @@ const ChatInput: React.FC<ChatInputProps> = ({
             disabled={loading}
             style={{ height: 'auto', overflowY: 'auto' }}
           />
+
+          {/* Memory toggle */}
+          {onToggleMemory !== undefined && (
+            <button
+              onClick={onToggleMemory}
+              className={`p-2.5 rounded-full mb-0.5 transition-all ${memoryEnabled ? 'bg-emerald-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-800 dark:hover:text-white'}`}
+              title={memoryEnabled ? 'Tắt ghi nhớ ngữ cảnh' : 'Bật ghi nhớ ngữ cảnh'}
+              aria-pressed={memoryEnabled}
+            >
+              <Brain className="w-5 h-5" />
+            </button>
+          )}
 
           <button
             onClick={toggleListening}

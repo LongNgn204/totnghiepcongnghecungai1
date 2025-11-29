@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChatMessage } from '../utils/chatStorage';
 import MessageContent from './MessageContent';
+import FeedbackForm from './FeedbackForm';
+import { ThumbsUp, ThumbsDown } from 'lucide-react';
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -25,6 +27,16 @@ const MessageList: React.FC<MessageListProps> = ({
   onFileInputClick,
   messagesEndRef
 }) => {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackMessageId, setFeedbackMessageId] = useState<string | null>(null);
+  const [defaultRating, setDefaultRating] = useState<'up' | 'down' | undefined>(undefined);
+
+  const openFeedback = (messageId: string, rating: 'up' | 'down') => {
+    setFeedbackMessageId(messageId);
+    setDefaultRating(rating);
+    setFeedbackOpen(true);
+  };
+
   return (
     <div
       className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 bg-white dark:bg-gray-800"
@@ -93,6 +105,12 @@ const MessageList: React.FC<MessageListProps> = ({
 
                 {message.role === 'assistant' && (
                   <div className="mt-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => openFeedback(message.id, 'up')} className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition-colors" title="Hữu ích">
+                      <ThumbsUp className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => openFeedback(message.id, 'down')} className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors" title="Chưa tốt">
+                      <ThumbsDown className="w-4 h-4" />
+                    </button>
                     <button onClick={() => navigator.clipboard.writeText(message.content)} className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors" title="Sao chép">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     </button>
@@ -114,6 +132,12 @@ const MessageList: React.FC<MessageListProps> = ({
           <div ref={messagesEndRef} />
         </div>
       )}
+      <FeedbackForm
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        messageId={feedbackMessageId || ''}
+        defaultRating={defaultRating}
+      />
     </div>
   );
 };

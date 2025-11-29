@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
-import { Play, RotateCcw, Send, ChevronDown, CheckCircle, Pencil, Code2, Cpu, MessageCircle, AlertCircle, Search, Sun, Moon, Copy, Download, FilePlus } from 'lucide-react';
-import { codingLessons, getLessonsByLanguage, getLessonById, Lesson } from '../data/codingLessons';
+import { Play, RotateCcw, Send, ChevronDown, CheckCircle, Pencil, Code2, Cpu, MessageCircle, AlertCircle, Search, Sun, Moon, Copy, Download } from 'lucide-react';
+import { getLessonsByLanguage, getLessonById, Lesson } from '../data/codingLessons';
 import ArduinoSimulator from './ArduinoSimulator';
 import toast from 'react-hot-toast';
 import { generateContent } from '../utils/geminiAPI';
+import { recordStudySession, getUnlockedAchievements } from '../utils/studyProgress';
 
 // Templates for quick insert
 const pyTemplates: Record<string, string> = {
@@ -242,9 +243,9 @@ const CodingLab: React.FC = () => {
           if (trimmed.includes('=') && !trimmed.startsWith('#')) {
             const varMatch = trimmed.match(/(\w+)\s*=\s*(.+)/);
             if (varMatch) {
-              const varName = varMatch[1];
-              const varValue = varMatch[2].replace(/['"]/g, '');
-              // Store for later use
+              // Variable assignment detected - could be used for tracking
+              // const varName = varMatch[1];
+              // const varValue = varMatch[2].replace(/['"]/g, '');
             }
           }
         }
@@ -279,6 +280,16 @@ const CodingLab: React.FC = () => {
   };
 
   const runCurrent = () => {
+    // record lab session for progress & achievements
+    const before = getUnlockedAchievements().map(a => a.id);
+    try {
+      recordStudySession({ activity: 'lab', duration: 1, subject: language, grade: 'Lab' });
+    } catch {}
+    const after = getUnlockedAchievements().map(a => a.id);
+    after.filter(id => !before.includes(id)).forEach(id => {
+      toast.success(`Thành tựu mới: ${id.replaceAll('_',' ')}`);
+    });
+
     if (language === 'python') {
       runPythonCode();
     } else {
@@ -699,7 +710,7 @@ const CodingLab: React.FC = () => {
                     </div>
                     <div className="p-4 border-t border-gray-200 bg-gray-50">
                       <div className="flex gap-2">
-                        <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && sendAIMessage()} placeholder="Hỏi AI..." className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                        <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendAIMessage()} placeholder="Hỏi AI..." className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                         <button onClick={sendAIMessage} disabled={isAILoading || !chatInput.trim()} className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-3 py-2 rounded-lg transition-colors"><Send size={16} /></button>
                       </div>
                       <p className="text-xs text-gray-500 mt-2 flex items-start gap-1"><AlertCircle size={12} className="mt-0.5 flex-shrink-0" />AI sẽ gợi ý, không cho đáp án ngay lập tức</p>
