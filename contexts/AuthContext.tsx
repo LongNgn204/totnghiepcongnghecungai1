@@ -1,6 +1,6 @@
 // AuthContext.tsx - Handles authentication state and integrates sync pause on 401
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { syncManager } from '../utils/syncManager';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { resumeSync, pauseSync } from '../utils/syncManager';
 
 interface User {
   id: string;
@@ -34,21 +34,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Auto‑login with stored token on mount
+  const logout = useCallback(() => {
+    const currentToken = localStorage.getItem('auth_token');
+    if (currentToken) {
+      fetch(`${API_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${currentToken}`,
+          'Content-Type': 'application/json',
+        },
+      }).catch(err => console.error('Logout error:', err));
+    }
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    localStorage.removeItem('user_id');
+    pauseSync();
+  }, []);
+
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = localStorage.getItem('auth_token');
-      const storedUser = localStorage.getItem('user_data');
-
       if (storedToken) {
         setToken(storedToken);
-        if (storedUser) {
-          try {
-            setUser(JSON.parse(storedUser));
-          } catch (e) {
-            console.error('Error parsing stored user:', e);
-          }
-        }
         try {
           const response = await fetch(`${API_URL}/api/auth/me`, {
             headers: {
@@ -61,23 +70,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const userData = result.data || result;
             setUser(userData);
             localStorage.setItem('user_data', JSON.stringify(userData));
-          } else if (response.status === 401) {
-            // Token invalid – clear storage and pause background sync
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('user_data');
-            localStorage.removeItem('user_id');
-            syncManager.pauseSync();
-            setUser(null);
-            setToken(null);
+            resumeSync(); // Resume sync if token is valid
+          } else {
+            logout();
           }
         } catch (error) {
           console.error('Error verifying token:', error);
+          logout();
         }
+      } else {
+        pauseSync(); // Ensure sync is paused if no token
       }
       setLoading(false);
     };
     initAuth();
-  }, []);
+
+    const handleAuthError = () => logout();
+    window.addEventListener('auth-error', handleAuthError);
+
+    return () => {
+      window.removeEventListener('auth-error', handleAuthError);
+    };
+  }, [logout]);
+
+  const handleSuccessfulAuth = (data: any) => {
+    if (!data.user || !data.token) throw new Error('Dữ liệu xác thực không hợp lệ');
+    setUser(data.user);
+    setToken(data.token);
+    localStorage.setItem('auth_token', data.token);
+    localStorage.setItem('user_data', JSON.stringify(data.user));
+    localStorage.setItem('user_id', data.user.id);
+    resumeSync();
+  };
 
   const register = async (email: string, password: string, displayName: string) => {
     const response = await fetch(`${API_URL}/api/auth/register`, {
@@ -87,13 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Đăng ký thất bại');
-    const data = result.data || result;
-    if (!data.user || !data.token) throw new Error('Dữ liệu đăng ký không hợp lệ');
-    setUser(data.user);
-    setToken(data.token);
-    localStorage.setItem('auth_token', data.token);
-    localStorage.setItem('user_data', JSON.stringify(data.user));
-    localStorage.setItem('user_id', data.user.id);
+    handleSuccessfulAuth(result.data || result);
   };
 
   const login = async (identifier: string, password: string) => {
@@ -106,40 +124,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Đăng nhập thất bại');
-    const data = result.data || result;
-    if (!data.user || !data.token) throw new Error('Dữ liệu đăng nhập không hợp lệ');
-    setUser(data.user);
-    setToken(data.token);
-    localStorage.setItem('auth_token', data.token);
-    localStorage.setItem('user_data', JSON.stringify(data.user));
-    localStorage.setItem('user_id', data.user.id);
-  };
-
-  const logout = () => {
-    if (token) {
-      fetch(`${API_URL}/api/auth/logout`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }).catch(err => console.error('Logout error:', err));
-    }
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
-    localStorage.removeItem('user_id');
-    // Ensure sync is paused after explicit logout
-    syncManager.pauseSync();
+    handleSuccessfulAuth(result.data || result);
   };
 
   const updateProfile = async (data: Partial<User>) => {
-    if (!token) throw new Error('Not authenticated');
+    const currentToken = localStorage.getItem('auth_token');
+    if (!currentToken) throw new Error('Not authenticated');
     const response = await fetch(`${API_URL}/api/auth/profile`, {
       method: 'PUT',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${currentToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),

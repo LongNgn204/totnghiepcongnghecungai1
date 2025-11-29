@@ -7,26 +7,25 @@ function getHeaders(): HeadersInit {
     'Content-Type': 'application/json',
   };
 
-  // Add auth token if available
   const token = localStorage.getItem('auth_token');
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Add user ID for backward compatibility
-  const userId = localStorage.getItem('user_id');
-  if (userId) {
-    headers['X-User-ID'] = userId;
-  } else {
-    const newId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem('user_id', newId);
-    headers['X-User-ID'] = newId;
-  }
-
   return headers;
 }
 
-async function fetchAPI(endpoint: string, options: RequestInit = {}) {
+export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
+  const isAuthEndpoint = endpoint.startsWith('/api/auth/');
+  const token = localStorage.getItem('auth_token');
+
+  // Skip non-auth API calls if no token is present
+  if (!token && !isAuthEndpoint) {
+    console.warn(`Skipping API call to ${endpoint}: No auth token found.`);
+    // Return a consistent empty/error-like state to prevent crashes
+    return Promise.resolve({ data: [], error: 'Not authenticated' });
+  }
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
@@ -36,202 +35,75 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Network error' }));
+    if (response.status === 401) {
+      console.error('Unauthorized access. Token may be invalid or expired.');
+      // Dispatch a global event to trigger logout in the AuthContext
+      window.dispatchEvent(new Event('auth-error'));
+    }
+    const error = await response.json().catch(() => ({ error: 'Network error or invalid JSON response' }));
     throw new Error(error.error || `API Error: ${response.status}`);
   }
 
   return response.json();
 }
 
-// ============= USERS API =============
-
-export const usersAPI = {
-  register: async (name?: string) => {
-    return fetchAPI('/api/users/register', {
-      method: 'POST',
-      body: JSON.stringify({ name }),
-    });
-  },
-
-  getMe: async () => {
-    return fetchAPI('/api/users/me');
-  },
-
-  updateProfile: async (data: { name?: string; email?: string; avatar?: string }) => {
-    return fetchAPI('/api/users/me', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-};
-
-// ============= EXAMS API =============
-
-export const examsAPI = {
-  create: async (exam: any) => {
-    return fetchAPI('/api/exams', {
-      method: 'POST',
-      body: JSON.stringify(exam),
-    });
-  },
-
-  getAll: async (limit = 20, offset = 0) => {
-    return fetchAPI(`/api/exams?limit=${limit}&offset=${offset}`);
-  },
-
-  getById: async (id: string) => {
-    return fetchAPI(`/api/exams/${id}`);
-  },
-
-  delete: async (id: string) => {
-    return fetchAPI(`/api/exams/${id}`, { method: 'DELETE' });
-  },
-
-  getStats: async () => {
-    return fetchAPI('/api/exams/stats');
-  },
-};
-
-// ============= FLASHCARDS API =============
-
-export const flashcardsAPI = {
-  decks: {
-    create: async (deck: any) => {
-      return fetchAPI('/api/flashcards/decks', {
-        method: 'POST',
-        body: JSON.stringify(deck),
-      });
-    },
-
-    getAll: async () => {
-      return fetchAPI('/api/flashcards/decks');
-    },
-
-    getById: async (id: string) => {
-      return fetchAPI(`/api/flashcards/decks/${id}`);
-    },
-
-    delete: async (id: string) => {
-      return fetchAPI(`/api/flashcards/decks/${id}`, { method: 'DELETE' });
-    },
-
-    addCard: async (deckId: string, card: any) => {
-      return fetchAPI(`/api/flashcards/decks/${deckId}/cards`, {
-        method: 'POST',
-        body: JSON.stringify(card),
-      });
-    },
-  },
-
-  cards: {
-    update: async (id: string, updates: any) => {
-      return fetchAPI(`/api/flashcards/cards/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(updates),
-      });
-    },
-
-    delete: async (id: string) => {
-      return fetchAPI(`/api/flashcards/cards/${id}`, { method: 'DELETE' });
-    },
-  },
-};
-
-// ============= CHAT API =============
-
-export const chatAPI = {
-  create: async (session: any) => {
-    return fetchAPI('/api/chat/sessions', {
-      method: 'POST',
-      body: JSON.stringify(session),
-    });
-  },
-
-  getAll: async () => {
-    return fetchAPI('/api/chat/sessions');
-  },
-
-  getById: async (id: string) => {
-    return fetchAPI(`/api/chat/sessions/${id}`);
-  },
-
-  update: async (id: string, messages: any[]) => {
-    return fetchAPI(`/api/chat/sessions/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ messages }),
-    });
-  },
-
-  delete: async (id: string) => {
-    return fetchAPI(`/api/chat/sessions/${id}`, { method: 'DELETE' });
-  },
-};
-
-// ============= PROGRESS API =============
-
-export const progressAPI = {
-  recordSession: async (session: any) => {
-    return fetchAPI('/api/progress/sessions', {
-      method: 'POST',
-      body: JSON.stringify(session),
-    });
-  },
-
-  getStats: async () => {
-    return fetchAPI('/api/progress/stats');
-  },
-
-  getChartData: async (period: number = 7) => {
-    return fetchAPI(`/api/progress/chart/${period}`);
-  },
-};
-
-// ============= LEADERBOARD API =============
-
-export const leaderboardAPI = {
-  get: async () => {
-    return fetchAPI('/api/leaderboard');
-  },
-};
-
-// ============= ADMIN API =============
-
-export const adminAPI = {
-  getStats: async () => {
-    return fetchAPI('/api/admin/stats');
-  },
-
-  getUsers: async () => {
-    return fetchAPI('/api/admin/users');
-  },
-
-  getChats: async () => {
-    return fetchAPI('/api/admin/chats');
-  },
-
-  getExamStats: async () => {
-    return fetchAPI('/api/admin/exams/stats');
-  },
-};
-
-// ============= DASHBOARD API =============
-
-export const dashboardAPI = {
-  getStats: async () => {
-    return fetchAPI('/api/dashboard/stats');
-  },
-};
-
-// Export all
 export const api = {
-  users: usersAPI,
-  exams: examsAPI,
-  flashcards: flashcardsAPI,
-  chat: chatAPI,
-  progress: progressAPI,
-  leaderboard: leaderboardAPI,
-  dashboard: dashboardAPI,
-  admin: adminAPI,
+  auth: {
+    register: (data: any) => fetchAPI('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+    login: (data: any) => fetchAPI('/api/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+    logout: () => fetchAPI('/api/auth/logout', { method: 'POST' }),
+    me: () => fetchAPI('/api/auth/me'),
+    updateProfile: (data: any) => fetchAPI('/api/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
+    changePassword: (data: any) => fetchAPI('/api/auth/change-password', { method: 'POST', body: JSON.stringify(data) }),
+    forgotPassword: (data: any) => fetchAPI('/api/auth/forgot-password', { method: 'POST', body: JSON.stringify(data) }),
+  },
+  dashboard: {
+    stats: () => fetchAPI('/api/dashboard/stats'),
+  },
+  exams: {
+    getAll: (params?: any) => {
+      const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+      return fetchAPI(`/api/exams${queryString}`);
+    },
+    getById: (id: string) => fetchAPI(`/api/exams/${id}`),
+    create: (data: any) => fetchAPI('/api/exams', { method: 'POST', body: JSON.stringify(data) }),
+    delete: (id: string) => fetchAPI(`/api/exams/${id}`, { method: 'DELETE' }),
+  },
+  flashcards: {
+    decks: {
+      getAll: (params?: any) => {
+        const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+        return fetchAPI(`/api/flashcards/decks${queryString}`);
+      },
+      getById: (id: string) => fetchAPI(`/api/flashcards/decks/${id}`),
+      create: (data: any) => fetchAPI('/api/flashcards/decks', { method: 'POST', body: JSON.stringify(data) }),
+      delete: (id: string) => fetchAPI(`/api/flashcards/decks/${id}`, { method: 'DELETE' }),
+    },
+    cards: {
+      create: (deckId: string, data: any) => fetchAPI(`/api/flashcards/decks/${deckId}/cards`, { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: any) => fetchAPI(`/api/flashcards/cards/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      delete: (id: string) => fetchAPI(`/api/flashcards/cards/${id}`, { method: 'DELETE' }),
+    }
+  },
+  chat: {
+    getAll: (params?: any) => {
+      const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+      return fetchAPI(`/api/chat/sessions${queryString}`);
+    },
+    getById: (id: string) => fetchAPI(`/api/chat/sessions/${id}`),
+    create: (data: any) => fetchAPI('/api/chat/sessions', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) => fetchAPI(`/api/chat/sessions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => fetchAPI(`/api/chat/sessions/${id}`, { method: 'DELETE' }),
+  },
+  progress: {
+    recordSession: (data: any) => fetchAPI('/api/progress/sessions', { method: 'POST', body: JSON.stringify(data) }),
+    getStats: () => fetchAPI('/api/progress/stats'),
+    getChart: (period: string) => fetchAPI(`/api/progress/chart/${period}`),
+  }
 };
+
+export const flashcardsAPI = api.flashcards;
+export const chatAPI = api.chat;
+export const examsAPI = api.exams;
 
 export default api;

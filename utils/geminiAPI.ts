@@ -6,7 +6,7 @@ export interface GeminiResponse {
 }
 
 export const AVAILABLE_MODELS = [
-  { id: 'gemini-1.5-pro', name: 'Gemini 2.5 Pro', description: 'Mô hình mạnh mẽ nhất, hỗ trợ hình ảnh (Next Gen)' },
+  { id: 'gemini-1.5-pro', name: 'Gemini 2.5 Pro', description: 'Mô hình mạnh mẽ nhất (Next Gen)' },
   { id: 'gemini-1.5-flash', name: 'Gemini 2.5 Flash', description: 'Phản hồi nhanh, độ trễ thấp (Turbo)' },
 ];
 
@@ -26,38 +26,46 @@ export async function generateContent(prompt: string, modelId: string = 'gemini-
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/${modelId}:generateContent?key=${API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 8192,
+    const doRequest = async (targetModel: string) => {
+      const response = await fetch(`${BASE_URL}/${targetModel}:generateContent?key=${API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'API request failed');
-    }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-    return {
-      text,
-      success: true,
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }],
+          generationConfig: {
+            temperature: 0.3,
+            topK: 30,
+            topP: 0.9,
+            maxOutputTokens: 8192,
+          },
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const message = errorData?.error?.message || `${response.status}`;
+        throw new Error(message);
+      }
+      return response.json();
     };
+
+    try {
+      const data = await doRequest(modelId);
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      return { text, success: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const shouldFallback = /not found|unsupported|404|invalid model/i.test(msg);
+      if (shouldFallback && modelId !== 'gemini-1.5-flash') {
+        const data = await doRequest('gemini-1.5-flash');
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        return { text, success: true };
+      }
+      throw err;
+    }
   } catch (error) {
     console.error('Gemini API Error:', error);
     return {

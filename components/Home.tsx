@@ -6,19 +6,17 @@ import {
   GraduationCap,
   MessageSquare,
   FileQuestion,
-  Settings,
   BookOpen,
   CheckCircle,
   Zap,
-  Clock,
-  Smartphone,
-  Mail,
-  Phone,
-  HelpCircle,
   Rocket,
   ArrowRight,
   Cpu,
-  Users
+  Users,
+  Phone,
+  Mail,
+  HelpCircle,
+  Sparkles
 } from 'lucide-react';
 
 const Home: React.FC = () => {
@@ -35,299 +33,262 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20">
       {/* Hero Section */}
-      <div className="relative rounded-2xl overflow-hidden mb-12 bg-white border border-gray-100 shadow-sm">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-indigo-50 opacity-50"></div>
-        <div className="relative z-10 p-12 md:p-20 text-center">
-          <div className="flex justify-center mb-8">
-            <div className="p-4 bg-blue-100 rounded-full">
-              <GraduationCap size={64} className="text-blue-600" />
-            </div>
+      <div className="relative rounded-3xl overflow-hidden mb-16 glass-panel border-0 p-1">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-500/10 dark:from-primary-900/20 dark:to-secondary-900/20"></div>
+
+        <div className="relative z-10 px-6 py-16 md:py-24 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-100/50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-sm font-medium mb-8 animate-fade-in border border-primary-200/50 dark:border-primary-700/30 backdrop-blur-sm">
+            <Sparkles size={16} />
+            <span>Hỗ trợ bởi Gemini 2.5 Pro</span>
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900 tracking-tight">
-            Nền Tảng Ôn Thi THPT <span className="text-blue-600">Công Nghệ</span>
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight text-gray-900 dark:text-white animate-slide-up">
+            Ôn Thi THPT <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-500 dark:from-primary-400 dark:to-secondary-400">Công Nghệ</span>
           </h1>
 
-          <h2 className="text-xl md:text-2xl font-medium mb-8 text-gray-600 max-w-3xl mx-auto">
-            Hệ thống luyện thi thông minh được hỗ trợ bởi <span className="text-blue-600 font-bold">Gemini 2.5 Pro</span>.
-            Bám sát chương trình GDPT 2018.
-          </h2>
+          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-10 leading-relaxed animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            Hệ thống luyện thi thông minh, bám sát chương trình GDPT 2018.
+            <br className="hidden md:block" />
+            Biến việc học trở nên thú vị và hiệu quả hơn bao giờ hết.
+          </p>
 
-          <div className="flex flex-wrap justify-center gap-4 mt-8">
+          <div className="flex flex-col sm:flex-row justify-center gap-4 animate-slide-up" style={{ animationDelay: '0.2s' }}>
             <button
               onClick={handleStartLearning}
-              className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200 flex items-center gap-2 transform hover:-translate-y-1"
+              className="btn-primary text-lg px-8 py-4 flex items-center justify-center gap-2 group"
             >
-              Bắt Đầu Học Ngay <ArrowRight size={20} />
+              Bắt Đầu Ngay <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
-            <Link to="/san-pham-3" className="bg-white text-gray-700 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-50 transition-all border border-gray-200 shadow-sm hover:shadow-md flex items-center gap-2">
+            <Link to="/san-pham-3" className="btn-secondary text-lg px-8 py-4 flex items-center justify-center gap-2">
               <FileQuestion size={20} /> Làm Đề Thi Thử
             </Link>
           </div>
 
-          <div className="mt-10 flex justify-center gap-6 text-sm text-gray-500">
-            <span className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> SGK KNTT & Cánh Diều</span>
-            <span className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> AI Gemini 2.5 Pro</span>
-            <span className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> Miễn phí 100%</span>
+          <div className="mt-12 flex flex-wrap justify-center gap-6 text-sm font-medium text-gray-500 dark:text-gray-400 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+            <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
+              <CheckCircle size={16} className="text-green-500" /> SGK KNTT & Cánh Diều
+            </span>
+            <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
+              <CheckCircle size={16} className="text-green-500" /> Miễn phí 100%
+            </span>
           </div>
         </div>
-      </div>
-
-      {/* Introduction Section */}
-      <div className="mb-20 text-center max-w-4xl mx-auto px-4">
-        <h2 className="text-3xl font-bold text-gray-900 mb-6">Về Nền Tảng Ôn Thi Công Nghệ</h2>
-        <p className="text-lg text-gray-600 leading-relaxed">
-          Chúng tôi xây dựng một hệ sinh thái học tập toàn diện, nơi công nghệ AI tiên tiến gặp gỡ chương trình giáo dục chuẩn mực.
-          Mục tiêu là biến việc ôn thi môn Công nghệ trở nên thú vị, hiệu quả và dễ dàng tiếp cận cho mọi học sinh THPT trên cả nước.
-        </p>
       </div>
 
       {/* Value Proposition Grid */}
-      <div className="grid md:grid-cols-3 gap-8 mb-20 px-4">
-        <div className="bg-blue-50 rounded-3xl p-8 border border-blue-100">
-          <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-600/20">
-            <Rocket className="text-white" size={28} />
+      <div className="grid md:grid-cols-3 gap-8 mb-20">
+        <div className="glass-card p-8 rounded-2xl group hover:-translate-y-2 transition-transform duration-300">
+          <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-6 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-300">
+            <Rocket size={28} />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">Mục Tiêu Của Chúng Tôi</h3>
-          <p className="text-gray-600">
-            Giúp học sinh nắm vững kiến thức cốt lõi, phát triển tư duy giải quyết vấn đề và đạt điểm số tối đa trong kỳ thi THPT Quốc gia.
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Mục Tiêu</h3>
+          <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+            Giúp học sinh nắm vững kiến thức cốt lõi, phát triển tư duy và đạt điểm số tối đa trong kỳ thi THPT Quốc gia.
           </p>
         </div>
 
-        <div className="bg-indigo-50 rounded-3xl p-8 border border-indigo-100">
-          <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-600/20">
-            <Users className="text-white" size={28} />
+        <div className="glass-card p-8 rounded-2xl group hover:-translate-y-2 transition-transform duration-300">
+          <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mb-6 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-300">
+            <Users size={28} />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">Dành Cho Ai?</h3>
-          <p className="text-gray-600">
-            Học sinh lớp 10, 11, 12 đang theo học bộ sách Kết nối tri thức hoặc Cánh diều, và các thầy cô giáo cần nguồn tài liệu phong phú.
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Đối Tượng</h3>
+          <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+            Học sinh lớp 10, 11, 12 theo học bộ sách Kết nối tri thức hoặc Cánh diều, và giáo viên cần nguồn tài liệu.
           </p>
         </div>
 
-        <div className="bg-purple-50 rounded-3xl p-8 border border-purple-100">
-          <div className="w-14 h-14 bg-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-purple-600/20">
-            <Zap className="text-white" size={28} />
+        <div className="glass-card p-8 rounded-2xl group hover:-translate-y-2 transition-transform duration-300">
+          <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center mb-6 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform duration-300">
+            <Zap size={28} />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">Phương Pháp Học</h3>
-          <p className="text-gray-600">
-            Kết hợp học lý thuyết qua Chat AI, luyện tập với ngân hàng câu hỏi thông minh và theo dõi tiến độ qua biểu đồ trực quan.
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Phương Pháp</h3>
+          <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+            Kết hợp học lý thuyết qua Chat AI, luyện tập với ngân hàng câu hỏi thông minh và theo dõi tiến độ.
           </p>
         </div>
       </div>
 
-      {/* Detailed Features */}
-      <div className="space-y-20 mb-20 px-4">
-        {/* Feature 1: Curriculum */}
+      {/* Features Section */}
+      <div className="space-y-24 mb-24">
+        {/* Feature 1 */}
         <div className="flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-bold mb-6">
+          <div className="flex-1 space-y-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-bold">
               <BookOpen size={16} /> Chương Trình Chuẩn
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-4">Đầy Đủ Chương Trình Học Tập</h3>
-            <p className="text-gray-600 text-lg mb-6">
-              Hệ thống bao phủ toàn bộ kiến thức của hai bộ sách giáo khoa phổ biến nhất hiện nay:
+            <h3 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+              Đầy Đủ Chương Trình Học Tập
+            </h3>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Hệ thống bao phủ toàn bộ kiến thức của hai bộ sách giáo khoa phổ biến nhất hiện nay, cập nhật liên tục.
             </p>
             <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <CheckCircle className="text-green-500 mt-1 flex-shrink-0" size={20} />
-                <span className="text-gray-700"><strong>Công nghệ Công nghiệp:</strong> Điện, Điện tử, Kỹ thuật cơ khí...</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="text-green-500 mt-1 flex-shrink-0" size={20} />
-                <span className="text-gray-700"><strong>Công nghệ Nông nghiệp:</strong> Trồng trọt, Chăn nuôi, Lâm nghiệp...</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="text-green-500 mt-1 flex-shrink-0" size={20} />
-                <span className="text-gray-700">Cập nhật liên tục theo các văn bản hướng dẫn mới nhất của Bộ GD&ĐT.</span>
-              </li>
+              {['Công nghệ Công nghiệp: Điện, Điện tử...', 'Công nghệ Nông nghiệp: Trồng trọt, Lâm nghiệp...', 'Cập nhật theo văn bản mới nhất của Bộ GD&ĐT'].map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
+                  <CheckCircle className="text-green-500 mt-1 flex-shrink-0" size={20} />
+                  <span>{item}</span>
+                </li>
+              ))}
             </ul>
           </div>
-          <div className="flex-1 bg-gray-100 rounded-3xl p-8 aspect-video flex items-center justify-center">
-            {/* Placeholder for Curriculum Image */}
-            <BookOpen size={120} className="text-gray-300" />
+          <div className="flex-1 glass-panel p-8 rounded-3xl aspect-video flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 overflow-hidden relative group">
+            <img
+              src="/assets/images/feature-1.png"
+              alt="Đầy Đủ Chương Trình Học Tập"
+              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 rounded-2xl shadow-sm"
+            />
           </div>
         </div>
 
-        {/* Feature 2: AI Q&A */}
+        {/* Feature 2 */}
         <div className="flex flex-col md:flex-row-reverse items-center gap-12">
-          <div className="flex-1">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-bold mb-6">
-              <MessageSquare size={16} /> Trợ Lý Ảo Thông Minh
+          <div className="flex-1 space-y-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-bold">
+              <MessageSquare size={16} /> Trợ Lý Ảo
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-4">Hỏi Đáp Với AI Gemini 2.5 Pro</h3>
-            <p className="text-gray-600 text-lg mb-6">
-              Không còn nỗi lo "bí" bài. Trợ lý AI của chúng tôi sẵn sàng giải đáp mọi thắc mắc 24/7:
+            <h3 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+              Hỏi Đáp Với AI Gemini 2.5 Pro
+            </h3>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Không còn nỗi lo "bí" bài. Trợ lý AI của chúng tôi sẵn sàng giải đáp mọi thắc mắc 24/7.
             </p>
             <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <CheckCircle className="text-blue-500 mt-1 flex-shrink-0" size={20} />
-                <span className="text-gray-700">Giải thích khái niệm khó hiểu một cách đơn giản, trực quan.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="text-blue-500 mt-1 flex-shrink-0" size={20} />
-                <span className="text-gray-700">Phân tích đề bài và hướng dẫn phương pháp giải chi tiết.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="text-blue-500 mt-1 flex-shrink-0" size={20} />
-                <span className="text-gray-700">Gợi ý các tài liệu tham khảo liên quan để mở rộng kiến thức.</span>
-              </li>
+              {['Giải thích khái niệm khó hiểu đơn giản, trực quan.', 'Phân tích đề bài và hướng dẫn giải chi tiết.', 'Gợi ý tài liệu tham khảo mở rộng.'].map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
+                  <CheckCircle className="text-blue-500 mt-1 flex-shrink-0" size={20} />
+                  <span>{item}</span>
+                </li>
+              ))}
             </ul>
           </div>
-          <div className="flex-1 bg-gray-100 rounded-3xl p-8 aspect-video flex items-center justify-center">
-            {/* Placeholder for AI Image */}
-            <MessageSquare size={120} className="text-gray-300" />
+          <div className="flex-1 glass-panel p-8 rounded-3xl aspect-video flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 overflow-hidden relative group">
+            <img
+              src="/assets/images/feature-2.png"
+              alt="Hỏi Đáp Với AI Gemini 2.5 Pro"
+              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 rounded-2xl shadow-sm"
+            />
           </div>
         </div>
 
-        {/* Feature 3: Exam Creation */}
+        {/* Feature 3 */}
         <div className="flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-bold mb-6">
-              <FileQuestion size={16} /> Luyện Thi Cực Chất
+          <div className="flex-1 space-y-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full text-sm font-bold">
+              <FileQuestion size={16} /> Luyện Thi
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-4">Tạo Đề Thi Tự Động</h3>
-            <p className="text-gray-600 text-lg mb-6">
-              Công cụ mạnh mẽ giúp bạn làm chủ phòng thi với kho đề vô tận:
+            <h3 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+              Tạo Đề Thi Tự Động
+            </h3>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Công cụ mạnh mẽ giúp bạn làm chủ phòng thi với kho đề vô tận và chấm điểm tức thì.
             </p>
             <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <CheckCircle className="text-purple-500 mt-1 flex-shrink-0" size={20} />
-                <span className="text-gray-700">Tùy chỉnh cấu trúc đề: Số lượng câu, mức độ khó, phạm vi kiến thức.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="text-purple-500 mt-1 flex-shrink-0" size={20} />
-                <span className="text-gray-700">Chấm điểm tự động và nhận xét chi tiết ngay sau khi nộp bài.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="text-purple-500 mt-1 flex-shrink-0" size={20} />
-                <span className="text-gray-700">Lưu lịch sử làm bài để theo dõi sự tiến bộ từng ngày.</span>
-              </li>
+              {['Tùy chỉnh cấu trúc, độ khó, phạm vi kiến thức.', 'Chấm điểm tự động và nhận xét chi tiết.', 'Lưu lịch sử làm bài để theo dõi tiến bộ.'].map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
+                  <CheckCircle className="text-purple-500 mt-1 flex-shrink-0" size={20} />
+                  <span>{item}</span>
+                </li>
+              ))}
             </ul>
           </div>
-          <div className="flex-1 bg-gray-100 rounded-3xl p-8 aspect-video flex items-center justify-center">
-            {/* Placeholder for Exam Image */}
-            <FileQuestion size={120} className="text-gray-300" />
+          <div className="flex-1 glass-panel p-8 rounded-3xl aspect-video flex items-center justify-center bg-gradient-to-br from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20">
+            <FileQuestion size={120} className="text-purple-200 dark:text-purple-800/50" />
           </div>
         </div>
       </div>
 
       {/* Tech Stack */}
-      <div className="mb-16">
+      <div className="mb-20">
         <div className="text-center mb-10">
-          <h3 className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-2">
-            <Cpu className="text-blue-600" /> Công Nghệ Lõi
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center justify-center gap-2">
+            <Cpu className="text-primary-600" /> Công Nghệ Lõi
           </h3>
         </div>
         <div className="flex flex-wrap justify-center gap-6">
-          <div className="px-6 py-3 bg-white rounded-full border border-gray-200 text-gray-600 font-medium shadow-sm flex items-center gap-2">
-            <span className="w-2 h-2 bg-blue-500 rounded-full"></span> Google Gemini 2.5 Pro
-          </div>
-          <div className="px-6 py-3 bg-white rounded-full border border-gray-200 text-gray-600 font-medium shadow-sm flex items-center gap-2">
-            <span className="w-2 h-2 bg-blue-500 rounded-full"></span> React 19
-          </div>
-          <div className="px-6 py-3 bg-white rounded-full border border-gray-200 text-gray-600 font-medium shadow-sm flex items-center gap-2">
-            <span className="w-2 h-2 bg-blue-500 rounded-full"></span> TypeScript
-          </div>
-          <div className="px-6 py-3 bg-white rounded-full border border-gray-200 text-gray-600 font-medium shadow-sm flex items-center gap-2">
-            <span className="w-2 h-2 bg-blue-500 rounded-full"></span> Vite
-          </div>
+          {['Google Gemini 2.5 Pro', 'React 19', 'TypeScript', 'Vite'].map((tech) => (
+            <div key={tech} className="px-6 py-3 glass-panel rounded-full text-gray-600 dark:text-gray-300 font-medium flex items-center gap-2 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-colors">
+              <span className="w-2 h-2 bg-primary-500 rounded-full"></span> {tech}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Contact & Support - Light Theme */}
-      <div className="grid md:grid-cols-2 gap-8 mb-16">
-        <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Phone className="text-blue-600" /> Liên Hệ Hỗ Trợ
+      {/* Contact & FAQ */}
+      <div className="grid md:grid-cols-2 gap-8 mb-20">
+        <div className="glass-card p-8 rounded-2xl">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <Phone className="text-primary-600" /> Liên Hệ Hỗ Trợ
           </h3>
           <div className="space-y-4">
-            <a href="mailto:longhngn.hnue@gmail.com" className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors group">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mr-4 group-hover:scale-110 transition-transform">
-                <Mail size={20} className="text-blue-600" />
+            <a href="mailto:longhngn.hnue@gmail.com" className="flex items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
+              <div className="w-10 h-10 bg-primary-50 dark:bg-primary-900/30 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                <Mail size={20} className="text-primary-600 dark:text-primary-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="font-medium text-gray-900">longhngn.hnue@gmail.com</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                <p className="font-medium text-gray-900 dark:text-white">longhngn.hnue@gmail.com</p>
               </div>
             </a>
-            <a href="https://zalo.me/0896636181" className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors group">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mr-4 group-hover:scale-110 transition-transform">
-                <Phone size={20} className="text-blue-600" />
+            <a href="https://zalo.me/0896636181" className="flex items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
+              <div className="w-10 h-10 bg-primary-50 dark:bg-primary-900/30 rounded-full flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                <Phone size={20} className="text-primary-600 dark:text-primary-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Zalo / Hotline</p>
-                <p className="font-medium text-gray-900">0896636181</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Zalo / Hotline</p>
+                <p className="font-medium text-gray-900 dark:text-white">0896636181</p>
               </div>
             </a>
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <HelpCircle className="text-blue-600" /> Câu Hỏi Thường Gặp
+        <div className="glass-card p-8 rounded-2xl">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <HelpCircle className="text-primary-600" /> Câu Hỏi Thường Gặp
           </h3>
-          <div className="space-y-3">
-            <details className="group">
-              <summary className="flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors font-medium text-gray-700">
-                <span>Sử dụng có mất phí không?</span>
-                <span className="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
-              </summary>
-              <p className="px-3 pb-3 text-sm text-gray-500 leading-relaxed">
-                Hoàn toàn miễn phí. Dự án phi lợi nhuận hỗ trợ cộng đồng học sinh THPT.
-              </p>
-            </details>
-            <div className="h-px bg-gray-100"></div>
-            <details className="group">
-              <summary className="flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors font-medium text-gray-700">
-                <span>Đăng ký tài khoản thế nào?</span>
-                <span className="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
-              </summary>
-              <p className="px-3 pb-3 text-sm text-gray-500 leading-relaxed">
-                Nhấn nút "Đăng nhập" góc phải → chọn tab "Đăng ký". Chỉ cần Email là đủ.
-              </p>
-            </details>
-            <div className="h-px bg-gray-100"></div>
-            <details className="group">
-              <summary className="flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors font-medium text-gray-700">
-                <span>Đề thi có chuẩn không?</span>
-                <span className="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
-              </summary>
-              <p className="px-3 pb-3 text-sm text-gray-500 leading-relaxed">
-                Đề thi được AI tạo dựa trên SGK chuẩn của Bộ GD&ĐT (Cánh Diều, KNTT).
-              </p>
-            </details>
+          <div className="space-y-4">
+            {[
+              { q: 'Sử dụng có mất phí không?', a: 'Hoàn toàn miễn phí. Dự án phi lợi nhuận hỗ trợ cộng đồng.' },
+              { q: 'Đăng ký tài khoản thế nào?', a: 'Nhấn nút "Đăng nhập" → chọn tab "Đăng ký". Chỉ cần Email.' },
+              { q: 'Đề thi có chuẩn không?', a: 'Đề thi được AI tạo dựa trên SGK chuẩn của Bộ GD&ĐT.' }
+            ].map((item, i) => (
+              <details key={i} className="group bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700/50">
+                <summary className="flex items-center justify-between p-4 cursor-pointer font-medium text-gray-700 dark:text-gray-200">
+                  <span>{item.q}</span>
+                  <span className="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <p className="px-4 pb-4 text-sm text-gray-500 dark:text-gray-400 leading-relaxed border-t border-gray-100 dark:border-gray-700/50 pt-3">
+                  {item.a}
+                </p>
+              </details>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* CTA Section - Professional Blue Gradient */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-lg p-12 text-center text-white mb-12 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-[url('/images/pattern.png')] opacity-10"></div>
+      {/* CTA Section */}
+      <div className="relative rounded-3xl overflow-hidden glass-panel border-0 p-12 text-center">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-600 to-secondary-600 opacity-90"></div>
         <div className="relative z-10">
-          <h3 className="text-3xl font-bold mb-4">Sẵn Sàng Chinh Phục Kỳ Thi?</h3>
+          <h3 className="text-3xl font-bold mb-4 text-white">Sẵn Sàng Chinh Phục Kỳ Thi?</h3>
           <p className="text-blue-100 mb-8 max-w-2xl mx-auto text-lg">
             Tham gia cùng hàng ngàn học sinh khác và nâng cao điểm số môn Công nghệ ngay hôm nay.
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <button
-              onClick={handleStartLearning}
-              className="bg-white text-blue-600 px-8 py-3 rounded-lg font-bold hover:bg-blue-50 transition-all shadow-md"
-            >
-              Trải Nghiệm Ngay
-            </button>
-          </div>
+          <button
+            onClick={handleStartLearning}
+            className="bg-white text-primary-600 px-8 py-3 rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          >
+            Trải Nghiệm Ngay
+          </button>
         </div>
       </div>
 
       {/* Login Modal */}
-      {showLoginModal && (
-        <LoginModal
-          isOpen={showLoginModal}
-          onClose={() => setShowLoginModal(false)}
-        />
-      )}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
     </div>
   );
 };

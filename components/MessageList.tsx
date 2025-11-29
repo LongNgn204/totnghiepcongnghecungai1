@@ -27,23 +27,23 @@ const MessageList: React.FC<MessageListProps> = ({
 }) => {
   return (
     <div
-      className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 bg-white"
+      className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 bg-white dark:bg-gray-800"
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
       {isDragging && (
-        <div className="absolute inset-0 bg-blue-50/90 z-50 flex items-center justify-center border-4 border-dashed border-blue-400 rounded-lg transition-all">
+        <div className="absolute inset-0 bg-blue-50/90 dark:bg-blue-900/90 z-50 flex items-center justify-center border-4 border-dashed border-blue-400 rounded-lg transition-all">
           <div className="text-center">
-            <p className="text-2xl font-medium text-blue-600">Thả file vào đây</p>
+            <p className="text-2xl font-medium text-blue-600 dark:text-blue-300">Thả file vào đây</p>
           </div>
         </div>
       )}
 
       {messages.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full text-gray-800">
+        <div className="flex flex-col items-center justify-center h-full text-gray-800 dark:text-gray-200">
           <h3 className="text-4xl font-medium mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Xin chào, tôi có thể giúp gì?</h3>
-          <p className="text-center max-w-lg text-gray-500 mb-12 text-lg">
+          <p className="text-center max-w-lg text-gray-500 dark:text-gray-400 mb-12 text-lg">
             Hỏi về Công nghệ, giải bài tập, hoặc tải lên hình ảnh để phân tích.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
@@ -56,12 +56,12 @@ const MessageList: React.FC<MessageListProps> = ({
       ) : (
         <div className="max-w-4xl mx-auto space-y-8">
           {messages.map((message) => (
-            <div key={message.id} className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
-              <div className={`max-w-[90%] md:max-w-[80%] ${message.role === 'user' ? 'bg-[#f0f4f9] rounded-3xl px-6 py-4 text-gray-800' : 'text-gray-900 px-0 py-0'}`}>
+            <div key={message.id} className={`flex flex-col group ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
+              <div className={`max-w-[90%] md:max-w-[80%] ${message.role === 'user' ? 'bg-blue-50 dark:bg-blue-900/50 rounded-3xl px-6 py-4 text-gray-800 dark:text-gray-200' : 'text-gray-900 dark:text-gray-100 px-0 py-0'}`}>
                 {message.role === 'assistant' && (
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-500 to-red-500 animate-pulse" />
-                    <span className="font-medium text-sm text-gray-600">Gemini</span>
+                    <span className="font-medium text-sm text-gray-600 dark:text-gray-400">Gemini</span>
                   </div>
                 )}
 
@@ -75,13 +75,15 @@ const MessageList: React.FC<MessageListProps> = ({
                           <img
                             src={file.preview}
                             alt={file.name}
-                            className="max-w-[300px] max-h-[300px] rounded-xl border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow object-contain bg-white"
+                            loading="lazy"
+                            decoding="async"
+                            className="max-w-[300px] max-h-[300px] rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-shadow object-contain bg-white dark:bg-gray-800"
                             onClick={() => window.open(file.preview, '_blank')}
                           />
                         ) : (
-                          <div className="flex items-center gap-3 bg-gray-100 px-4 py-3 rounded-xl border border-gray-200">
-                            <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center text-gray-500 font-bold text-xs">FILE</div>
-                            <span className="text-sm font-medium text-gray-700">{file.name}</span>
+                          <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-700 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600">
+                            <div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center text-gray-500 dark:text-gray-300 font-bold text-xs">FILE</div>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{file.name}</span>
                           </div>
                         )}
                       </div>
@@ -91,7 +93,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
                 {message.role === 'assistant' && (
                   <div className="mt-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => navigator.clipboard.writeText(message.content)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors" title="Sao chép">
+                    <button onClick={() => navigator.clipboard.writeText(message.content)} className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors" title="Sao chép">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     </button>
                   </div>
@@ -103,10 +105,10 @@ const MessageList: React.FC<MessageListProps> = ({
             <div className="flex flex-col items-start animate-pulse">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-500 to-red-500" />
-                <span className="font-medium text-sm text-gray-600">Gemini</span>
+                <span className="font-medium text-sm text-gray-600 dark:text-gray-400">Gemini</span>
               </div>
-              <div className="h-4 w-32 bg-gray-200 rounded mb-2"></div>
-              <div className="h-4 w-64 bg-gray-200 rounded"></div>
+              <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+              <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -119,7 +121,7 @@ const MessageList: React.FC<MessageListProps> = ({
 const SuggestionCard: React.FC<{ onClick: () => void; text: string }> = ({ onClick, text }) => (
   <button
     onClick={onClick}
-    className="p-4 bg-gray-50 hover:bg-gray-100 rounded-xl text-left transition-colors text-gray-700 font-medium border border-transparent hover:border-gray-200"
+    className="p-4 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl text-left transition-colors text-gray-700 dark:text-gray-300 font-medium border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
   >
     {text}
   </button>

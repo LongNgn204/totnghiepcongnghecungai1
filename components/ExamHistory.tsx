@@ -44,26 +44,68 @@ const ExamHistory: React.FC = () => {
 
   const loadHistory = async () => {
     try {
-      const [examsResponse, statsResponse] = await Promise.all([
-        api.exams.getAll(100), // Fetch last 100 exams
+      // Always read local first (offline-friendly)
+      const localStored = await import('../utils/examStorage');
+      const localExams = localStored.getExamHistory() as any[];
+
+      // If offline -> show local immediately
+      if (!navigator.onLine) {
+        setHistory(localExams as any);
+        return;
+      }
+
+      // Fetch remote in parallel
+      const [examsResponse, statsResponse] = await Promise.allSettled([
+        api.exams.getAll(100),
         api.exams.getStats()
       ]);
 
-      // Map backend exams to frontend format
-      const mappedExams = (examsResponse.exams || []).map((e: any) => ({
+      const remoteExamsRaw = examsResponse.status === 'fulfilled' ? (examsResponse.value as any) : { exams: [] };
+      const stats = statsResponse.status === 'fulfilled' ? (statsResponse.value as any) : null;
+
+      // Normalize remote shape -> ExamHistoryType
+      const remoteMapped: ExamHistoryType[] = (remoteExamsRaw.exams || remoteExamsRaw.data?.exams || []).map((e: any) => ({
         id: e.id,
         examTitle: e.title,
-        examType: e.subject === 'Công nghiệp' ? 'industrial' : 'agriculture', // Simple mapping
+        examType: e.subject === 'Công nghiệp' ? 'industrial' : 'agriculture',
         score: e.score,
         totalQuestions: e.total_questions,
-        percentage: (e.score / e.total_questions) * 100,
-        timeSpent: Math.round(e.duration / 60), // Assuming duration is seconds
-        createdAt: new Date(e.created_at).toISOString(),
-        isSubmitted: true // Backend exams are usually submitted
+        percentage: e.total_questions ? (e.score / e.total_questions) * 100 : 0,
+        timeSpent: e.duration ? Math.round(e.duration / 60) : 0,
+        createdAt: e.created_at ? new Date(e.created_at).toISOString() : new Date().toISOString(),
+        isSubmitted: true,
       }));
 
-      setHistory(mappedExams);
-      setStats(statsResponse);
+      // Normalize local shape -> ExamHistoryType (already similar)
+      const localMapped: ExamHistoryType[] = (localExams || []).map((x: any) => ({
+        id: x.id,
+        examTitle: x.examTitle,
+        examType: x.examType,
+        score: x.score,
+        totalQuestions: x.totalQuestions,
+        percentage: x.percentage,
+        timeSpent: x.timeSpent,
+        createdAt: x.createdAt,
+        isSubmitted: x.isSubmitted,
+      }));
+
+      // Merge by id, prefer newer createdAt
+      const mergedMap = new Map<string, ExamHistoryType>();
+      [...localMapped, ...remoteMapped].forEach(item => {
+        const prev = mergedMap.get(item.id);
+        if (!prev) {
+          mergedMap.set(item.id, item);
+        } else {
+          const prevTime = new Date(prev.createdAt).getTime();
+          const curTime = new Date(item.createdAt).getTime();
+          mergedMap.set(item.id, curTime >= prevTime ? item : prev);
+        }
+      });
+
+      const merged = Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      setHistory(merged);
+      setStats(stats);
     } catch (error) {
       console.error('Failed to load exam history:', error);
     }
@@ -104,30 +146,31 @@ const ExamHistory: React.FC = () => {
   });
 
   const getScoreColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 50) return 'text-yellow-600';
-    return 'text-red-600';
+    if (percentage >= 80) return 'text-green-600 dark:text-green-400';
+    if (percentage >= 50) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   const getScoreBgColor = (percentage: number) => {
-    if (percentage >= 80) return 'bg-green-50 border-green-200';
-    if (percentage >= 50) return 'bg-yellow-50 border-yellow-200';
-    return 'bg-red-50 border-red-200';
+    if (percentage >= 80) return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/30';
+    if (percentage >= 50) return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800/30';
+    return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/30';
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-8 animate-fade-in max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 rounded-2xl shadow-lg text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
+      <div className="glass-panel border-0 p-8 text-white relative overflow-hidden rounded-3xl shadow-xl">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-600 to-secondary-600 opacity-90"></div>
+        <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4 scale-150">
           <History size={200} />
         </div>
         <div className="relative z-10">
-          <h2 className="text-3xl font-bold text-center mb-2 flex items-center justify-center gap-3">
-            <History className="w-8 h-8" />
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 flex items-center justify-center gap-3 tracking-tight">
+            <History className="w-10 h-10" />
             Lịch Sử Đề Thi
           </h2>
-          <p className="text-center text-blue-100 text-lg">
+          <p className="text-center text-white/90 text-lg max-w-2xl mx-auto">
             Xem lại các đề thi đã làm và theo dõi tiến độ học tập
           </p>
         </div>
@@ -136,48 +179,48 @@ const ExamHistory: React.FC = () => {
       {/* Statistics */}
       {stats && stats.totalExams > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 text-center hover:shadow-md transition-all">
-            <FileText className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">{stats.totalExams}</div>
-            <div className="text-sm text-gray-500 font-medium">Đề đã làm</div>
+          <div className="glass-card p-6 text-center hover:shadow-md transition-all hover:-translate-y-1">
+            <FileText className="w-8 h-8 text-primary-500 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalExams}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Đề đã làm</div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 text-center hover:shadow-md transition-all">
+          <div className="glass-card p-6 text-center hover:shadow-md transition-all hover:-translate-y-1">
             <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">{stats.averageScore.toFixed(1)}%</div>
-            <div className="text-sm text-gray-500 font-medium">Điểm TB</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.averageScore.toFixed(1)}%</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Điểm TB</div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 text-center hover:shadow-md transition-all">
+          <div className="glass-card p-6 text-center hover:shadow-md transition-all hover:-translate-y-1">
             <Trophy className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">{stats.bestScore.toFixed(1)}%</div>
-            <div className="text-sm text-gray-500 font-medium">Cao nhất</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.bestScore.toFixed(1)}%</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Cao nhất</div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 text-center hover:shadow-md transition-all">
+          <div className="glass-card p-6 text-center hover:shadow-md transition-all hover:-translate-y-1">
             <Clock className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">{stats.totalTimeSpent}</div>
-            <div className="text-sm text-gray-500 font-medium">Phút học</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalTimeSpent}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Phút học</div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 text-center hover:shadow-md transition-all">
+          <div className="glass-card p-6 text-center hover:shadow-md transition-all hover:-translate-y-1">
             <Factory className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">{stats.industrialCount}</div>
-            <div className="text-sm text-gray-500 font-medium">Công nghiệp</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.industrialCount}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Công nghiệp</div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 text-center hover:shadow-md transition-all">
+          <div className="glass-card p-6 text-center hover:shadow-md transition-all hover:-translate-y-1">
             <Tractor className="w-8 h-8 text-green-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">{stats.agricultureCount}</div>
-            <div className="text-sm text-gray-500 font-medium">Nông nghiệp</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.agricultureCount}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Nông nghiệp</div>
           </div>
         </div>
       )}
 
       {/* Filters & Actions */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+      <div className="glass-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${filter === 'all'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-primary-600 text-white shadow-md'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
             >
               <FileText className="w-4 h-4" />
@@ -187,7 +230,7 @@ const ExamHistory: React.FC = () => {
               onClick={() => setFilter('industrial')}
               className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${filter === 'industrial'
                 ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
             >
               <Factory className="w-4 h-4" />
@@ -197,7 +240,7 @@ const ExamHistory: React.FC = () => {
               onClick={() => setFilter('agriculture')}
               className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${filter === 'agriculture'
                 ? 'bg-green-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
             >
               <Tractor className="w-4 h-4" />
@@ -209,7 +252,7 @@ const ExamHistory: React.FC = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'date' | 'score')}
-              className="px-4 py-2 border border-gray-300 rounded-xl bg-white text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-white font-medium focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
             >
               <option value="date">Sắp xếp: Mới nhất</option>
               <option value="score">Sắp xếp: Điểm cao nhất</option>
@@ -218,7 +261,7 @@ const ExamHistory: React.FC = () => {
             {history.length > 0 && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all flex items-center gap-2 font-bold"
+                className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all flex items-center gap-2 font-bold shadow-md"
               >
                 <Trash2 className="w-4 h-4" />
                 Xóa tất cả
@@ -230,27 +273,27 @@ const ExamHistory: React.FC = () => {
 
       {/* Exam List */}
       {sortedHistory.length === 0 ? (
-        <div className="bg-white p-16 rounded-2xl shadow-sm border border-gray-200 text-center">
-          <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <FileText className="w-10 h-10 text-gray-300" />
+        <div className="glass-card p-16 text-center">
+          <div className="bg-gray-50 dark:bg-gray-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <FileText className="w-10 h-10 text-gray-300 dark:text-gray-600" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
             Chưa có đề thi nào
           </h3>
-          <p className="text-gray-500 mb-8">
+          <p className="text-gray-500 dark:text-gray-400 mb-8">
             Bắt đầu làm đề thi để xem lịch sử và theo dõi tiến độ học tập
           </p>
           <div className="flex justify-center gap-4">
             <Link
               to="/san-pham-3"
-              className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all flex items-center gap-2 font-bold shadow-md"
+              className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all flex items-center gap-2 font-bold shadow-md hover:-translate-y-0.5"
             >
               <Factory className="w-5 h-5" />
               Đề Công nghiệp
             </Link>
             <Link
               to="/san-pham-4"
-              className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all flex items-center gap-2 font-bold shadow-md"
+              className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all flex items-center gap-2 font-bold shadow-md hover:-translate-y-0.5"
             >
               <Tractor className="w-5 h-5" />
               Đề Nông nghiệp
@@ -262,38 +305,38 @@ const ExamHistory: React.FC = () => {
           {sortedHistory.map((exam) => (
             <div
               key={exam.id}
-              className={`bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all border-2 ${exam.isSubmitted ? 'border-green-200' : 'border-gray-200'
+              className={`glass-card p-6 hover:shadow-lg transition-all border-2 ${exam.isSubmitted ? 'border-green-200 dark:border-green-800/30' : 'border-gray-200 dark:border-gray-700'
                 }`}
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className={`px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1 ${exam.examType === 'industrial'
-                      ? 'bg-indigo-100 text-indigo-700'
-                      : 'bg-green-100 text-green-700'
+                      ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                      : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                       }`}>
                       {exam.examType === 'industrial' ? <Factory className="w-3 h-3" /> : <Tractor className="w-3 h-3" />}
                       {exam.examType === 'industrial' ? 'Công nghiệp' : 'Nông nghiệp'}
                     </span>
                     {!exam.isSubmitted && (
-                      <span className="px-3 py-1 rounded-full text-sm font-bold bg-yellow-100 text-yellow-700 flex items-center gap-1">
+                      <span className="px-3 py-1 rounded-full text-sm font-bold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 flex items-center gap-1">
                         <Edit className="w-3 h-3" />
                         Chưa nộp
                       </span>
                     )}
                     {exam.isSubmitted && (
-                      <span className="px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-700 flex items-center gap-1">
+                      <span className="px-3 py-1 rounded-full text-sm font-bold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" />
                         Đã hoàn thành
                       </span>
                     )}
                   </div>
 
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
                     {exam.examTitle}
                   </h3>
 
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       {new Date(exam.createdAt).toLocaleDateString('vi-VN', {
@@ -329,7 +372,7 @@ const ExamHistory: React.FC = () => {
                 <div className="flex gap-2">
                   <Link
                     to={`/xem-lai/${exam.id}`}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all flex items-center gap-2 font-bold shadow-md"
+                    className="px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all flex items-center gap-2 font-bold shadow-md hover:-translate-y-0.5"
                     title="Xem lại đề thi"
                   >
                     <Eye className="w-4 h-4" />
@@ -337,7 +380,7 @@ const ExamHistory: React.FC = () => {
                   </Link>
                   <button
                     onClick={() => handleDelete(exam.id)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all flex items-center justify-center shadow-md"
+                    className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all flex items-center justify-center shadow-md hover:-translate-y-0.5"
                     title="Xóa đề thi này"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -351,13 +394,13 @@ const ExamHistory: React.FC = () => {
 
       {/* Delete Confirm Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl animate-scale-in">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="glass-panel p-8 max-w-md w-full shadow-2xl animate-scale-in">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <AlertTriangle className="w-6 h-6 text-red-500" />
               Xác nhận xóa
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
               Bạn có chắc muốn xóa <strong>tất cả {history.length} đề thi</strong> trong lịch sử?
               Hành động này không thể hoàn tác!
             </p>
@@ -371,7 +414,7 @@ const ExamHistory: React.FC = () => {
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all font-bold"
+                className="flex-1 px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-all font-bold"
               >
                 Hủy
               </button>

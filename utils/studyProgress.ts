@@ -3,7 +3,7 @@ export interface StudySession {
   id: string;
   date: string;
   duration: number; // minutes
-  activity: 'exam' | 'chat' | 'flashcard';
+  activity: 'exam' | 'chat' | 'flashcard' | 'lab';
   score?: number; // for exams
   cardsStudied?: number; // for flashcards
   questionsAsked?: number; // for chat
@@ -33,7 +33,7 @@ export interface Achievement {
   unlockedAt?: string;
   requirement: number;
   currentProgress: number;
-  category: 'exam' | 'chat' | 'flashcard' | 'streak' | 'total';
+  category: 'exam' | 'chat' | 'flashcard' | 'streak' | 'total' | 'lab';
 }
 
 const SESSIONS_KEY = 'study_sessions';
@@ -280,6 +280,34 @@ export const deleteGoal = (goalId: string): void => {
 // ============= ACHIEVEMENTS =============
 
 const DEFAULT_ACHIEVEMENTS: Achievement[] = [
+  // Lab achievements
+  {
+    id: 'lab_first_run',
+    title: 'Chạy lần đầu',
+    description: 'Nhấn Chạy Code trong Phòng Code lần đầu tiên',
+    icon: 'fa-play',
+    requirement: 1,
+    currentProgress: 0,
+    category: 'lab'
+  },
+  {
+    id: 'lab_ten_runs',
+    title: 'Thực hành chăm chỉ',
+    description: 'Chạy code 10 lần trong Phòng Code',
+    icon: 'fa-code',
+    requirement: 10,
+    currentProgress: 0,
+    category: 'lab'
+  },
+  {
+    id: 'lab_one_hour',
+    title: '60 phút bền bỉ',
+    description: 'Học coding tổng 60 phút',
+    icon: 'fa-hourglass-half',
+    requirement: 60,
+    currentProgress: 0,
+    category: 'lab'
+  },
   {
     id: 'first_exam',
     title: 'Kỳ thi đầu tiên',

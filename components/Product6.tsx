@@ -5,16 +5,28 @@ import {
 } from 'recharts';
 import {
   getStats,
-  getAllActivities,
   getAllGoals,
   saveGoal,
-  updateGoal,
   deleteGoal,
   getActivityChartData,
   getScoreTrendData,
   StudyGoal,
   StudyStats
 } from '../utils/studyProgress';
+import ProductTemplate from './layout/ProductTemplate';
+import {
+  Activity,
+  TrendingUp,
+  Target,
+  Trophy,
+  Plus,
+  RefreshCcw,
+  Bell,
+  Clock,
+  CheckCircle2,
+  Calendar
+} from 'lucide-react';
+import LoadingSpinner from './LoadingSpinner';
 
 const Product6: React.FC = () => {
   const [stats, setStats] = useState<StudyStats | null>(null);
@@ -24,19 +36,11 @@ const Product6: React.FC = () => {
   const [showCreateGoal, setShowCreateGoal] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<7 | 14 | 30>(7);
 
-  const [goalForm, setGoalForm] = useState({
-    title: '',
-    description: '',
-    type: 'exam-score' as StudyGoal['type'],
-    target: 80,
-    current: 0,
-    unit: '%',
-    deadline: ''
-  });
-
-  useEffect(() => {
-    loadData();
-  }, [selectedPeriod]);
+  // Form state
+  const [newGoalTitle, setNewGoalTitle] = useState('');
+  const [newGoalTarget, setNewGoalTarget] = useState(0);
+  const [newGoalType, setNewGoalType] = useState<'daily_time' | 'weekly_exams' | 'mastery_score'>('daily_time');
+  const [newGoalDeadline, setNewGoalDeadline] = useState('');
 
   const loadData = () => {
     setStats(getStats());
@@ -45,43 +49,34 @@ const Product6: React.FC = () => {
     setScoreTrendData(getScoreTrendData());
   };
 
-  const handleCreateGoal = () => {
-    if (!goalForm.title.trim()) {
-      alert('Vui lòng nhập tên mục tiêu');
-      return;
-    }
-
-    saveGoal({
-      title: goalForm.title,
-      description: goalForm.description,
-      type: goalForm.type,
-      target: goalForm.target,
-      unit: goalForm.unit as 'minutes' | 'exams' | 'cards' | 'chats' | 'score' | 'decks',
-      startDate: new Date().toISOString(),
-      endDate: goalForm.deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      deadline: goalForm.deadline
-    });
-
+  useEffect(() => {
     loadData();
-    setShowCreateGoal(false);
-    setGoalForm({
-      title: '',
-      description: '',
-      type: 'exam-score',
-      target: 80,
-      current: 0,
-      unit: '%',
-      deadline: ''
-    });
-  };
+  }, [selectedPeriod]);
 
-  const handleToggleGoal = (goal: StudyGoal) => {
-    updateGoal(goal.id, { completed: !goal.completed });
+  const handleCreateGoal = () => {
+    if (!newGoalTitle.trim() || newGoalTarget <= 0) return;
+
+    const newGoal: StudyGoal = {
+      id: Date.now().toString(),
+      title: newGoalTitle,
+      type: newGoalType,
+      targetValue: newGoalTarget,
+      currentValue: 0,
+      deadline: newGoalDeadline ? new Date(newGoalDeadline).getTime() : undefined,
+      status: 'in_progress',
+      createdAt: Date.now()
+    };
+
+    saveGoal(newGoal);
+    setNewGoalTitle('');
+    setNewGoalTarget(0);
+    setNewGoalDeadline('');
+    setShowCreateGoal(false);
     loadData();
   };
 
   const handleDeleteGoal = (id: string) => {
-    if (confirm('Bạn có chắc muốn xóa mục tiêu này?')) {
+    if (window.confirm('Bạn có chắc chắn muốn xóa mục tiêu này?')) {
       deleteGoal(id);
       loadData();
     }
@@ -89,390 +84,337 @@ const Product6: React.FC = () => {
 
   const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-  if (!stats) {
-    return <div className="flex items-center justify-center h-96">
-      <div className="animate-spin text-blue-600 text-4xl">
-        ⏳
+  const sidebarContent = stats ? (
+    <div className="space-y-6">
+      <div className="glass-card p-6">
+        <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-blue-600" />
+          Tổng quan nhanh
+        </h4>
+        <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <span>Tổng giờ học</span>
+            <span className="font-bold text-gray-900 dark:text-white">{(stats.totalStudyTime / 60).toFixed(1)}h</span>
+          </div>
+          <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <span>Chuỗi ngày</span>
+            <span className="font-bold text-orange-500">{stats.streakDays} ngày 🔥</span>
+          </div>
+          <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <span>Điểm TB</span>
+            <span className="font-bold text-emerald-500">{stats.averageScore.toFixed(1)}</span>
+          </div>
+          <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <span>Bài thi đã làm</span>
+            <span className="font-bold text-blue-500">{stats.examsCompleted}</span>
+          </div>
+        </div>
       </div>
-    </div>;
+
+      <div className="glass-card p-6 space-y-3">
+        <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Target className="w-4 h-4 text-emerald-600" />
+          Hành động nhanh
+        </h4>
+        <button
+          onClick={() => setShowCreateGoal(true)}
+          className="w-full btn-primary py-2.5 rounded-xl font-semibold shadow-md flex items-center justify-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Thêm mục tiêu
+        </button>
+        <button
+          onClick={loadData}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+        >
+          <RefreshCcw className="w-4 h-4" />
+          Cập nhật
+        </button>
+      </div>
+
+      <div className="glass-card p-6 border-l-4 border-l-blue-500">
+        <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          <Bell className="w-4 h-4 text-blue-500" />
+          Gợi ý tiến độ
+        </h4>
+        <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+          {stats.streakDays > 3
+            ? "Bạn đang giữ phong độ rất tốt! Hãy duy trì chuỗi ngày học tập này nhé."
+            : "Cố gắng học ít nhất 15 phút mỗi ngày để xây dựng thói quen học tập bền vững."}
+        </p>
+      </div>
+    </div>
+  ) : null;
+
+  if (!stats) {
+    return (
+      <ProductTemplate
+        icon={<Activity className="w-28 h-28 text-white/40" />}
+        title="Sản phẩm học tập số 6: Dashboard tiến độ"
+        subtitle="Đang tải dữ liệu..."
+        heroGradientFrom="from-indigo-700"
+        heroGradientTo="to-blue-600"
+        sidebar={<div></div>}
+      >
+        <div className="flex items-center justify-center min-h-[400px]">
+          <LoadingSpinner size="lg" color="primary" />
+        </div>
+      </ProductTemplate>
+    );
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-        <h2 className="text-3xl font-bold text-center mb-2 text-gray-800 flex items-center justify-center gap-3">
-          📊 Dashboard - Theo Dõi Tiến Độ Học Tập
-        </h2>
-        <p className="text-center text-gray-600">
-          Phân tích thống kê, đặt mục tiêu và theo dõi sự tiến bộ của bạn
-        </p>
-      </div>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-3xl opacity-75">⏱️</span>
-            <span className="text-xs bg-white/20 px-3 py-1 rounded-full font-medium">Tổng</span>
+    <ProductTemplate
+      icon={<Activity className="w-28 h-28 text-white/40" />}
+      title="Sản phẩm học tập số 6: Dashboard tiến độ"
+      subtitle="Theo dõi thời gian học, điểm số và mục tiêu – đồng bộ offline-first, tối ưu cho mọi thiết bị"
+      heroGradientFrom="from-indigo-700"
+      heroGradientTo="to-blue-600"
+      sidebar={sidebarContent}
+    >
+      <div className="space-y-8 animate-fade-in">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="glass-card p-6 border-l-4 border-l-blue-500">
+            <div className="flex justify-between items-start mb-2">
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 font-bold">Thời gian học</p>
+              <Clock className="w-5 h-5 text-blue-500" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{(stats.totalStudyTime / 60).toFixed(1)}h</p>
+            <p className="text-xs text-green-500 mt-1 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> +12% tuần này
+            </p>
           </div>
-          <div className="text-4xl font-bold mb-1">{Math.round(stats.totalStudyTime / 60)}h</div>
-          <div className="text-sm opacity-90 font-medium">Thời gian học</div>
-        </div>
-
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-3xl opacity-75">📝</span>
-            <span className="text-xs bg-white/20 px-3 py-1 rounded-full font-medium">Đề</span>
+          <div className="glass-card p-6 border-l-4 border-l-orange-500">
+            <div className="flex justify-between items-start mb-2">
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 font-bold">Chuỗi ngày</p>
+              <Trophy className="w-5 h-5 text-orange-500" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.streakDays} ngày</p>
+            <p className="text-xs text-gray-500 mt-1">Kỷ lục: {stats.longestStreak} ngày</p>
           </div>
-          <div className="text-4xl font-bold mb-1">{stats.totalExams}</div>
-          <div className="text-sm opacity-90 font-medium">Đề thi đã làm</div>
-        </div>
-
-        <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-3xl opacity-75">⭐</span>
-            <span className="text-xs bg-white/20 px-3 py-1 rounded-full font-medium">TB</span>
+          <div className="glass-card p-6 border-l-4 border-l-emerald-500">
+            <div className="flex justify-between items-start mb-2">
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 font-bold">Điểm trung bình</p>
+              <Activity className="w-5 h-5 text-emerald-500" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.averageScore.toFixed(1)}</p>
+            <p className="text-xs text-green-500 mt-1">Trên mức trung bình</p>
           </div>
-          <div className="text-4xl font-bold mb-1">{stats.averageScore.toFixed(1)}%</div>
-          <div className="text-sm opacity-90 font-medium">Điểm trung bình</div>
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl p-6 text-white shadow-lg transform hover:scale-105 transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-3xl opacity-75">🔥</span>
-            <span className="text-xs bg-white/20 px-3 py-1 rounded-full font-medium">Streak</span>
-          </div>
-          <div className="text-4xl font-bold mb-1">{stats.currentStreak}</div>
-          <div className="text-sm opacity-90 font-medium">Ngày liên tục</div>
-        </div>
-      </div>
-
-      {/* More Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:border-blue-300 transition-all">
-          <div className="text-center">
-            <div className="text-4xl mb-3">📂</div>
-            <div className="text-3xl font-bold text-gray-900">{stats.flashcardsLearned}</div>
-            <div className="text-sm text-gray-500 font-medium mt-1">Flashcards ôn</div>
+          <div className="glass-card p-6 border-l-4 border-l-purple-500">
+            <div className="flex justify-between items-start mb-2">
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 font-bold">Bài thi</p>
+              <CheckCircle2 className="w-5 h-5 text-purple-500" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.examsCompleted}</p>
+            <p className="text-xs text-gray-500 mt-1">Đã hoàn thành</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:border-blue-300 transition-all">
-          <div className="text-center">
-            <div className="text-4xl mb-3">💬</div>
-            <div className="text-3xl font-bold text-gray-900">{stats.chatSessions}</div>
-            <div className="text-sm text-gray-500 font-medium mt-1">Chat sessions</div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:border-blue-300 transition-all">
-          <div className="text-center">
-            <div className="text-4xl mb-3">📅</div>
-            <div className="text-3xl font-bold text-gray-900">{stats.weeklyActiveDays}/7</div>
-            <div className="text-sm text-gray-500 font-medium mt-1">Ngày học/tuần</div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:border-blue-300 transition-all">
-          <div className="text-center">
-            <div className="text-4xl mb-3">🏆</div>
-            <div className="text-3xl font-bold text-gray-900">{stats.longestStreak}</div>
-            <div className="text-sm text-gray-500 font-medium mt-1">Kỷ lục streak</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Activity Chart */}
-        <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <span className="text-blue-600">📊</span>
-              Hoạt động học tập
-            </h3>
-            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
-              {[7, 14, 30].map(days => (
-                <button
-                  key={days}
-                  onClick={() => setSelectedPeriod(days as any)}
-                  className={`px-3 py-1 rounded-md text-sm font-bold transition-all ${selectedPeriod === days
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                >
-                  {days}d
-                </button>
-              ))}
+        {/* Charts Section */}
+        <div className="grid lg:grid-cols-2 gap-8">
+          <div className="glass-panel p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Activity className="w-5 h-5 text-blue-600" />
+                Hoạt động học tập
+              </h3>
+              <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                {[7, 14, 30].map((days) => (
+                  <button
+                    key={days}
+                    onClick={() => setSelectedPeriod(days as any)}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${selectedPeriod === days
+                        ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-white shadow-sm'
+                        : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                  >
+                    {days} ngày
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={activityData}>
+                  <defs>
+                    <linearGradient id="colorTime" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Area type="monotone" dataKey="minutes" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorTime)" />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={activityData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
-              <YAxis stroke="#9ca3af" fontSize={12} />
-              <Tooltip
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                cursor={{ fill: '#f3f4f6' }}
-              />
-              <Legend wrapperStyle={{ paddingTop: '20px' }} />
-              <Bar dataKey="Thi" name="Thi thử" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Chat" name="Hỏi AI" fill="#10b981" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Flashcard" name="Ôn thẻ" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
 
-        {/* Score Trend */}
-        <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <span className="text-green-600">📈</span>
-            Xu hướng điểm số
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={scoreTrendData}>
-              <defs>
-                <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="exam" stroke="#9ca3af" fontSize={12} />
-              <YAxis domain={[0, 100]} stroke="#9ca3af" fontSize={12} />
-              <Tooltip
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-              />
-              <Area
-                type="monotone"
-                dataKey="score"
-                name="Điểm số"
-                stroke="#10b981"
-                fillOpacity={1}
-                fill="url(#colorScore)"
-                strokeWidth={3}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Goals Section */}
-      <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <span className="text-red-600">🎯</span>
-            Mục tiêu học tập
-          </h3>
-          <button
-            onClick={() => setShowCreateGoal(true)}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-bold shadow-md flex items-center gap-2"
-          >
-            <span className="text-white">➕</span>
-            Tạo mục tiêu mới
-          </button>
-        </div>
-
-        {goals.length === 0 ? (
-          <div className="text-center py-16 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
-            <div className="text-6xl mb-4 text-gray-300">🎯</div>
-            <p className="text-gray-600 text-lg font-medium">Chưa có mục tiêu nào</p>
-            <p className="text-gray-500 text-sm mt-2">Đặt mục tiêu để theo dõi tiến độ học tập!</p>
+          <div className="glass-panel p-6">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-600" />
+              Xu hướng điểm số
+            </h3>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={scoreTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                  <YAxis domain={[0, 10]} axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Line type="monotone" dataKey="score" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981' }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        ) : (
-          <div className="grid gap-6">
-            {goals.map(goal => {
-              const progress = Math.min((goal.current / goal.target) * 100, 100);
-              const isOverdue = new Date(goal.deadline) < new Date() && !goal.completed;
+        </div>
 
-              return (
-                <div
-                  key={goal.id}
-                  className={`p-6 rounded-2xl border transition-all ${goal.completed
-                    ? 'bg-green-50 border-green-200'
-                    : isOverdue
-                      ? 'bg-red-50 border-red-200'
-                      : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
-                    }`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <button
-                          onClick={() => handleToggleGoal(goal)}
-                          className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${goal.completed
-                            ? 'bg-green-500 border-green-500'
-                            : 'border-gray-300 hover:border-blue-500 text-transparent hover:text-blue-500'
-                            }`}
-                        >
-                          {goal.completed && <span className="text-white text-sm">✓</span>}
-                        </button>
-                        <h4 className={`text-lg font-bold ${goal.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                          {goal.title}
-                        </h4>
-                      </div>
-                      <p className="text-sm text-gray-600 ml-11">{goal.description}</p>
+        {/* Goals Section */}
+        <div className="glass-card p-8">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Target className="w-6 h-6 text-red-500" />
+              Mục tiêu học tập
+            </h3>
+            <button
+              onClick={() => setShowCreateGoal(true)}
+              className="btn-primary px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Thêm mục tiêu
+            </button>
+          </div>
+
+          {goals.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+              <Target className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400">Chưa có mục tiêu nào. Hãy đặt mục tiêu để phấn đấu!</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {goals.map(goal => (
+                <div key={goal.id} className="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all relative group">
+                  <button
+                    onClick={() => handleDeleteGoal(goal.id)}
+                    className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <span className="text-lg leading-none">×</span>
+                  </button>
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-bold text-gray-900 dark:text-white">{goal.title}</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {goal.type === 'daily_time' ? 'Thời gian học mỗi ngày' :
+                          goal.type === 'weekly_exams' ? 'Bài thi mỗi tuần' : 'Điểm số mục tiêu'}
+                      </p>
                     </div>
-                    <button
-                      onClick={() => handleDeleteGoal(goal.id)}
-                      className="text-gray-400 hover:text-red-500 transition-all p-2 rounded-lg hover:bg-red-50"
-                    >
-                      🗑️
-                    </button>
+                    <span className={`px-2 py-1 rounded-lg text-xs font-bold ${goal.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                        goal.status === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                          'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                      }`}>
+                      {goal.status === 'completed' ? 'Hoàn thành' :
+                        goal.status === 'failed' ? 'Thất bại' : 'Đang thực hiện'}
+                    </span>
                   </div>
 
-                  <div className="ml-11">
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-600 font-medium">Tiến độ</span>
-                      <span className="font-bold text-gray-900">
-                        {goal.current} / {goal.target} {goal.unit}
-                      </span>
+                  <div className="mt-4">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-600 dark:text-gray-400">Tiến độ</span>
+                      <span className="font-bold text-gray-900 dark:text-white">{goal.currentValue} / {goal.targetValue}</span>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all duration-1000 ${goal.completed
-                          ? 'bg-green-500'
-                          : progress >= 80
-                            ? 'bg-blue-500'
-                            : progress >= 50
-                              ? 'bg-yellow-500'
-                              : 'bg-red-500'
-                          }`}
-                        style={{ width: `${progress}%` }}
+                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(100, (goal.currentValue / goal.targetValue) * 100)}%` }}
                       ></div>
                     </div>
-
-                    <div className="flex items-center justify-between mt-3 text-xs">
-                      <span className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 font-bold' : 'text-gray-500'}`}>
-                        <span>📅</span>
-                        Deadline: {new Date(goal.deadline).toLocaleDateString('vi-VN')}
-                      </span>
-                      <span className="font-bold text-gray-700">
-                        {progress.toFixed(0)}% hoàn thành
-                      </span>
-                    </div>
                   </div>
+
+                  {goal.deadline && (
+                    <div className="mt-3 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <Calendar className="w-3 h-3" />
+                      <span>Hạn: {new Date(goal.deadline).toLocaleDateString('vi-VN')}</span>
+                    </div>
+                  )}
                 </div>
-              );
-            })}
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Create Goal Modal */}
+        {showCreateGoal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div className="glass-panel w-full max-w-md p-6 animate-scale-in">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Thêm mục tiêu mới</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tên mục tiêu</label>
+                  <input
+                    type="text"
+                    value={newGoalTitle}
+                    onChange={(e) => setNewGoalTitle(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="VD: Học 30 phút mỗi ngày"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Loại mục tiêu</label>
+                  <select
+                    value={newGoalType}
+                    onChange={(e) => setNewGoalType(e.target.value as any)}
+                    className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="daily_time">Thời gian học (phút/ngày)</option>
+                    <option value="weekly_exams">Số bài thi (bài/tuần)</option>
+                    <option value="mastery_score">Điểm số mục tiêu (thang 10)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Giá trị mục tiêu</label>
+                  <input
+                    type="number"
+                    value={newGoalTarget}
+                    onChange={(e) => setNewGoalTarget(Number(e.target.value))}
+                    className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hạn hoàn thành (tùy chọn)</label>
+                  <input
+                    type="date"
+                    value={newGoalDeadline}
+                    onChange={(e) => setNewGoalDeadline(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowCreateGoal(false)}
+                    className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 font-bold hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleCreateGoal}
+                    disabled={!newGoalTitle.trim() || newGoalTarget <= 0}
+                    className="flex-1 btn-primary py-2.5 rounded-xl font-bold"
+                  >
+                    Tạo mục tiêu
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
-
-      {/* Create Goal Modal */}
-      {showCreateGoal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 animate-scale-in max-h-[90vh] overflow-y-auto">
-            <h3 className="text-2xl font-bold mb-6 text-gray-900 flex items-center gap-2">
-              <span className="text-blue-600">🎯</span>
-              Tạo mục tiêu mới
-            </h3>
-
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Tên mục tiêu <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={goalForm.title}
-                  onChange={(e) => setGoalForm({ ...goalForm, title: e.target.value })}
-                  placeholder="VD: Đạt điểm trung bình 80%"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Mô tả
-                </label>
-                <textarea
-                  value={goalForm.description}
-                  onChange={(e) => setGoalForm({ ...goalForm, description: e.target.value })}
-                  placeholder="Mô tả chi tiết về mục tiêu"
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Loại mục tiêu
-                  </label>
-                  <select
-                    value={goalForm.type}
-                    onChange={(e) => setGoalForm({ ...goalForm, type: e.target.value as any })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                  >
-                    <option value="exam-score">Điểm thi</option>
-                    <option value="study-time">Thời gian học</option>
-                    <option value="flashcard-mastery">Thành thạo flashcard</option>
-                    <option value="custom">Tùy chỉnh</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Deadline
-                  </label>
-                  <input
-                    type="date"
-                    value={goalForm.deadline}
-                    onChange={(e) => setGoalForm({ ...goalForm, deadline: e.target.value })}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Mục tiêu
-                  </label>
-                  <input
-                    type="number"
-                    value={goalForm.target}
-                    onChange={(e) => setGoalForm({ ...goalForm, target: Number(e.target.value) })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Đơn vị
-                  </label>
-                  <input
-                    type="text"
-                    value={goalForm.unit}
-                    onChange={(e) => setGoalForm({ ...goalForm, unit: e.target.value })}
-                    placeholder="%, phút, thẻ..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4 mt-8 pt-6 border-t border-gray-100">
-              <button
-                onClick={() => setShowCreateGoal(false)}
-                className="flex-1 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all font-bold"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleCreateGoal}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-bold shadow-md flex items-center justify-center gap-2"
-              >
-                ✅ Tạo mục tiêu
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </ProductTemplate>
   );
 };
 

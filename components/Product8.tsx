@@ -1,275 +1,447 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import ProductTemplate from './layout/ProductTemplate';
+import { BookOpen, GraduationCap, Filter, Sparkles, Shuffle, ExternalLink, List, CheckCircle, PlayCircle, ChevronRight, ChevronDown } from 'lucide-react';
 
 interface Book {
-    id: string;
-    title: string;
-    shortTitle: string;
-    color: string;
-    link: string;
-    grade: number;
-    publisher: string;
+  id: number;
+  title: string;
+  grade: number;
+  cover: string;
+  link: string;
+  description: string;
+}
+
+interface Lesson {
+  id: string;
+  title: string;
+  duration: string; // e.g., "45 phút"
+  isCompleted?: boolean;
+}
+
+interface Chapter {
+  id: string;
+  title: string;
+  lessons: Lesson[];
+}
+
+interface GradeCurriculum {
+  grade: number;
+  title: string;
+  chapters: Chapter[];
 }
 
 const booksData: Book[] = [
-    // Lớp 10
-    {
-        id: '10-1',
-        title: "Công nghệ 10 - Công nghệ trồng trọt",
-        shortTitle: "CNT",
-        color: "bg-green-600",
-        link: "https://www.hoc10.vn/doc-sach/cong-nghe-10-cong-nghe-trong-trot/1/162/0/",
-        grade: 10,
-        publisher: "Cánh Diều"
-    },
-    {
-        id: '10-2',
-        title: "Công nghệ 10 - Thiết kế và Công nghệ",
-        shortTitle: "TKC",
-        color: "bg-orange-500",
-        link: "https://www.hoc10.vn/doc-sach/cong-nghe-10-thiet-ke-va-cong-nghe/1/163/0/",
-        grade: 10,
-        publisher: "Cánh Diều"
-    },
-    {
-        id: '10-3',
-        title: "Chuyên đề học tập Công nghệ 10 - Công nghệ trồng trọt",
-        shortTitle: "CĐT",
-        color: "bg-emerald-600",
-        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-10-(cong-nghe-trong-trot)/1/203/0/",
-        grade: 10,
-        publisher: "Cánh Diều"
-    },
-    {
-        id: '10-4',
-        title: "Chuyên đề học tập Công nghệ 10 - Thiết kế và Công nghệ",
-        shortTitle: "CĐK",
-        color: "bg-amber-500",
-        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-10-(thiet-ke-va-cong-nghe)/1/204/0/",
-        grade: 10,
-        publisher: "Cánh Diều"
-    },
-    // Lớp 11
-    {
-        id: '11-1',
-        title: "Công nghệ 11 - Công nghệ chăn nuôi",
-        shortTitle: "CN",
-        color: "bg-yellow-600",
-        link: "https://www.hoc10.vn/doc-sach/cong-nghe-11-cong-nghe-chan-nuoi/1/383/0/",
-        grade: 11,
-        publisher: "Cánh Diều"
-    },
-    {
-        id: '11-2',
-        title: "Công nghệ 11 - Công nghệ cơ khí",
-        shortTitle: "CK",
-        color: "bg-blue-600",
-        link: "https://www.hoc10.vn/doc-sach/cong-nghe-11-cong-nghe-co-khi/1/384/0/",
-        grade: 11,
-        publisher: "Cánh Diều"
-    },
-    {
-        id: '11-3',
-        title: "Chuyên đề học tập Công nghệ 11 - Công nghệ chăn nuôi",
-        shortTitle: "CĐN",
-        color: "bg-amber-600",
-        link: "https://www.hoc10.vn/doc-sach/cd-cong-nghe-11-chan-nuoi/1/404/0/",
-        grade: 11,
-        publisher: "Cánh Diều"
-    },
-    {
-        id: '11-4',
-        title: "Chuyên đề học tập Công nghệ 11 - Công nghệ cơ khí",
-        shortTitle: "CĐC",
-        color: "bg-indigo-600",
-        link: "https://www.hoc10.vn/doc-sach/cd-cong-nghe-11-co-khi/1/405/0/",
-        grade: 11,
-        publisher: "Cánh Diều"
-    },
-    // Lớp 12
-    {
-        id: '12-1',
-        title: "Công nghệ 12 - Công nghệ điện - điện tử",
-        shortTitle: "ĐĐT",
-        color: "bg-red-600",
-        link: "https://www.hoc10.vn/doc-sach/cong-nghe-12-cn-dien,-dien-tu/1/735/0/",
-        grade: 12,
-        publisher: "Cánh Diều"
-    },
-    {
-        id: '12-2',
-        title: "Công nghệ 12 - Lâm nghiệp - Thủy sản",
-        shortTitle: "LN-TS",
-        color: "bg-teal-600",
-        link: "https://www.hoc10.vn/doc-sach/cong-nghe-12-cn-lam-nghiep,-thuy-san/1/736/0/",
-        grade: 12,
-        publisher: "Cánh Diều"
-    },
-    {
-        id: '12-3',
-        title: "Chuyên đề học tập Công nghệ 12 - Công nghệ điện - điện tử",
-        shortTitle: "CĐ-ĐĐT",
-        color: "bg-rose-600",
-        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-12-cn-dien,-dien-tu/1/747/0/",
-        grade: 12,
-        publisher: "Cánh Diều"
-    },
-    {
-        id: '12-4',
-        title: "Chuyên đề học tập Công nghệ 12 - Lâm nghiệp - Thủy sản",
-        shortTitle: "CĐ-LN",
-        color: "bg-emerald-600",
-        link: "https://www.hoc10.vn/doc-sach/chuyen-de-hoc-tap-cong-nghe-12-cn-lam-nghiep,-thuy-san/1/748/0/",
-        grade: 12,
-        publisher: "Cánh Diều"
-    }
+  {
+    id: 1,
+    title: "Công nghệ 10 - Thiết kế và Công nghệ",
+    grade: 10,
+    cover: "https://hoc10.vn/upload/sgk/canh-dieu/lop-10/cong-nghe-10-thiet-ke-va-cong-nghe/SHS/bia.jpg",
+    link: "https://hoc10.vn/doc-sach/cong-nghe-10-thiet-ke-va-cong-nghe/1/0/63",
+    description: "Sách giáo khoa Công nghệ 10 - Bộ Cánh Diều"
+  },
+  {
+    id: 2,
+    title: "Công nghệ 10 - Công nghệ trồng trọt",
+    grade: 10,
+    cover: "https://hoc10.vn/upload/sgk/canh-dieu/lop-10/cong-nghe-10-cong-nghe-trong-trot/SHS/bia.jpg",
+    link: "https://hoc10.vn/doc-sach/cong-nghe-10-cong-nghe-trong-trot/1/0/64",
+    description: "Sách giáo khoa Công nghệ 10 - Bộ Cánh Diều"
+  },
+  {
+    id: 3,
+    title: "Công nghệ 11 - Công nghệ cơ khí",
+    grade: 11,
+    cover: "https://hoc10.vn/upload/sgk/canh-dieu/lop-11/cong-nghe-11-cong-nghe-co-khi/SHS/bia.jpg",
+    link: "https://hoc10.vn/doc-sach/cong-nghe-11-cong-nghe-co-khi/1/0/132",
+    description: "Sách giáo khoa Công nghệ 11 - Bộ Cánh Diều"
+  },
+  {
+    id: 4,
+    title: "Công nghệ 11 - Công nghệ chăn nuôi",
+    grade: 11,
+    cover: "https://hoc10.vn/upload/sgk/canh-dieu/lop-11/cong-nghe-11-cong-nghe-chan-nuoi/SHS/bia.jpg",
+    link: "https://hoc10.vn/doc-sach/cong-nghe-11-cong-nghe-chan-nuoi/1/0/133",
+    description: "Sách giáo khoa Công nghệ 11 - Bộ Cánh Diều"
+  },
+  {
+    id: 5,
+    title: "Công nghệ 12 - Công nghệ điện - điện tử",
+    grade: 12,
+    cover: "https://hoc10.vn/upload/sgk/canh-dieu/lop-12/cong-nghe-12-cong-nghe-dien-dien-tu/SHS/bia.jpg",
+    link: "https://hoc10.vn/doc-sach/cong-nghe-12-cong-nghe-dien-dien-tu/1/0/188",
+    description: "Sách giáo khoa Công nghệ 12 - Bộ Cánh Diều"
+  },
+  {
+    id: 6,
+    title: "Công nghệ 12 - Lâm nghiệp và Thủy sản",
+    grade: 12,
+    cover: "https://hoc10.vn/upload/sgk/canh-dieu/lop-12/cong-nghe-12-lam-nghiep-va-thuy-san/SHS/bia.jpg",
+    link: "https://hoc10.vn/doc-sach/cong-nghe-12-lam-nghiep-va-thuy-san/1/0/189",
+    description: "Sách giáo khoa Công nghệ 12 - Bộ Cánh Diều"
+  }
+];
+
+const curriculumData: GradeCurriculum[] = [
+  {
+    grade: 12,
+    title: "Công nghệ Điện - Điện tử & Lâm nghiệp Thủy sản",
+    chapters: [
+      {
+        id: "c1",
+        title: "Chương 1: Giới thiệu về kĩ thuật điện",
+        lessons: [
+          { id: "l1", duration: "45 phút", title: "Bài 1: Khái quát về kĩ thuật điện" },
+          { id: "l2", duration: "45 phút", title: "Bài 2: Một số ngành nghề trong lĩnh vực kĩ thuật điện" }
+        ]
+      },
+      {
+        id: "c2",
+        title: "Chương 2: Hệ thống điện quốc gia",
+        lessons: [
+          { id: "l3", duration: "45 phút", title: "Bài 3: Mạng điện hạ áp dùng trong sinh hoạt" },
+          { id: "l4", duration: "45 phút", title: "Bài 4: An toàn điện" }
+        ]
+      },
+      {
+        id: "c3",
+        title: "Chương 3: Điện tử căn bản",
+        lessons: [
+          { id: "l5", duration: "45 phút", title: "Bài 5: Linh kiện điện tử thụ động" },
+          { id: "l6", duration: "45 phút", title: "Bài 6: Linh kiện bán dẫn" },
+          { id: "l7", duration: "45 phút", title: "Bài 7: Khuếch đại thuật toán và IC" }
+        ]
+      }
+    ]
+  },
+  {
+    grade: 11,
+    title: "Công nghệ Cơ khí & Chăn nuôi",
+    chapters: [
+      {
+        id: "c11_1",
+        title: "Chương 1: Giới thiệu về cơ khí động lực",
+        lessons: [
+          { id: "l11_1", duration: "45 phút", title: "Bài 1: Khái quát về cơ khí động lực" },
+          { id: "l11_2", duration: "45 phút", title: "Bài 2: Một số ngành nghề liên quan" }
+        ]
+      },
+      {
+        id: "c11_2",
+        title: "Chương 2: Động cơ đốt trong",
+        lessons: [
+          { id: "l11_3", duration: "45 phút", title: "Bài 3: Nguyên lí làm việc của động cơ đốt trong" },
+          { id: "l11_4", duration: "45 phút", title: "Bài 4: Các cơ cấu và hệ thống chính" }
+        ]
+      }
+    ]
+  },
+  {
+    grade: 10,
+    title: "Thiết kế & Công nghệ Trồng trọt",
+    chapters: [
+      {
+        id: "c10_1",
+        title: "Chương 1: Đại cương về công nghệ",
+        lessons: [
+          { id: "l10_1", duration: "45 phút", title: "Bài 1: Công nghệ và đời sống" },
+          { id: "l10_2", duration: "45 phút", title: "Bài 2: Hệ thống kĩ thuật" }
+        ]
+      },
+      {
+        id: "c10_2",
+        title: "Chương 2: Vẽ kĩ thuật",
+        lessons: [
+          { id: "l10_3", duration: "45 phút", title: "Bài 3: Tiêu chuẩn trình bày bản vẽ" },
+          { id: "l10_4", duration: "45 phút", title: "Bài 4: Hình chiếu vuông góc" }
+        ]
+      }
+    ]
+  }
 ];
 
 const Product8: React.FC = () => {
-    const [selectedGrade, setSelectedGrade] = useState<number | 'all'>('all');
-    const [previewBook, setPreviewBook] = useState<Book | null>(null);
+  const [activeTab, setActiveTab] = useState<'books' | 'curriculum'>('curriculum');
+  const [selectedGrade, setSelectedGrade] = useState<number | 'all'>('all');
+  const [previewBook, setPreviewBook] = useState<Book | null>(null);
+  const [expandedChapters, setExpandedChapters] = useState<string[]>(['c1', 'c11_1', 'c10_1']);
 
-    const filteredBooks = selectedGrade === 'all'
-        ? booksData
-        : booksData.filter(book => book.grade === selectedGrade);
+  const filteredBooks = selectedGrade === 'all'
+    ? booksData
+    : booksData.filter(book => book.grade === selectedGrade);
 
-    return (
-        <div className="space-y-8 animate-fade-in">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-amber-600 to-orange-700 p-8 rounded-2xl shadow-lg text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
-                    <span className="text-9xl">📚</span>
-                </div>
-                <div className="relative z-10">
-                    <h2 className="text-3xl font-bold text-center mb-3 flex items-center justify-center gap-3">
-                        <span>📚</span>
-                        Tủ sách học liệu số
-                    </h2>
-                    <p className="text-center text-amber-100 max-w-2xl mx-auto text-lg">
-                        Kho sách giáo khoa điện tử chính thống từ bộ sách Cánh Diều
-                    </p>
-                </div>
-            </div>
+  const filteredCurriculum = selectedGrade === 'all'
+    ? curriculumData
+    : curriculumData.filter(c => c.grade === selectedGrade);
 
-            {/* Filter */}
-            <div className="flex justify-center gap-4">
-                {[
-                    { id: 'all', label: 'Tất cả' },
-                    { id: 10, label: 'Lớp 10' },
-                    { id: 11, label: 'Lớp 11' },
-                    { id: 12, label: 'Lớp 12' }
-                ].map(filter => (
-                    <button
-                        key={filter.id}
-                        onClick={() => setSelectedGrade(filter.id as number | 'all')}
-                        className={`px-6 py-2 rounded-full font-bold transition-all ${selectedGrade === filter.id
-                            ? 'bg-amber-600 text-white shadow-md transform scale-105'
-                            : 'bg-white text-gray-600 hover:bg-amber-50 border border-gray-200'
-                            }`}
-                    >
-                        {filter.label}
-                    </button>
-                ))}
-            </div>
+  const totalBooks = booksData.length;
+  const gradeBreakdown = useMemo(() => {
+    return [10, 11, 12].map(grade => ({
+      grade,
+      count: booksData.filter(book => book.grade === grade).length
+    }));
+  }, []);
 
-            {/* Bookshelf List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 max-w-6xl mx-auto">
-                {filteredBooks.map(book => (
-                    <div
-                        key={book.id}
-                        className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 p-4 flex items-center gap-4"
-                    >
-                        {/* Icon/Short Title */}
-                        <div className={`w-16 h-16 flex-shrink-0 rounded-lg ${book.color} flex items-center justify-center shadow-inner`}>
-                            <span className="text-xl font-bold text-white tracking-tight">
-                                {book.shortTitle}
-                            </span>
-                        </div>
+  const randomPreview = () => {
+    const pool = filteredBooks.length ? filteredBooks : booksData;
+    const randomBook = pool[Math.floor(Math.random() * pool.length)];
+    setPreviewBook(randomBook);
+  };
 
-                        {/* Content */}
-                        <div className="flex-grow min-w-0">
-                            <h3 className="font-bold text-gray-800 text-lg mb-1 truncate" title={book.title}>
-                                {book.title}
-                            </h3>
-                            <div className="flex items-center gap-2 text-sm">
-                                <span className="font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-xs">
-                                    {book.publisher}
-                                </span>
-                                <span className="text-gray-500 font-medium flex items-center gap-1 text-xs">
-                                    <span>🎓</span> Lớp {book.grade}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Action Button */}
-                        <div className="flex-shrink-0">
-                            <button
-                                onClick={() => setPreviewBook(book)}
-                                className="bg-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-amber-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center gap-2 text-sm"
-                            >
-                                <span>📖</span>
-                                <span className="hidden sm:inline">Đọc</span>
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Preview Modal */}
-            {previewBook && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col animate-fade-in">
-                    <div className="bg-white p-4 flex justify-between items-center shadow-md">
-                        <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
-                            <span>📖</span>
-                            {previewBook.title}
-                        </h3>
-                        <div className="flex items-center gap-3">
-                            <a
-                                href={previewBook.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2 text-sm"
-                            >
-                                <span>🔗</span> Mở tab mới
-                            </a>
-                            <button
-                                onClick={() => setPreviewBook(null)}
-                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                            >
-                                <span className="text-2xl">❌</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div className="flex-1 bg-gray-100 relative">
-                        <iframe
-                            src={previewBook.link}
-                            className="w-full h-full border-0"
-                            title={previewBook.title}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                        />
-                        {/* Fallback message if iframe is blocked */}
-                        <div className="absolute inset-0 -z-10 flex items-center justify-center">
-                            <div className="text-center p-8 max-w-md">
-                                <div className="text-6xl mb-4">🔒</div>
-                                <h4 className="text-xl font-bold text-gray-800 mb-2">Không thể tải bản xem trước</h4>
-                                <p className="text-gray-600 mb-6">
-                                    Trang web này có thể chặn hiển thị trong ứng dụng. Vui lòng mở trong tab mới để đọc sách.
-                                </p>
-                                <a
-                                    href={previewBook.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition-all shadow-lg hover:shadow-xl"
-                                >
-                                    <span>🚀</span> Mở sách ngay
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+  const toggleChapter = (chapterId: string) => {
+    setExpandedChapters(prev =>
+      prev.includes(chapterId)
+        ? prev.filter(id => id !== chapterId)
+        : [...prev, chapterId]
     );
+  };
+
+  const sidebarContent = (
+    <div className="space-y-6">
+      <div className="glass-card p-6">
+        <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <GraduationCap className="w-4 h-4 text-amber-600" />
+          Thống kê nhanh
+        </h4>
+        <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <span>Tổng số sách</span>
+            <span className="font-bold text-gray-900 dark:text-white">{totalBooks}</span>
+          </div>
+          {gradeBreakdown.map(({ grade, count }) => (
+            <div key={grade} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+              <span>Lớp {grade}</span>
+              <span className="font-bold text-amber-600 dark:text-amber-400">{count} cuốn</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass-card p-6 space-y-3">
+        <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-indigo-600" />
+          Hành động nhanh
+        </h4>
+        <button
+          onClick={() => setActiveTab('curriculum')}
+          className={`w-full py-2.5 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'curriculum' ? 'btn-primary' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50'}`}
+        >
+          <List className="w-4 h-4" />
+          Xem lộ trình
+        </button>
+        <button
+          onClick={() => setActiveTab('books')}
+          className={`w-full py-2.5 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'books' ? 'btn-primary' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50'}`}
+        >
+          <BookOpen className="w-4 h-4" />
+          Đọc sách
+        </button>
+      </div>
+
+      <div className="glass-card p-6 border-l-4 border-l-amber-500">
+        <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          <ExternalLink className="w-4 h-4 text-amber-600" />
+          Gợi ý sử dụng
+        </h4>
+        <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+          Kết hợp xem lộ trình học tập và đọc sách giáo khoa để nắm vững kiến thức nền tảng trước khi luyện đề.
+        </p>
+      </div>
+    </div>
+  );
+
+  return (
+    <ProductTemplate
+      icon={<GraduationCap className="w-28 h-28 text-white/40" />}
+      title="Sản phẩm học tập số 8: Chương trình học & Tủ sách số"
+      subtitle="Lộ trình học tập chi tiết và kho SGK Cánh Diều điện tử — Đầy đủ cho lớp 10, 11, 12"
+      heroGradientFrom="from-amber-600"
+      heroGradientTo="to-orange-600"
+      sidebar={sidebarContent}
+    >
+      <div className="space-y-8 animate-fade-in">
+        {/* Filter Tabs */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+            <button
+              onClick={() => setActiveTab('curriculum')}
+              className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'curriculum'
+                ? 'bg-white dark:bg-gray-700 text-amber-600 dark:text-amber-400 shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900'
+                }`}
+            >
+              Lộ trình học
+            </button>
+            <button
+              onClick={() => setActiveTab('books')}
+              className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${activeTab === 'books'
+                ? 'bg-white dark:bg-gray-700 text-amber-600 dark:text-amber-400 shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900'
+                }`}
+            >
+              Tủ sách SGK
+            </button>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSelectedGrade('all')}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${selectedGrade === 'all'
+                ? 'bg-amber-600 text-white shadow-md'
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50'
+                }`}
+            >
+              Tất cả
+            </button>
+            {[10, 11, 12].map(grade => (
+              <button
+                key={grade}
+                onClick={() => setSelectedGrade(grade)}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${selectedGrade === grade
+                  ? 'bg-amber-600 text-white shadow-md'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50'
+                  }`}
+              >
+                Lớp {grade}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Content Area */}
+        {activeTab === 'curriculum' ? (
+          <div className="space-y-8 animate-fade-in">
+            {filteredCurriculum.map((curr) => (
+              <div key={curr.grade} className="glass-card p-6">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                    <span className="text-xl font-bold text-amber-600 dark:text-amber-400">{curr.grade}</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Chương trình Công nghệ {curr.grade}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{curr.title}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {curr.chapters.map(chapter => (
+                    <div key={chapter.id} className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => toggleChapter(chapter.id)}
+                        className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <span className="font-bold text-gray-800 dark:text-gray-200">{chapter.title}</span>
+                        {expandedChapters.includes(chapter.id) ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                      </button>
+
+                      {expandedChapters.includes(chapter.id) && (
+                        <div className="bg-white dark:bg-gray-900/50 divide-y divide-gray-100 dark:divide-gray-800">
+                          {chapter.lessons.map(lesson => (
+                            <div key={lesson.id} className="p-4 flex items-center justify-between hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors group cursor-pointer">
+                              <div className="flex items-center gap-3">
+                                <PlayCircle className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                    {lesson.title}
+                                  </p>
+                                  <p className="text-xs text-gray-400">{lesson.duration}</p>
+                                </div>
+                              </div>
+                              <button className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                Học ngay
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 max-w-6xl mx-auto animate-fade-in">
+            {filteredBooks.map(book => (
+              <div
+                key={book.id}
+                className="group glass-card p-4 flex items-center gap-6 hover:border-amber-400 dark:hover:border-amber-600 transition-all duration-300"
+              >
+                <div className="w-24 h-32 flex-shrink-0 rounded-lg overflow-hidden shadow-md group-hover:shadow-xl transition-all">
+                  <img src={book.cover} alt={book.title} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-bold">
+                      Lớp {book.grade}
+                    </span>
+                    <span className="px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold">
+                      Cánh Diều
+                    </span>
+                  </div>
+                  <h3
+                    className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors cursor-pointer"
+                    onClick={() => window.open(book.link, '_blank')}
+                  >
+                    {book.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">{book.description}</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setPreviewBook(book)}
+                      className="flex-1 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-bold text-sm hover:bg-amber-600 hover:text-white dark:hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
+                    >
+                      <BookOpen className="w-4 h-4" /> Đọc ngay
+                    </button>
+                    <button
+                      onClick={() => window.open(book.link, '_blank')}
+                      className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-amber-600 hover:border-amber-600 transition-all"
+                      title="Mở trong tab mới"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {previewBook && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col animate-fade-in">
+            <div className="bg-white dark:bg-gray-900 p-4 flex justify-between items-center shadow-md border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-4">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{previewBook.title}</h3>
+                <span className="px-2 py-1 rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-bold">
+                  Đang đọc thử
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => window.open(previewBook.link, '_blank')}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition-all flex items-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" /> Mở trang gốc
+                </button>
+                <button
+                  onClick={() => setPreviewBook(null)}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-all"
+                >
+                  <span className="text-2xl leading-none">×</span>
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 bg-gray-100 dark:bg-gray-900 relative">
+              <iframe
+                src={previewBook.link}
+                className="w-full h-full border-none"
+                title={previewBook.title}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </ProductTemplate>
+  );
 };
 
 export default Product8;

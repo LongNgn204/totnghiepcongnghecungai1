@@ -1,4 +1,5 @@
 import React from 'react';
+import DOMPurify from 'dompurify';
 import katex from 'katex';
 import CodeBlock from './CodeBlock';
 import 'katex/dist/katex.min.css';
@@ -7,16 +8,30 @@ interface MessageContentProps {
   content: string;
 }
 
+const isSafeUrl = (url: string): boolean => {
+  try {
+    const u = new URL(url, window.location.origin);
+    return u.protocol === 'http:' || u.protocol === 'https:' || u.protocol === 'data:';
+  } catch {
+    return false;
+  }
+};
+
+const escapeHtml = (str: string): string =>
+  str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
 const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
   const renderContent = () => {
     const parts: React.ReactNode[] = [];
-    let text = content;
     let key = 0;
 
     // Extract and render code blocks first
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
     let lastIndex = 0;
-    let match;
+    let match: RegExpExecArray | null;
 
     while ((match = codeBlockRegex.exec(content)) !== null) {
       // Add text before code block
@@ -64,33 +79,31 @@ const formatMarkdown = (text: string): string => {
   let html = text;
 
   // Escape HTML
-  html = html.replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  html = escapeHtml(html);
 
   // Math equations - Block ($$...$$)
   html = html.replace(/\$\$([\s\S]+?)\$\$/g, (match, equation) => {
     try {
-      return `<div class="math-block my-4">${katex.renderToString(equation.trim(), {
+      return `<div class="math-block my-4">${katex.renderToString(String(equation).trim(), {
         displayMode: true,
         throwOnError: false,
         trust: true
       })}</div>`;
     } catch (e) {
-      return `<div class="math-error bg-red-100 dark:bg-red-900 p-2 rounded">Error rendering: ${equation}</div>`;
+      return `<div class="math-error bg-red-100 dark:bg-red-900 p-2 rounded">Error rendering: ${escapeHtml(equation)}</div>`;
     }
   });
 
   // Math equations - Inline ($...$)
   html = html.replace(/\$([^\$\n]+?)\$/g, (match, equation) => {
     try {
-      return `<span class="math-inline">${katex.renderToString(equation.trim(), {
+      return `<span class="math-inline">${katex.renderToString(String(equation).trim(), {
         displayMode: false,
         throwOnError: false,
         trust: true
       })}</span>`;
     } catch (e) {
-      return `<span class="math-error text-red-600">${equation}</span>`;
+      return `<span class="math-error text-red-600">${escapeHtml(equation)}</span>`;
     }
   });
 
@@ -108,11 +121,20 @@ const formatMarkdown = (text: string): string => {
   // Inline code (only single backticks, triple handled separately)
   html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-200 px-2 py-1 rounded text-sm font-mono text-pink-600">$1</code>');
 
-  // Images
-  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-xl shadow-sm my-4 border border-gray-100 cursor-pointer" onclick="window.open(\'$2\', \'_blank\')" />');
+  // Images (sanitize URL, no inline onclick)
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt, src) => {
+    const safe = isSafeUrl(src) ? src : '';
+    const escapedAlt = escapeHtml(alt);
+    if (!safe) return `<span class="text-red-500 text-sm">[Blocked image: ${escapedAlt}]</span>`;
+    return `<a href="${safe}" target="_blank" rel="noopener noreferrer"><img src="${safe}" alt="${escapedAlt}" loading="lazy" decoding="async" referrerpolicy="no-referrer" class="max-w-full rounded-xl shadow-sm my-4 border border-gray-100 cursor-zoom-in" /></a>`;
+  });
 
-  // Links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-500 hover:underline font-medium" target="_blank" rel="noopener noreferrer">$1 🔗</a>');
+  // Links (sanitize URL)
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, href) => {
+    const safe = isSafeUrl(href) ? href : '#';
+    const escapedLabel = escapeHtml(label);
+    return `<a href="${safe}" class="text-blue-500 hover:underline font-medium" target="_blank" rel="noopener noreferrer">${escapedLabel} 🔗</a>`;
+  });
 
   // Lists - Unordered
   html = html.replace(/^\s*[-•]\s+(.*)$/gim, '<li class="ml-6 my-1 flex items-start gap-2"><span class="text-blue-500 font-bold">•</span><span>$1</span></li>');
@@ -128,10 +150,13 @@ const formatMarkdown = (text: string): string => {
   html = html.replace(/^─+$/gm, '<hr class="my-2 border-t border-gray-200"/>');
 
   // Line breaks
-  html = html.replace(/\n\n/g, '<br/><br/>');
-  html = html.replace(/\n/g, '<br/>');
+  html = html.replace(/\n\n/g, '<br/><br/>' );
+  html = html.replace(/\n/g, '<br/>' );
 
-  return html;
+  return DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true, svg: true, mathMl: true },
+    ADD_ATTR: ['target', 'rel', 'referrerpolicy', 'loading', 'decoding', 'class', 'style'],
+  });
 };
 
 export default MessageContent;

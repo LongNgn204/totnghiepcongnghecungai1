@@ -6,42 +6,37 @@ export enum QuestionLevel {
 
 export interface QuestionMC {
   id: number;
+  type?: 'multiple_choice' | 'mc'; // Allow both for compatibility
   question: string;
   options: string[];
   answer: string;
-  requirement: string;
-  level: QuestionLevel;
+  requirement?: string;
+  level?: QuestionLevel;
+  explanation?: string;
+  // Aliases
+  text?: string;
+  correctAnswer?: string;
 }
 
 export interface QuestionTF {
   id: number;
+  type?: 'true_false' | 'tf'; // Allow both
   question: string;
-  answer: boolean;
-  requirement: string;
-  level: QuestionLevel;
-  // Format mới: Câu hỏi Đúng/Sai với 4 phát biểu a, b, c, d
-  statements?: {
-    a: string;
-    b: string;
-    c: string;
-    d: string;
-  };
-  answers?: {
-    a: boolean;
-    b: boolean;
-    c: boolean;
-    d: boolean;
-  };
-  explanations?: {
-    a: string;
-    b: string;
-    c: string;
-    d: string;
-  };
+  requirement?: string;
+  level?: QuestionLevel;
+  statements: {
+    id: string;
+    text: string;
+    isCorrect: boolean;
+    explanation?: string;
+  }[];
+  // Aliases
+  text?: string;
+  explanation?: string;
 }
 
 export interface MemberAssignment {
-    memberName: string;
-    mcQuestions: number[];
-    tfQuestions: number[];
+  memberName: string;
+  mcQuestions: number[];
+  tfQuestions: number[];
 }

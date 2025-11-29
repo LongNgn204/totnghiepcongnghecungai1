@@ -25,47 +25,86 @@ export interface ChatSession {
   };
 }
 
+const CHAT_STORAGE_KEY = 'chat_sessions';
+
 /**
  * Tạo ID unique
  */
-export const generateId = (): string => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
+export const generateId = (): string => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 /**
- * Lấy tất cả chat sessions từ API
+ * LOCAL STORAGE HELPERS (Offline-first)
  */
-export const getChatHistory = async (): Promise<ChatSession[]> => {
+export const getLocalChatHistory = (): ChatSession[] => {
   try {
-    const response = await api.chat.getAll();
-    if (response && response.sessions) {
-      return response.sessions;
-    }
-    return [];
-  } catch (error) {
-    console.error('Error loading chat history:', error);
+    const stored = localStorage.getItem(CHAT_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    console.warn('Failed to read local chat history', e);
     return [];
   }
 };
 
+export const saveLocalChatSession = (session: ChatSession): void => {
+  try {
+    const list = getLocalChatHistory();
+    const idx = list.findIndex(s => s.id === session.id);
+    const updated = { ...session, updatedAt: session.updatedAt || Date.now() };
+    if (idx >= 0) list[idx] = updated; else list.unshift(updated);
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.warn('Failed to save local chat session', e);
+  }
+};
+
+export const deleteLocalChatSession = (id: string): void => {
+  try {
+    const list = getLocalChatHistory().filter(s => s.id !== id);
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.warn('Failed to delete local chat session', e);
+  }
+};
+
+const mergeSessions = (remote: ChatSession[], local: ChatSession[]): ChatSession[] => {
+  const map = new Map<string, ChatSession>();
+  [...local, ...remote].forEach(s => {
+    const existing = map.get(s.id);
+    if (!existing || (s.updatedAt || 0) > (existing.updatedAt || 0)) {
+      map.set(s.id, s);
+    }
+  });
+  return Array.from(map.values()).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+};
+
 /**
- * Lưu hoặc cập nhật chat session lên API
+ * Lấy lịch sử chat (merge local + server). Nếu offline hoặc API lỗi => trả local.
+ */
+export const getChatHistory = async (): Promise<ChatSession[]> => {
+  const local = getLocalChatHistory();
+  if (!navigator.onLine) return local;
+  try {
+    const response = await api.chat.getAll();
+    const remote = response?.sessions || response?.data?.sessions || [];
+    const merged = mergeSessions(remote, local);
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(merged));
+    return merged;
+  } catch (error) {
+    console.error('Error loading chat history (fallback to local):', error);
+    return local;
+  }
+};
+
+/**
+ * Lưu/upsert chat: luôn ghi local trước, rồi cố gắng sync server (upsert)
  */
 export const saveChatSession = async (session: ChatSession): Promise<void> => {
   try {
-    // Check if session exists (simple check by ID or just try create/update)
-    // For simplicity, we can try to get it first or just use create/update endpoints
-    // But our API has create (POST) and update (PUT)
-    // We need to know if it's new or existing.
-    // Usually the UI knows. But here we can check if we can fetch it.
-    // Or better, we can just always use a "save" logic if the backend supports upsert, 
-    // but our backend has distinct POST /api/chat/sessions and PUT /api/chat/sessions/:id
-
-    // We will try to update, if 404 then create.
+    saveLocalChatSession(session);
+    if (!navigator.onLine) return;
     try {
       await api.chat.update(session.id, session.messages);
     } catch (e: any) {
-      // If update fails, maybe it doesn't exist, try create
       await api.chat.create(session);
     }
   } catch (error) {
@@ -73,54 +112,49 @@ export const saveChatSession = async (session: ChatSession): Promise<void> => {
   }
 };
 
-/**
- * Lấy một session cụ thể
- */
+/** Lấy 1 session (merge ưu tiên remote) */
 export const getChatSession = async (id: string): Promise<ChatSession | null> => {
   try {
-    const session = await api.chat.getById(id);
-    return session;
+    if (navigator.onLine) {
+      const session = await api.chat.getById(id);
+      if (session) {
+        saveLocalChatSession(session);
+        return session;
+      }
+    }
+    return getLocalChatHistory().find(s => s.id === id) || null;
   } catch (error) {
     console.error('Error getting chat session:', error);
-    return null;
+    return getLocalChatHistory().find(s => s.id === id) || null;
   }
 };
 
-/**
- * Xóa một session
- */
+/** Xóa 1 session (local trước, server sau) */
 export const deleteChatSession = async (id: string): Promise<void> => {
   try {
-    await api.chat.delete(id);
+    deleteLocalChatSession(id);
+    if (navigator.onLine) {
+      await api.chat.delete(id);
+    }
   } catch (error) {
     console.error('Error deleting chat session:', error);
   }
 };
 
-/**
- * Tạo title tự động từ câu hỏi đầu tiên
- */
+/** Tạo title auto */
 export const generateChatTitle = (firstMessage: string): string => {
   const maxLength = 50;
   const cleaned = firstMessage.trim().replace(/\n/g, ' ');
-
-  if (cleaned.length <= maxLength) {
-    return cleaned;
-  }
-
-  return cleaned.substring(0, maxLength) + '...';
+  return cleaned.length <= maxLength ? cleaned : cleaned.substring(0, maxLength) + '...';
 };
 
-/**
- * Nhóm chat theo thời gian
- */
+/** Nhóm chat theo thời gian */
 export const groupChatsByTime = (sessions: ChatSession[]) => {
   const now = Date.now();
   const today = new Date().setHours(0, 0, 0, 0);
-  const yesterday = today - (24 * 60 * 60 * 1000);
-  const weekAgo = now - (7 * 24 * 60 * 60 * 1000);
-  const monthAgo = now - (30 * 24 * 60 * 60 * 1000);
-
+  const yesterday = today - 24 * 60 * 60 * 1000;
+  const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const monthAgo = now - 30 * 24 * 60 * 60 * 1000;
   return {
     today: sessions.filter(s => s.updatedAt >= today),
     yesterday: sessions.filter(s => s.updatedAt >= yesterday && s.updatedAt < today),
@@ -130,40 +164,23 @@ export const groupChatsByTime = (sessions: ChatSession[]) => {
   };
 };
 
-/**
- * Search chat sessions
- */
+/** Tìm kiếm (trên merged list) */
 export const searchChats = async (query: string): Promise<ChatSession[]> => {
-  if (!query.trim()) return getChatHistory();
-
-  // Our API supports search
-  // But for now let's fetch all and filter if API search is not robust enough
-  // Actually API has search param.
-  // return fetchAPI(`/api/chat/sessions?search=${query}`);
-  // But api.chat.getAll doesn't expose params yet in the client wrapper fully (it defaults).
-  // Let's update apiClient to support params or just filter client side for now.
-  // Since we want to be fast, let's fetch all and filter.
   const sessions = await getChatHistory();
-  const lowerQuery = query.toLowerCase();
-  return sessions.filter(session => {
-    return session.title.toLowerCase().includes(lowerQuery) ||
-      session.messages.some(m => m.content.toLowerCase().includes(lowerQuery));
-  });
+  const lower = query.trim().toLowerCase();
+  if (!lower) return sessions;
+  return sessions.filter(s => s.title.toLowerCase().includes(lower) || s.messages.some(m => m.content.toLowerCase().includes(lower)));
 };
 
-/**
- * Export chat session to text
- */
+/** Xuất chat ra text */
 export const exportChatToText = (session: ChatSession): string => {
   let text = `${session.title}\n`;
   text += `Ngày tạo: ${new Date(session.createdAt).toLocaleString('vi-VN')}\n\n`;
   text += '='.repeat(50) + '\n\n';
-
   session.messages.forEach(msg => {
     const role = msg.role === 'user' ? 'BẠN' : 'AI';
     const time = new Date(msg.timestamp).toLocaleTimeString('vi-VN');
     text += `[${time}] ${role}:\n${msg.content}\n\n`;
   });
-
   return text;
 };

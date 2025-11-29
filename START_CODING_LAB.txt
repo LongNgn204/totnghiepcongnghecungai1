@@ -1,0 +1,187 @@
+================================================================================
+PHÒNG CODE - SMART LAB: HƯỚNG DẪN BẮT ĐẦU
+================================================================================
+
+🎉 CHÀO MỪNG ĐẾN VỚI PHÒNG CODE! 🎉
+
+================================================================================
+GIỚI THIỆU NHANH
+================================================================================
+
+Phòng Code là một nền tảng học lập trình hiện đại cung cấp:
+
+✅ IDE Monaco Editor - Trình biên dịch code chuyên nghiệp
+✅ 8 Bài Học - 5 bài Python + 3 bài Arduino
+✅ AI Mentor - Trợ lý AI giúp giải thích code
+✅ Arduino Simulator - Mô phỏng board Arduino
+✅ Learning Path - Danh sách bài học được tổ chức tốt
+✅ Responsive Design - Hoạt động trên mọi thiết bị
+
+================================================================================
+BẮT ĐẦU NHANH (5 PHÚT)
+================================================================================
+
+1. TRUY CẬP
+   Đăng nhập → Nhấp "Phòng Code" → Hoặc: /home/coding-lab
+
+2. CHỌN NGÔN NGỮ
+   Python hoặc Arduino
+
+3. CHỌN BÀI HỌC
+   Mở rộng danh mục → Chọn bài
+
+4. VIẾT CODE
+   Viết code vào editor
+
+5. CHẠY CODE
+   Nhấp "Chạy Code" → Xem output
+
+6. NHỜ AI GIÚP
+   Tab "AI Mentor" → Gõ câu hỏi
+
+7. NỘP BÀI
+   Nhấp "Nộp Bài"
+
+================================================================================
+BÀI HỌC CÓ SẴN
+================================================================================
+
+PYTHON (5 BÀI):
+  1. Hello World - ⭐ Dễ
+  2. Biến & Kiểu Dữ Liệu - ⭐ Dễ
+  3. Tính Tổng Danh Sách - ⭐⭐ Trung
+  4. Hàm & Tham Số - ⭐⭐ Trung
+  5. Điều Kiện If-Else - ⭐⭐ Trung
+
+ARDUINO (3 BÀI):
+  1. Blink LED - ⭐ Dễ
+  2. Đèn Giao Thông - ⭐⭐⭐ Khó
+  3. Nút Bấm & LED - ⭐⭐ Trung
+
+================================================================================
+TÍNH NĂNG CHÍNH
+================================================================================
+
+LAYOUT 3 CỘT:
+  Trái (20%):   Learning Path - Danh sách bài học
+  Giữa (50%):   Monaco IDE - Trình biên dịch code
+  Phải (30%):   Output & AI Mentor - Kết quả & hỗ trợ
+
+MONACO EDITOR:
+  - Syntax highlighting
+  - Line numbers & auto-indent
+  - Word wrap
+  - Responsive layout
+
+ARDUINO SIMULATOR:
+  - Vẽ board Arduino Uno
+  - 4 LED indicators
+  - Phân tích code
+  - Console output
+
+AI MENTOR:
+  - Chat interface
+  - Gợi ý thông minh
+  - Không cho đáp án ngay
+  - Hỗ trợ giải thích
+
+================================================================================
+GẶP VẤN ĐỀ?
+================================================================================
+
+CODE KHÔNG CHẠY:
+  1. Kiểm tra cú pháp
+  2. Xem thông báo lỗi
+  3. Hỏi AI Mentor
+
+LED KHÔNG SÁNG:
+  1. Kiểm tra pin số
+  2. Sử dụng digitalWrite(pin, HIGH)
+  3. Chạy simulation lại
+
+AI KHÔNG PHẢN HỒI:
+  1. Kiểm tra kết nối internet
+  2. Chờ vài giây
+  3. Làm mới trang
+
+================================================================================
+LIÊN HỆ & HỖ TRỢ
+================================================================================
+
+📧 Email: stu725114073@hnue.edu.vn
+📱 Phone: 0896636181
+⏰ Giờ làm việc: T2-T7, 8:00-21:00
+
+================================================================================
+THÔNG TIN DỰ ÁN
+================================================================================
+
+Tên:              Phòng Code - Smart Lab
+Phiên Bản:        1.0
+Trạng Thái:       ✅ HOÀN THÀNH & TESTED
+Ngôn Ngữ:         Python & Arduino
+Bài Học:          8 (5 Python + 3 Arduino)
+Bundle Size:      ~39 KB (gzipped: ~13 KB)
+Linting Errors:   0
+
+================================================================================
+MỤC TIÊU HỌC TẬP
+================================================================================
+
+PYTHON:
+  ✅ Hiểu hàm print()
+  ✅ Khai báo & sử dụng biến
+  ✅ Làm việc với danh sách & vòng lặp
+  ✅ Định nghĩa & gọi hàm
+  ✅ Sử dụng if-else conditions
+
+ARDUINO:
+  ✅ Hiểu cấu trúc board Arduino
+  ✅ Điều khiển digital outputs (LED)
+  ✅ Sử dụng delay() cho timing
+  ✅ Triển khai sequential logic
+  ✅ Đọc digital inputs (buttons)
+
+================================================================================
+LỜI KHUYÊN
+================================================================================
+
+✅ LÀM TỐT:
+  - Đọc kỹ mô tả bài
+  - Sử dụng gợi ý
+  - Chạy code nhiều lần
+  - Hỏi AI khi cần
+
+❌ TRÁNH LÀM:
+  - Copy-paste đáp án
+  - Bỏ qua gợi ý
+  - Chạy code một lần rồi bỏ
+  - Sợ hỏi AI
+
+================================================================================
+TÀI LIỆU
+================================================================================
+
+📖 CODING_LAB_GUIDE.md - Hướng dẫn chi tiết
+⚡ CODING_LAB_QUICKSTART.md - Quick start
+ℹ️ CODING_LAB_INFO.md - Thông tin tổng quan
+📋 IMPLEMENTATION_SUMMARY.txt - Tóm tắt triển khai
+
+================================================================================
+CHÚC MỪNG!
+================================================================================
+
+Phòng Code - Smart Lab đã sẵn sàng!
+
+Hãy bắt đầu học lập trình ngay bây giờ:
+  👉 Nhấp "Phòng Code" trong navigation bar
+  👉 Hoặc truy cập: /home/coding-lab
+
+Chúc bạn học tập vui vẻ! 🎓
+
+================================================================================
+Version: 1.0
+Date: 2025-11-29
+Status: ✅ COMPLETE & READY TO USE
+================================================================================
+
