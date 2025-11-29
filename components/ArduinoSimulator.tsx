@@ -11,7 +11,10 @@ interface LEDState {
 
 type Command =
   | { time: number; type: 'digital'; pin: number; state: boolean }
-  | { time: number; type: 'pwm'; pin: number; value: number };
+  | { time: number; type: 'pwm'; pin: number; value: number }
+  | { time: number; type: 'tone'; pin: number; freq: number; duration: number }
+  | { time: number; type: 'servo'; angle: number }
+  | { time: number; type: 'log'; message: string };
 
 interface ArduinoSimulatorProps {
   code: string;
@@ -49,56 +52,159 @@ const ArduinoSimulator: React.FC<ArduinoSimulatorProps> = ({ code, onSimulationO
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
-  // Parse Arduino code with pin alias support and PWM
+  // Parse Arduino code with pin alias support, simple functions, for-loops and PWM
   const parseArduinoCode = (arduinoCode: string): Command[] => {
     const lines = arduinoCode.split('\n');
     const commands: Command[] = [];
     const pinAlias: Record<string, number> = {};
-    let currentTime = 0;
 
+    // Helper: normalize and strip comments
+    const clean = (s: string) => s.replace(/\/\/.*$/, '').trim();
+
+    // First pass: collect pin aliases
     for (const raw of lines) {
-      const line = raw.trim();
-      if (!line || line.startsWith('//')) continue;
-
-      // const int NAME = 13;
+      const line = clean(raw);
       const aliasMatch = line.match(/const\s+int\s+(\w+)\s*=\s*(\d+)\s*;/);
       if (aliasMatch) {
         pinAlias[aliasMatch[1]] = parseInt(aliasMatch[2]);
-        continue;
-      }
-
-      // delay(ms)
-      const delayMatch = line.match(/delay\s*\(\s*(\d+)\s*\)/);
-      if (delayMatch) {
-        currentTime += parseInt(delayMatch[1]);
-        continue;
-      }
-
-      // digitalWrite(pinExpr, HIGH|LOW)
-      const dwMatch = line.match(/digitalWrite\s*\(\s*(\w+)\s*,\s*(HIGH|LOW)\s*\)/);
-      if (dwMatch) {
-        const pinExpr = dwMatch[1];
-        const pin = /^(\d+)$/.test(pinExpr) ? parseInt(pinExpr) : (pinAlias[pinExpr] ?? NaN);
-        if (!isNaN(pin)) {
-          const state = dwMatch[2] === 'HIGH';
-          commands.push({ time: currentTime, type: 'digital', pin, state });
-        }
-        continue;
-      }
-
-      // analogWrite(pinExpr, value)
-      const awMatch = line.match(/analogWrite\s*\(\s*(\w+)\s*,\s*(\d+)\s*\)/);
-      if (awMatch) {
-        const pinExpr = awMatch[1];
-        const pin = /^(\d+)$/.test(pinExpr) ? parseInt(pinExpr) : (pinAlias[pinExpr] ?? NaN);
-        const value = Math.max(0, Math.min(255, parseInt(awMatch[2])));
-        if (!isNaN(pin)) {
-          commands.push({ time: currentTime, type: 'pwm', pin, value });
-        }
-        continue;
       }
     }
 
+    // Second pass: capture simple void function() { ... } bodies (no params)
+    const funcBodies: Record<string, string[]> = {};
+    for (let i = 0; i < lines.length; i++) {
+      const line = clean(lines[i]);
+      const fnStart = line.match(/^void\s+(\w+)\s*\(\s*\)\s*\{/);
+      if (fnStart) {
+        const name = fnStart[1];
+        let body: string[] = [];
+        let depth = 1;
+        i++; // move into body
+        while (i < lines.length && depth > 0) {
+          let l = clean(lines[i]);
+          // Track braces
+          if (l.includes('{')) depth++;
+          if (l.includes('}')) {
+            depth--;
+            if (depth === 0) break; // end of function
+          }
+          if (depth > 0 && l) body.push(l);
+          i++;
+        }
+        funcBodies[name] = body;
+      }
+    }
+
+    // Core processor over a list of lines
+    let currentTime = 0;
+    const processLines = (arr: string[]) => {
+      for (let idx = 0; idx < arr.length; idx++) {
+        const raw = arr[idx];
+        const line = clean(raw);
+        if (!line) continue;
+
+        // delay(ms)
+        const delayMatch = line.match(/^delay\s*\(\s*(\d+)\s*\)\s*;?/);
+        if (delayMatch) {
+          currentTime += parseInt(delayMatch[1]);
+          continue;
+        }
+
+        // digitalWrite(pinExpr, HIGH|LOW)
+        const dwMatch = line.match(/^digitalWrite\s*\(\s*(\w+)\s*,\s*(HIGH|LOW)\s*\)\s*;?/);
+        if (dwMatch) {
+          const pinExpr = dwMatch[1];
+          const pin = /^(\d+)$/.test(pinExpr) ? parseInt(pinExpr) : (pinAlias[pinExpr] ?? NaN);
+          if (!isNaN(pin)) {
+            const state = dwMatch[2] === 'HIGH';
+            commands.push({ time: currentTime, type: 'digital', pin, state });
+          }
+          continue;
+        }
+
+        // analogWrite(pinExpr, value)
+        const awMatch = line.match(/^analogWrite\s*\(\s*(\w+)\s*,\s*(\d+)\s*\)\s*;?/);
+        if (awMatch) {
+          const pinExpr = awMatch[1];
+          const pin = /^(\d+)$/.test(pinExpr) ? parseInt(pinExpr) : (pinAlias[pinExpr] ?? NaN);
+          const value = Math.max(0, Math.min(255, parseInt(awMatch[2])));
+          if (!isNaN(pin)) {
+            commands.push({ time: currentTime, type: 'pwm', pin, value });
+          }
+          continue;
+        }
+
+        // tone(pin, freq, duration)
+        const toneMatch = line.match(/^tone\s*\(\s*(\w+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*;?/);
+        if (toneMatch) {
+          const pinExpr = toneMatch[1];
+          const pin = /^(\d+)$/.test(pinExpr) ? parseInt(pinExpr) : (pinAlias[pinExpr] ?? NaN);
+          const freq = parseInt(toneMatch[2]);
+          const duration = parseInt(toneMatch[3]);
+          if (!isNaN(pin)) {
+            commands.push({ time: currentTime, type: 'log', message: `tone pin ${pin} ${freq}Hz ${duration}ms` });
+          }
+          continue;
+        }
+
+        // noTone(pin)
+        const noToneMatch = line.match(/^noTone\s*\(\s*(\w+)\s*\)\s*;?/);
+        if (noToneMatch) {
+          const pinExpr = noToneMatch[1];
+          const pin = /^(\d+)$/.test(pinExpr) ? parseInt(pinExpr) : (pinAlias[pinExpr] ?? NaN);
+          if (!isNaN(pin)) {
+            commands.push({ time: currentTime, type: 'log', message: `noTone pin ${pin}` });
+          }
+          continue;
+        }
+
+        // for(int i=0;i<N;i++) function();
+        const forInlineCall = line.match(/^for\s*\([^)]*<\s*(\d+)\s*[^)]*\)\s*(\w+)\s*\(\s*\)\s*;?/);
+        if (forInlineCall) {
+          const count = parseInt(forInlineCall[1]);
+          const fname = forInlineCall[2];
+          const body = funcBodies[fname];
+          if (body) {
+            for (let k = 0; k < count; k++) processLines(body);
+          }
+          continue;
+        }
+
+        // for(...){ ... } with simple body (we'll capture until matching })
+        const forBlockStart = line.match(/^for\s*\([^)]*<\s*(\d+)\s*[^)]*\)\s*\{/);
+        if (forBlockStart) {
+          const count = parseInt(forBlockStart[1]);
+          // capture block
+          let body: string[] = [];
+          let depth = 1;
+          while (idx + 1 < arr.length && depth > 0) {
+            idx++;
+            let l = clean(arr[idx]);
+            if (l.includes('{')) depth++;
+            if (l.includes('}')) {
+              depth--;
+              if (depth === 0) break;
+            }
+            if (depth > 0 && l) body.push(l);
+          }
+          for (let k = 0; k < count; k++) processLines(body);
+          continue;
+        }
+
+        // function call without params: name();
+        const callMatch = line.match(/^(\w+)\s*\(\s*\)\s*;?/);
+        if (callMatch) {
+          const fname = callMatch[1];
+          const body = funcBodies[fname];
+          if (body) processLines(body);
+          continue;
+        }
+
+        // Ignore other statements (variable declarations, etc.)
+      }
+    };
+
+    processLines(lines);
     return commands;
   };
 
@@ -134,7 +240,13 @@ const ArduinoSimulator: React.FC<ArduinoSimulatorProps> = ({ code, onSimulationO
       setSimulationTime(prev => {
         const newTime = Math.min(prev + 100, duration);
         const newLeds = applyStateAtTime(newTime, commands, ledsRef.current);
-        // Log significant changes
+        // Log tone/noTone and other log commands between prev->newTime
+        commands
+          .filter(c => (c as any).type === 'log' && (c as any).time > prev && (c as any).time <= newTime)
+          .forEach((c: any) => {
+            outputText += `[${(c.time / 1000).toFixed(1)}s] ${c.message}\n`;
+          });
+        // Log significant LED/PWM changes
         newLeds.forEach((led, idx) => {
           const before = ledsRef.current[idx];
           const changedDigital = before.isOn !== led.isOn;

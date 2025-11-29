@@ -2,7 +2,7 @@
 export interface GeminiResponse {
   text: string;
   success: boolean;
-  error?: string;2 
+  error?: string;
 }
 
 export const AVAILABLE_MODELS = [

@@ -1,4 +1,5 @@
 // Coding Lessons Data - Mock Data for Python & Arduino
+import { QuestionMC, QuestionTF } from '../types';
 export interface Lesson {
   id: string;
   title: string;
@@ -11,6 +12,9 @@ export interface Lesson {
   objectives: string[];
   completed: boolean;
   category: string;
+  // Optional embedded quizzes per lesson (can be defined separately)
+  mcQuestions?: QuestionMC[];
+  tfQuestions?: QuestionTF[];
 }
 
 export const codingLessons: Lesson[] = [
@@ -37,7 +41,37 @@ export const codingLessons: Lesson[] = [
       'Làm quen với cú pháp Python cơ bản',
       'Chạy code lần đầu tiên'
     ],
-    completed: false
+    completed: false,
+    mcQuestions: [
+      {
+        id: 10101,
+        type: 'multiple_choice',
+        question: 'Hàm nào dùng để in ra màn hình trong Python?',
+        options: ['echo()', 'console.log()', 'print()', 'printf()'],
+        answer: 'print()',
+        explanation: 'Trong Python dùng hàm print() để in dữ liệu ra màn hình.'
+      },
+      {
+        id: 10102,
+        type: 'multiple_choice',
+        question: 'Chuỗi ký tự nên được đặt trong?',
+        options: ['Dấu ngoặc vuông []', 'Dấu ngoặc kép hoặc dấu nháy đơn', 'Dấu ngoặc nhọn {}', 'Không cần dấu'],
+        answer: 'Dấu ngoặc kép hoặc dấu nháy đơn',
+        explanation: 'Chuỗi trong Python đặt trong dấu nháy đơn hoặc dấu ngoặc kép.'
+      }
+    ],
+    tfQuestions: [
+      {
+        id: 10103,
+        type: 'true_false',
+        question: 'Các phát biểu về Python cơ bản',
+        statements: [
+          { id: 's1', text: 'print("Hello") sẽ in ra Hello', isCorrect: true },
+          { id: 's2', text: 'Python bắt buộc dấu chấm phẩy ; cuối dòng', isCorrect: false },
+          { id: 's3', text: 'Python phân biệt chữ hoa thường', isCorrect: true }
+        ]
+      }
+    ]
   },
   {
     id: 'py-02',

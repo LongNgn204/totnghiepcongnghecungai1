@@ -5,6 +5,7 @@ import { getLessonsByLanguage, getLessonById, Lesson } from '../data/codingLesso
 import ArduinoSimulator from './ArduinoSimulator';
 import toast from 'react-hot-toast';
 import { generateContent } from '../utils/geminiAPI';
+import QuizPanel from './QuizPanel';
 import { recordStudySession, getUnlockedAchievements } from '../utils/studyProgress';
 
 // Templates for quick insert
@@ -53,7 +54,7 @@ const CodingLab: React.FC = () => {
   const [code, setCode] = useState<string>('');
   const [output, setOutput] = useState<string>('');
   const [isRunning, setIsRunning] = useState(false);
-  const [activeTab, setActiveTab] = useState<'output' | 'ai'>('output');
+  const [activeTab, setActiveTab] = useState<'output' | 'ai' | 'quiz'>('output');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState<string>('');
   const [isAILoading, setIsAILoading] = useState(false);
@@ -665,12 +666,13 @@ const CodingLab: React.FC = () => {
               {/* Tabs */}
               <div className="flex border-b border-gray-200">
                 <button onClick={() => setActiveTab('output')} className={`flex-1 px-4 py-3 font-medium text-sm transition-colors ${activeTab === 'output' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-900'}`}>Output / Mô Phỏng</button>
+                <button onClick={() => setActiveTab('quiz')} className={`flex-1 px-4 py-3 font-medium text-sm transition-colors ${activeTab === 'quiz' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-900'}`}>Trắc Nghiệm</button>
                 <button onClick={() => setActiveTab('ai')} className={`flex-1 px-4 py-3 font-medium text-sm transition-colors flex items-center justify-center gap-2 ${activeTab === 'ai' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-900'}`}><MessageCircle size={16} /> AI Mentor</button>
               </div>
 
               {/* Content */}
               <div className="flex-1 overflow-hidden flex flex-col">
-                {activeTab === 'output' ? (
+                {activeTab === 'output' && (
                   <>
                     {language === 'python' && (
                       <div className="flex-1 p-4 overflow-y-auto">
@@ -685,7 +687,21 @@ const CodingLab: React.FC = () => {
                       </div>
                     )}
                   </>
-                ) : (
+                )}
+
+                {activeTab === 'quiz' && (
+                  <QuizPanel
+                    lesson={currentLesson}
+                    onPassed={() => {
+                      if (currentLesson && !completedIds.includes(currentLesson.id)) {
+                        saveCompleted([...completedIds, currentLesson.id]);
+                        toast.success('Bạn đã vượt qua bài trắc nghiệm! ✅');
+                      }
+                    }}
+                  />
+                )}
+
+                {activeTab === 'ai' && (
                   <>
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
                       {chatMessages.length === 0 && (
