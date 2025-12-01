@@ -208,7 +208,7 @@ const App: React.FC = () => {
                   Về Chúng Tôi
                 </h3>
                 <p className="text-slate-400 text-sm leading-relaxed">
-                  <span className="text-blue-400 font-bold">Ôn Thi THPT QG môn Công Nghệ</span> - Nền tảng học tập thông minh tiên phong sử dụng <span className="text-purple-400 font-medium">Gemini 2.5 Pro</span>.
+                  <span className="text-blue-400 font-bold">STEM Vietnam</span> - Nền tảng học tập thông minh tiên phong sử dụng <span className="text-purple-400 font-medium">Gemini 2.5 Pro</span>.
                 </p>
                 <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
                   <p className="text-xs text-slate-400">
@@ -307,7 +307,7 @@ const App: React.FC = () => {
             {/* Bottom Bar */}
             <div className="pt-8 border-t border-slate-800 text-center">
               <p className="text-slate-500 text-sm">
-                © 2025 <span className="text-blue-400 font-medium">Ôn Thi THPT QG môn Công Nghệ</span>. Powered by <span className="text-purple-400 font-medium">Google Gemini 2.5 Pro</span>.
+                © 2025 <span className="text-blue-400 font-medium">STEM Vietnam</span>. Powered by <span className="text-purple-400 font-medium">Google Gemini 2.5 Pro</span>.
               </p>
             </div>
           </div>

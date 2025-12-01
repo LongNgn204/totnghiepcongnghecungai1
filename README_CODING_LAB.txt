@@ -8,8 +8,7 @@ Chào mừng đến với Phòng Code - một nền tảng học lập trình hi
 GIỚI THIỆU NHANH
 ================================================================================
 
-Phòng Code là một module học lập trình tích hợp trong ứng dụng "Ôn Thi THPT QG 
-môn Công Nghệ" cung cấp:
+Phòng Code là một module học lập trình tích hợp trong ứng dụng "STEM Vietnam" cung cấp:
 
 ✅ IDE Monaco Editor - Trình biên dịch code chuyên nghiệp như VS Code
 ✅ 8 Bài Học - 5 bài Python + 3 bài Arduino, từ cơ bản đến nâng cao

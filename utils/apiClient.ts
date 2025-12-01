@@ -1,6 +1,6 @@
 // API Client for backend communication
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ai-hoc-tap-api.your-account.workers.dev';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
 function getHeaders(): HeadersInit {
   const headers: HeadersInit = {

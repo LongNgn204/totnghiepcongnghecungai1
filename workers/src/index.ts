@@ -19,7 +19,9 @@ import {
   verifyResetToken,
   resetPassword,
   requireAuth,
-  hashPassword
+  hashPassword,
+  getSecurityQuestionByEmail,
+  resetPasswordBySecurityQuestion
 } from './auth-service';
 import {
   updateUserData,
@@ -37,8 +39,17 @@ export interface Env {
 
 const router = Router();
 
-// CORS preflight
-router.options('*', () => new Response(null, { headers: corsHeaders }));
+// CORS preflight with allowlist
+router.options('*', (request, env: Env) => {
+  const origin = request.headers.get('Origin') || '';
+  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
+  const isAllowed = allowed.length === 0 || allowed.includes(origin) || allowed.includes('*');
+  const headers = new Headers(corsHeaders);
+  headers.set('Vary', 'Origin');
+  headers.set('Access-Control-Allow-Origin', isAllowed ? origin || '*' : 'null');
+  return new Response(null, { headers });
+});
+
 
 // Health check
 router.get('/api/health', () =>
@@ -51,17 +62,19 @@ router.get('/api/health', () =>
 router.post('/api/auth/register', async (request, env: Env) => {
   try {
     const body: any = await request.json();
-    const { username, email, password, displayName } = body;
+    const { username, email, password, displayName, securityQuestion, securityAnswer } = body;
 
-    if (!email || !password || !displayName) {
-      return badRequestResponse('Missing required fields: email, password, displayName');
+    if (!email || !password || !displayName || !securityQuestion || !securityAnswer) {
+      return badRequestResponse('Thiếu các trường bắt buộc: email, password, displayName, securityQuestion, securityAnswer');
     }
 
     const result = await registerUser(env.DB, {
       username,
       email,
       password,
-      displayName
+      displayName,
+      securityQuestion,
+      securityAnswer
     });
 
     return successResponse(result, 'Registration successful');
@@ -159,33 +172,87 @@ router.post('/api/auth/change-password', async (request, env: Env) => {
 });
 
 // Forgot password
-router.post('/api/auth/forgot-password', async (request, env: Env) => {
+router.post('/api/auth/forgot-password', async () => {
+  return badRequestResponse('Endpoint deprecated. Use /api/auth/request-reset and /api/auth/reset-password');
+});
+
+// Request password reset code (via email in prod, returns code in dev)
+router.post('/api/auth/request-reset', async (request, env: Env) => {
   try {
     const body: any = await request.json();
-    const { email, newPassword } = body;
+    const { email } = body;
+    if (!email) return badRequestResponse('Email là bắt buộc');
 
-    if (!email || !newPassword || newPassword.length < 6) {
-      return badRequestResponse('Email và mật khẩu mới (≥6 ký tự) là bắt buộc');
-    }
+    const emailCfg = env.RESEND_API_KEY && env.EMAIL_FROM ? {
+      apiKey: env.RESEND_API_KEY,
+      fromEmail: env.EMAIL_FROM,
+      fromName: env.EMAIL_FROM_NAME || 'AI Học Tập'
+    } : undefined;
 
-    const passwordHash = await hashPassword(newPassword);
-
-    const updated = await env.DB.prepare('UPDATE auth_users SET password_hash = ? WHERE email = ?')
-      .bind(passwordHash, email.toLowerCase())
-      .run();
-
-    if (updated.meta.changes === 0) {
-      return errorResponse('Không tìm thấy email', 404);
-    }
-
-    // Invalidate all sessions
-    await env.DB.prepare('DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM auth_users WHERE email = ?)')
-      .bind(email.toLowerCase())
-      .run();
-
-    return successResponse({ success: true, message: 'Mật khẩu đã được cập nhật thành công! Đăng nhập ngay.' });
+    const result = await requestPasswordReset(env.DB, email.toLowerCase(), emailCfg as any);
+    return successResponse(result, 'Reset code generated');
   } catch (error: any) {
-    return errorResponse('Lỗi hệ thống', 500);
+    return errorResponse(error.message || 'Lỗi hệ thống', 500);
+  }
+});
+
+// Verify reset code
+router.post('/api/auth/verify-reset', async (request, env: Env) => {
+  try {
+    const body: any = await request.json();
+    const { email, token } = body;
+    if (!email || !token) return badRequestResponse('Email và mã xác thực là bắt buộc');
+    const result = await verifyResetToken(env.DB, email.toLowerCase(), token);
+    return successResponse(result, 'Mã xác thực hợp lệ');
+  } catch (error: any) {
+    return errorResponse(error.message || 'Mã xác thực không hợp lệ', 400);
+  }
+});
+
+// Reset password with code
+router.post('/api/auth/reset-password', async (request, env: Env) => {
+  try {
+    const body: any = await request.json();
+    const { email, token, newPassword } = body;
+    if (!email || !token || !newPassword || newPassword.length < 6) {
+      return badRequestResponse('Thiếu email, mã xác thực hoặc mật khẩu mới (>=6)');
+    }
+    const result = await resetPassword(env.DB, email.toLowerCase(), token, newPassword);
+    return successResponse(result, 'Đổi mật khẩu thành công');
+  } catch (error: any) {
+    return errorResponse(error.message || 'Không thể đổi mật khẩu', 400);
+  }
+});
+
+// Get security question by email
+router.get('/api/auth/security-question', async (request, env: Env) => {
+  try {
+    const url = new URL(request.url);
+    const email = url.searchParams.get('email');
+    if (!email) {
+      return badRequestResponse('Thiếu email');
+    }
+    const result = await getSecurityQuestionByEmail(env.DB, email);
+    return successResponse(result);
+  } catch (error: any) {
+    return errorResponse(error.message, 404);
+  }
+});
+
+// Reset password with security question
+router.post('/api/auth/reset-by-question', async (request, env: Env) => {
+  try {
+    const body: any = await request.json();
+    const { email, securityAnswer, newPassword } = body;
+
+    if (!email || !securityAnswer || !newPassword) {
+      return badRequestResponse('Thiếu email, câu trả lời bảo mật hoặc mật khẩu mới');
+    }
+
+    const result = await resetPasswordBySecurityQuestion(env.DB, { email, securityAnswer, newPassword });
+    return successResponse(result);
+  } catch (error: any) {
+    return errorResponse(error.message, 400);
   }
 });
 
@@ -538,6 +605,12 @@ router.post('/api/flashcards/decks/:deckId/cards', async (request, env: Env) => 
     const { deckId } = request.params;
     const body: any = await request.json();
 
+    // Ownership check: ensure deck belongs to current user
+    const deck = await env.DB.prepare('SELECT id FROM flashcard_decks WHERE id = ? AND user_id = ?')
+      .bind(deckId, userId)
+      .first();
+    if (!deck) return unauthorizedResponse('Bạn không có quyền thêm thẻ vào bộ này');
+
     const { id, question, answer, difficulty, tags } = body;
     const now = Date.now();
 
@@ -549,8 +622,8 @@ router.post('/api/flashcards/decks/:deckId/cards', async (request, env: Env) => 
       .run();
 
     // Update deck updated_at
-    await env.DB.prepare('UPDATE flashcard_decks SET updated_at = ? WHERE id = ?')
-      .bind(now, deckId)
+    await env.DB.prepare('UPDATE flashcard_decks SET updated_at = ? WHERE id = ? AND user_id = ?')
+      .bind(now, deckId, userId)
       .run();
 
     return successResponse({ id }, 'Card created successfully');
@@ -1099,10 +1172,65 @@ router.post('/api/management/change-password', async (request, env: Env) => {
 router.all('*', () => errorResponse('Not Found', 404));
 
 // Export handler
+// Basic in-memory rate limit store (per isolate)
+const __rateBuckets = new Map<string, number[]>();
+function getIP(req: Request): string {
+  return (
+    req.headers.get('CF-Connecting-IP') ||
+    req.headers.get('X-Forwarded-For') ||
+    req.headers.get('X-Real-IP') ||
+    'unknown'
+  );
+}
+function allowRequest(key: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+  const bucket = __rateBuckets.get(key) || [];
+  const windowStart = now - windowMs;
+  const recent = bucket.filter(ts => ts > windowStart);
+  if (recent.length >= limit) {
+    __rateBuckets.set(key, recent);
+    return false;
+  }
+  recent.push(now);
+  __rateBuckets.set(key, recent);
+  return true;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     try {
-      return await router.handle(request, env, ctx);
+      const url = new URL(request.url);
+      const origin = request.headers.get('Origin') || '';
+      const allowed = (env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
+      const isAllowed = allowed.length === 0 || allowed.includes(origin) || allowed.includes('*');
+
+      // Simple rate limiting by IP and route group
+      const ip = getIP(request);
+      const path = url.pathname;
+      const method = request.method.toUpperCase();
+      if (method !== 'OPTIONS') {
+        if (path.startsWith('/api/auth/')) {
+          const ok = allowRequest(`auth:${ip}`, 50, 15 * 60 * 1000);
+          if (!ok) {
+            return errorResponse('Too many requests (auth)', 429);
+          }
+        } else if (path.startsWith('/api/sync')) {
+          const ok = allowRequest(`sync:${ip}`, 300, 15 * 60 * 1000);
+          if (!ok) {
+            return errorResponse('Too many requests (sync)', 429);
+          }
+        }
+      }
+
+      const res = await router.handle(request, env, ctx);
+      // Attach dynamic CORS to all responses
+      const headers = new Headers(res?.headers || {});
+      headers.set('Vary', 'Origin');
+      headers.set('Access-Control-Allow-Origin', isAllowed ? (origin || '*') : 'null');
+      headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      headers.set('Access-Control-Allow-Headers', 'Content-Type, X-User-ID, Authorization');
+      headers.set('Access-Control-Max-Age', '86400');
+      return new Response(res?.body, { status: res?.status || 200, headers });
     } catch (error: any) {
       return errorResponse(error.message || 'Internal Server Error', 500);
     }

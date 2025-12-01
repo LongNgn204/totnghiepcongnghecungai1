@@ -1,52 +1,78 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+
+type Step = 'request' | 'answer';
 
 const ForgotPassword: React.FC = () => {
   const navigate = useNavigate();
+
+  const [step, setStep] = useState<Step>('request');
   const [email, setEmail] = useState('');
+  const [securityQuestion, setSecurityQuestion] = useState('');
+  const [securityAnswer, setSecurityAnswer] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const handleGetQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setMessage('');
     setLoading(true);
 
+    try {
+      const res = await fetch(`${API_URL}/api/auth/security-question?email=${encodeURIComponent(email)}`);
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.error || 'Không thể lấy câu hỏi bảo mật');
+      }
+
+      setSecurityQuestion(result.data.securityQuestion);
+      setMessage('Đã tìm thấy câu hỏi bảo mật. Vui lòng trả lời để tiếp tục.');
+      setStep('answer');
+    } catch (err: any) {
+      setError(err.message || 'Đã có lỗi xảy ra');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
+
     if (newPassword !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp');
-      setLoading(false);
       return;
     }
 
     if (newPassword.length < 6) {
       setError('Mật khẩu phải có ít nhất 6 ký tự');
-      setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/auth/reset-by-question`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, newPassword })
+        body: JSON.stringify({ email, securityAnswer, newPassword })
       });
+      const result = await res.json();
 
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'Không thể reset mật khẩu');
+      if (!res.ok) {
+        throw new Error(result.error || 'Không thể đổi mật khẩu');
       }
 
-      setMessage(result.data?.message || 'Mật khẩu đã được cập nhật thành công! Đang chuyển đến trang đăng nhập...');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      setMessage('Đổi mật khẩu thành công! Đang chuyển đến trang đăng nhập...');
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {
       setError(err.message || 'Đã có lỗi xảy ra');
     } finally {
@@ -58,16 +84,16 @@ const ForgotPassword: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 px-4 py-12">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-2xl p-8">
-          {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-block bg-gradient-to-r from-purple-500 to-pink-500 rounded-full p-3 mb-4">
               <i className="fas fa-key text-3xl text-white"></i>
             </div>
             <h2 className="text-3xl font-bold text-gray-800 mb-2">Quên mật khẩu</h2>
-            <p className="text-gray-600">Nhập email và mật khẩu mới để đổi mật khẩu ngay lập tức</p>
+            <p className="text-gray-600">
+              {step === 'request' ? 'Nhập email để lấy câu hỏi bảo mật' : 'Trả lời câu hỏi để đổi mật khẩu'}
+            </p>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
               <i className="fas fa-exclamation-circle text-red-500 mt-0.5 flex-shrink-0"></i>
@@ -75,7 +101,6 @@ const ForgotPassword: React.FC = () => {
             </div>
           )}
 
-          {/* Success */}
           {message && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
               <i className="fas fa-check-circle text-green-500 mt-0.5 flex-shrink-0"></i>
@@ -83,76 +108,129 @@ const ForgotPassword: React.FC = () => {
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleResetPassword} className="space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                <i className="fas fa-envelope text-purple-500"></i>
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                placeholder="email@example.com"
-                required
-                disabled={loading}
-              />
-            </div>
+          {step === 'request' && (
+            <form onSubmit={handleGetQuestion} className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <i className="fas fa-envelope text-purple-500"></i>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="email@example.com"
+                  required
+                  disabled={loading}
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                <i className="fas fa-lock text-pink-500"></i>
-                Mật khẩu mới
-              </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                placeholder="Ít nhất 6 ký tự"
-                minLength={6}
-                required
+              <button
+                type="submit"
                 disabled={loading}
-              />
-            </div>
+                className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                {loading ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    Đang tìm...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-search mr-2"></i>
+                    Tìm câu hỏi bảo mật
+                  </>
+                )}
+              </button>
+            </form>
+          )}
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                <i className="fas fa-lock text-orange-500"></i>
-                Xác nhận mật khẩu
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                placeholder="Nhập lại mật khẩu mới"
-                minLength={6}
-                required
+          {step === 'answer' && (
+            <form onSubmit={handleResetPassword} className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <i className="fas fa-shield-alt text-blue-500"></i>
+                  Câu hỏi bảo mật
+                </label>
+                <p className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-100 text-gray-700">{securityQuestion}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <i className="fas fa-key text-blue-500"></i>
+                  Câu trả lời của bạn
+                </label>
+                <input
+                  type="text"
+                  value={securityAnswer}
+                  onChange={(e) => setSecurityAnswer(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="Nhập câu trả lời của bạn"
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <i className="fas fa-lock text-pink-500"></i>
+                  Mật khẩu mới
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="Ít nhất 6 ký tự"
+                  minLength={6}
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <i className="fas fa-lock text-orange-500"></i>
+                  Xác nhận mật khẩu
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="Nhập lại mật khẩu mới"
+                  minLength={6}
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <button
+                type="submit"
                 disabled={loading}
-              />
-            </div>
+                className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                {loading ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    Đang cập nhật...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-magic mr-2"></i>
+                    Đổi mật khẩu ngay
+                  </>
+                )}
+              </button>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-            >
-              {loading ? (
-                <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i>
-                  Đang cập nhật...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-magic mr-2"></i>
-                  Đổi mật khẩu ngay
-                </>
-              )}
-            </button>
-          </form>
+              <div className="text-sm text-gray-500">
+                <button type="button" className="underline" onClick={() => setStep('request')}>
+                  Quay lại
+                </button>
+              </div>
+            </form>
+          )}
 
           <div className="mt-8 text-center pt-6 border-t border-gray-200">
             <button

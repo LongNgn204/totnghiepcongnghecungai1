@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS auth_users (
   created_at INTEGER NOT NULL,
   last_login INTEGER,
   is_active INTEGER DEFAULT 1,
-  is_admin INTEGER DEFAULT 0
+  is_admin INTEGER DEFAULT 0,
+  security_question TEXT,
+  security_answer_hash TEXT
 );
 
 -- Sessions table for token management

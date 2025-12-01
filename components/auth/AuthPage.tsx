@@ -14,8 +14,8 @@ export default function AuthPage() {
           <div className="bg-gradient-to-r from-blue-500 to-purple-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-graduation-cap text-4xl text-white"></i>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">Ôn Thi THPT</h1>
-          <p className="text-gray-600">Công Nghệ - Kết nối tri thức</p>
+          <h1 className="text-3xl font-bold text-gray-800">STEM Vietnam</h1>
+          <p className="text-gray-600">Học tập ôn thi cùng AI</p>
         </div>
 
         {/* Toggle Login/Register */}
@@ -147,13 +147,23 @@ function LoginForm() {
   );
 }
 
+const securityQuestions = [
+  'Tên trường tiểu học của bạn là gì?',
+  'Tên người bạn thân nhất thời thơ ấu của bạn là gì?',
+  'Tên con thú cưng đầu tiên của bạn là gì?',
+  'Thành phố nơi bạn sinh ra là gì?',
+  'Tên đường phố bạn đã lớn lên là gì?'
+];
+
 function RegisterForm({ setIsLogin }: { setIsLogin: (val: boolean) => void }) {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
-    displayName: ''
+    displayName: '',
+    securityQuestion: securityQuestions[0],
+    securityAnswer: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -193,7 +203,9 @@ function RegisterForm({ setIsLogin }: { setIsLogin: (val: boolean) => void }) {
         username: formData.username,
         email: formData.email,
         password: formData.password,
-        displayName: formData.displayName
+        displayName: formData.displayName,
+        securityQuestion: formData.securityQuestion,
+        securityAnswer: formData.securityAnswer
       });
       
       setSuccess(true);
@@ -303,6 +315,38 @@ function RegisterForm({ setIsLogin }: { setIsLogin: (val: boolean) => void }) {
           onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
           placeholder="Nhập lại mật khẩu"
+          required
+          disabled={loading}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          <i className="fas fa-shield-alt mr-2 text-blue-500"></i>
+          Câu hỏi bảo mật
+        </label>
+        <select
+          value={formData.securityQuestion}
+          onChange={e => setFormData({ ...formData, securityQuestion: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+          required
+          disabled={loading}
+        >
+          {securityQuestions.map(q => <option key={q} value={q}>{q}</option>)}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          <i className="fas fa-key mr-2 text-blue-500"></i>
+          Câu trả lời bảo mật
+        </label>
+        <input
+          type="text"
+          value={formData.securityAnswer}
+          onChange={e => setFormData({ ...formData, securityAnswer: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+          placeholder="Ít nhất 3 ký tự"
           required
           disabled={loading}
         />

@@ -19,7 +19,7 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (identifier: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
+  register: (data: any) => Promise<void>;
   logout: () => void;
   updateProfile: (data: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
@@ -103,11 +103,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     resumeSync();
   };
 
-  const register = async (email: string, password: string, displayName: string) => {
+  const register = async (data: any) => {
     const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, displayName }),
+      body: JSON.stringify(data),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Đăng ký thất bại');

@@ -109,7 +109,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                         <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">
                             {mode === 'login' ? 'Đăng Nhập' : 'Đăng Ký'}
                         </h2>
-                        <p className="text-blue-100 text-sm font-medium">Ôn Thi THPT QG môn Công Nghệ</p>
+                        <p className="text-blue-100 text-sm font-medium">STEM Vietnam - Học tập ôn thi cùng AI</p>
                     </div>
                 </div>
 

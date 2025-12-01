@@ -1,6 +1,6 @@
 # Phòng Code - Smart Lab
 
-**Một module học lập trình tích hợp trong ứng dụng "Ôn Thi THPT QG môn Công Nghệ"**
+**Một module học lập trình tích hợp trong ứng dụng "STEM Vietnam"**
 
 ---
 

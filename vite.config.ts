@@ -23,9 +23,9 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
         manifest: {
-          name: 'Ôn Thi THPT Môn Công Nghệ',
-          short_name: 'Ôn Thi CN',
-          description: 'Ứng dụng AI hỗ trợ học tập và ôn thi THPT môn Công nghệ',
+          name: 'STEM Vietnam',
+          short_name: 'STEM VN',
+          description: 'STEM Vietnam - Học tập ôn thi cùng AI',
           theme_color: '#ffffff',
           icons: [
             {

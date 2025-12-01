@@ -13,7 +13,7 @@ const TermsOfService: React.FC = () => {
                         <h1 className="text-3xl font-bold">Điều Khoản Sử Dụng</h1>
                     </div>
                     <p className="text-gray-400 text-lg">
-                        Quy định về việc sử dụng nền tảng Ôn Thi THPT QG môn Công Nghệ.
+                        Quy định về việc sử dụng nền tảng STEM Vietnam.
                     </p>
                 </div>
 

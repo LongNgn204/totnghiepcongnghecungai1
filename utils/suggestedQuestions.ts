@@ -1,4 +1,4 @@
-import { generateContent } from './geminiAPI';
+fimport { generateContent } from './geminiAPI';
 import type { ChatMessage } from './chatStorage';
 
 /**

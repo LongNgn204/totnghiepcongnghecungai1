@@ -59,10 +59,10 @@ const Header: React.FC = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-gray-900 dark:text-white text-lg leading-tight group-hover:text-blue-600 transition-colors">
-                    Ôn Thi THPT QG
+                    STEM Vietnam
                   </span>
                   <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                    Môn Công Nghệ
+                    Học tập ôn thi cùng AI
                   </span>
                 </div>
               </Link>

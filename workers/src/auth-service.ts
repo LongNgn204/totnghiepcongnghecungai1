@@ -39,11 +39,24 @@ export async function requireAuth(request: any, db: any): Promise<string> {
   }
 
   const token = authHeader.substring(7);
-  const userId = decodeToken(token);
-  console.log('Decoded userId:', userId);
+  const decodedUserId = decodeToken(token);
 
-  if (!userId) {
+  if (!decodedUserId) {
     throw new Error('UNAUTHORIZED: Invalid token');
+  }
+
+  // Verify session exists, not expired, and matches user
+  const session = await db.prepare(
+    'SELECT user_id FROM auth_sessions WHERE token = ? AND expires_at > ?'
+  ).bind(token, Date.now()).first();
+
+  if (!session) {
+    throw new Error('UNAUTHORIZED: Session expired');
+  }
+
+  const userId = session.user_id as string;
+  if (userId !== decodedUserId) {
+    throw new Error('UNAUTHORIZED: Token mismatch');
   }
 
   // Verify user exists and is active
@@ -55,18 +68,6 @@ export async function requireAuth(request: any, db: any): Promise<string> {
     throw new Error('UNAUTHORIZED: User not found or inactive');
   }
 
-  // Verify session exists and not expired
-  console.log('requireAuth token:', token);
-  const session = await db.prepare(
-    'SELECT id FROM auth_sessions WHERE token = ? AND expires_at > ?'
-  ).bind(token, Date.now()).first();
-  console.log('session query result:', session);
-
-  if (!session) {
-    console.log('Session not found or expired for token');
-    throw new Error('UNAUTHORIZED: Session expired');
-  }
-
   return userId;
 }
 
@@ -76,6 +77,8 @@ export async function registerUser(db: any, data: {
   email: string;
   password: string;
   displayName: string;
+  securityQuestion: string;
+  securityAnswer: string;
 }) {
   // Auto-generate username from email if not provided
   const username = data.username || data.email.split('@')[0];
@@ -102,8 +105,16 @@ export async function registerUser(db: any, data: {
     throw new Error('Username hoặc email đã được sử dụng');
   }
 
-  // Hash password
+  if (!data.securityQuestion || data.securityQuestion.length < 5) {
+    throw new Error('Câu hỏi bảo mật phải có ít nhất 5 ký tự');
+  }
+  if (!data.securityAnswer || data.securityAnswer.length < 3) {
+    throw new Error('Câu trả lời bảo mật phải có ít nhất 3 ký tự');
+  }
+
+  // Hash password and security answer
   const passwordHash = await hashPassword(data.password);
+  const securityAnswerHash = await hashPassword(data.securityAnswer.toLowerCase().trim());
 
   // Create user
   const userId = crypto.randomUUID();
@@ -111,8 +122,8 @@ export async function registerUser(db: any, data: {
 
   await db.prepare(
     `INSERT INTO auth_users 
-    (id, username, email, password_hash, display_name, created_at, last_login, is_active) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    (id, username, email, password_hash, display_name, created_at, last_login, is_active, security_question, security_answer_hash) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     userId,
     username.toLowerCase(),
@@ -121,7 +132,9 @@ export async function registerUser(db: any, data: {
     data.displayName,
     now,
     now,
-    1
+    1,
+    data.securityQuestion,
+    securityAnswerHash
   ).run();
 
   // Generate token
@@ -337,14 +350,15 @@ export async function requestPasswordReset(
   }
 
   // Return response (show code in dev mode only)
-  const isDevelopment = !emailConfig || !emailConfig.apiKey;
+  const hasEmail = !!(emailConfig && emailConfig.apiKey);
 
+  // Luôn trả resetCode trong response theo yêu cầu sản phẩm (kể cả khi có email)
   return {
     success: true,
-    message: isDevelopment
-      ? 'Mã reset đã được tạo (Dev mode - email không được gửi)'
-      : 'Mã reset đã được gửi đến email của bạn',
-    ...(isDevelopment && { resetCode }) // Only show code in dev mode
+    message: hasEmail
+      ? 'Mã reset đã được gửi đến email của bạn (đồng thời hiển thị bên dưới để nhập nhanh)'
+      : 'Mã reset đã được tạo (Dev mode - email không được gửi)',
+    resetCode
   };
 }
 
@@ -404,4 +418,58 @@ export async function resetPassword(db: any, email: string, token: string, newPa
   await db.prepare('DELETE FROM auth_sessions WHERE user_id = ?').bind(verification.userId).run();
 
   return { success: true, message: 'Mật khẩu đã được reset thành công' };
+}
+
+// Get security question for a user by email
+export async function getSecurityQuestionByEmail(db: any, email: string) {
+  const user = await db.prepare(
+    'SELECT security_question FROM auth_users WHERE email = ?'
+  ).bind(email.toLowerCase()).first();
+
+  if (!user || !user.security_question) {
+    throw new Error('Không tìm thấy tài khoản hoặc tài khoản chưa có câu hỏi bảo mật.');
+  }
+
+  return { securityQuestion: user.security_question };
+}
+
+// Reset password using security question and answer
+export async function resetPasswordBySecurityQuestion(db: any, data: {
+  email: string;
+  securityAnswer: string;
+  newPassword: string;
+}) {
+  const { email, securityAnswer, newPassword } = data;
+
+  // Find user by email
+  const user = await db.prepare(
+    'SELECT id, security_answer_hash FROM auth_users WHERE email = ?'
+  ).bind(email.toLowerCase()).first();
+
+  if (!user || !user.security_answer_hash) {
+    throw new Error('Tài khoản không hợp lệ hoặc chưa thiết lập câu trả lời bảo mật.');
+  }
+
+  // Verify security answer
+  const isAnswerCorrect = await verifyPassword(securityAnswer.toLowerCase().trim(), user.security_answer_hash);
+
+  if (!isAnswerCorrect) {
+    throw new Error('Câu trả lời bảo mật không đúng.');
+  }
+
+  // Validate new password
+  if (newPassword.length < 6) {
+    throw new Error('Mật khẩu mới phải có ít nhất 6 ký tự.');
+  }
+
+  // Hash and update password
+  const newPasswordHash = await hashPassword(newPassword);
+  await db.prepare(
+    'UPDATE auth_users SET password_hash = ? WHERE id = ?'
+  ).bind(newPasswordHash, user.id).run();
+
+  // Invalidate all user sessions
+  await db.prepare('DELETE FROM auth_sessions WHERE user_id = ?').bind(user.id).run();
+
+  return { success: true, message: 'Mật khẩu đã được cập nhật thành công.' };
 }
