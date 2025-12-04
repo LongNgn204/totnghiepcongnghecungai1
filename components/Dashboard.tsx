@@ -51,12 +51,20 @@ const Dashboard: React.FC = () => {
     // Fetch real stats
     const fetchStats = async () => {
       try {
-        const data = await api.dashboard.getStats();
+        const data = await api.dashboard.stats();
         if (data) {
           setStats(data);
         }
       } catch (error) {
         console.error('Failed to fetch dashboard stats:', error);
+        // Set default stats to prevent loading state
+        setStats({
+          streak: 0,
+          weeklyProgress: 0,
+          avgScore: 0,
+          recentActivity: [],
+          chartData: []
+        });
       } finally {
         setLoading(false);
       }

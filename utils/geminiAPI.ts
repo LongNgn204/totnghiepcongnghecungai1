@@ -18,6 +18,17 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 export async function generateContent(prompt: string, modelId: string = 'gemini-2.5-pro'): Promise<GeminiResponse> {
   try {
     const token = localStorage.getItem('auth_token');
+    
+    // Check if API URL is configured
+    if (!API_URL || API_URL === 'http://localhost:8787') {
+      console.warn('AI API endpoint not properly configured. Using fallback response.');
+      return { 
+        text: 'Xin lỗi, dịch vụ AI hiện không khả dụng. Vui lòng kiểm tra cấu hình API.', 
+        success: false, 
+        error: 'API endpoint not configured' 
+      };
+    }
+
     const response = await fetch(`${API_URL}/api/ai/generate`, {
       method: 'POST',
       headers: {
@@ -44,7 +55,12 @@ export async function generateContent(prompt: string, modelId: string = 'gemini-
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const message = errorData?.error || `${response.status}`;
+      const statusMessage = response.status === 404 
+        ? 'Endpoint AI không tìm thấy. Vui lòng kiểm tra cấu hình server.'
+        : response.status === 500
+        ? 'Lỗi server. Vui lòng thử lại sau.'
+        : `Lỗi ${response.status}`;
+      const message = errorData?.error || statusMessage;
       throw new Error(message);
     }
 
@@ -114,6 +130,16 @@ export async function sendChatMessage(
   history: any[] = []
 ): Promise<GeminiResponse> {
   try {
+    // Check if API URL is configured
+    if (!API_URL || API_URL === 'http://localhost:8787') {
+      console.warn('AI API endpoint not properly configured. Using fallback response.');
+      return { 
+        text: 'Xin lỗi, dịch vụ AI hiện không khả dụng. Vui lòng kiểm tra cấu hình API.', 
+        success: false, 
+        error: 'API endpoint not configured' 
+      };
+    }
+
     // Construct the contents array from history
     const contents = history.map(msg => ({
       role: msg.role === 'user' ? 'user' : 'model',
@@ -160,7 +186,12 @@ export async function sendChatMessage(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData?.error || 'API request failed');
+      const statusMessage = response.status === 404 
+        ? 'Endpoint AI không tìm thấy. Vui lòng kiểm tra cấu hình server.'
+        : response.status === 500
+        ? 'Lỗi server. Vui lòng thử lại sau.'
+        : `Lỗi ${response.status}`;
+      throw new Error(errorData?.error || statusMessage);
     }
 
     const data = await response.json();

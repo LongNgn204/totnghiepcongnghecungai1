@@ -103,9 +103,27 @@ export const saveChatSession = async (session: ChatSession): Promise<void> => {
     saveLocalChatSession(session);
     if (!navigator.onLine) return;
     try {
-      await api.chat.update(session.id, session.messages);
+      // Ensure all required fields are present and not undefined
+      const sessionData = {
+        id: session.id,
+        title: session.title || 'Chat mới',
+        createdAt: session.createdAt || Date.now(),
+        updatedAt: session.updatedAt || Date.now(),
+        messages: session.messages || [],
+        metadata: session.metadata || { subject: 'Công nghệ', grade: '12' }
+      };
+      await api.chat.update(session.id, sessionData);
     } catch (e: any) {
-      await api.chat.create(session);
+      // If update fails, try to create a new session
+      const sessionData = {
+        id: session.id,
+        title: session.title || 'Chat mới',
+        createdAt: session.createdAt || Date.now(),
+        updatedAt: session.updatedAt || Date.now(),
+        messages: session.messages || [],
+        metadata: session.metadata || { subject: 'Công nghệ', grade: '12' }
+      };
+      await api.chat.create(sessionData);
     }
   } catch (error) {
     console.error('Error saving chat session:', error);
