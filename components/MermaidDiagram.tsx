@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import DOMPurify from 'dompurify';
 
 interface MermaidDiagramProps {
   chart: string;
@@ -16,13 +17,19 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart }) => {
         mermaid.initialize({
           startOnLoad: false,
           theme: 'default',
-          securityLevel: 'loose',
+          securityLevel: 'strict', // Prevent HTML in diagrams to mitigate XSS
+          flowchart: { htmlLabels: false },
           fontFamily: 'sans-serif',
         });
         const id = `mermaid-diagram-${Math.random().toString(36).slice(2, 11)}`;
         const { svg: svgCode } = await mermaid.render(id, chart);
         if (isMounted) {
-          setSvg(svgCode);
+          // Sanitize the generated SVG before injecting
+          const safeSvg = DOMPurify.sanitize(svgCode, {
+            USE_PROFILES: { svg: true },
+            ALLOWED_ATTR: ['class', 'style', 'fill', 'stroke', 'd', 'transform', 'viewBox', 'xmlns', 'width', 'height', 'id', 'x', 'y', 'rx', 'ry', 'cx', 'cy', 'r', 'points', 'markerWidth', 'markerHeight', 'refX', 'refY', 'orient', 'markerUnits', 'x1', 'y1', 'x2', 'y2', 'offset', 'stop-color', 'stop-opacity'],
+          } as any);
+          setSvg(safeSvg);
           setError(null);
         }
       } catch (e) {

@@ -8,10 +8,23 @@ interface MessageContentProps {
   content: string;
 }
 
-const isSafeUrl = (url: string): boolean => {
+const isSafeHttpUrl = (url: string): boolean => {
   try {
     const u = new URL(url, window.location.origin);
-    return u.protocol === 'http:' || u.protocol === 'https:' || u.protocol === 'data:';
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
+const isSafeImageSrc = (src: string): boolean => {
+  try {
+    const u = new URL(src, window.location.origin);
+    if (u.protocol === 'http:' || u.protocol === 'https:') return true;
+    if (u.protocol === 'data:') {
+      return /^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,/i.test(src);
+    }
+    return false;
   } catch {
     return false;
   }
@@ -147,7 +160,7 @@ const formatMarkdown = (text: string): string => {
 
   // Images (sanitize URL)
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt, src) => {
-    const safe = isSafeUrl(src) ? src : '';
+    const safe = isSafeImageSrc(src) ? src : '';
     const escapedAlt = escapeHtml(alt);
     if (!safe) return `<span class="text-red-500 text-sm">[Blocked image: ${escapedAlt}]</span>`;
     return `<a href="${safe}" target="_blank" rel="noopener noreferrer"><img src="${safe}" alt="${escapedAlt}" loading="lazy" decoding="async" referrerpolicy="no-referrer" class="max-w-full rounded-xl shadow-sm my-4 border border-gray-100 cursor-zoom-in" /></a>`;
@@ -155,7 +168,7 @@ const formatMarkdown = (text: string): string => {
 
   // Links (sanitize URL)
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, href) => {
-    const safe = isSafeUrl(href) ? href : '#';
+    const safe = isSafeHttpUrl(href) ? href : '#';
     const escapedLabel = escapeHtml(label);
     return `<a href="${safe}" class="text-blue-500 hover:underline font-medium" target="_blank" rel="noopener noreferrer">${escapedLabel} 🔗</a>`;
   });
@@ -176,8 +189,8 @@ const formatMarkdown = (text: string): string => {
   html = html.replace(/\n/g, '<br/>' );
 
   return DOMPurify.sanitize(html, {
-    USE_PROFILES: { html: true, svg: true, mathMl: true },
-    ADD_ATTR: ['target', 'rel', 'referrerpolicy', 'loading', 'decoding', 'class', 'style'],
+    USE_PROFILES: { html: true, svg: false, mathMl: true },
+    ADD_ATTR: ['target', 'rel', 'referrerpolicy', 'loading', 'decoding', 'class'],
   });
 };
 

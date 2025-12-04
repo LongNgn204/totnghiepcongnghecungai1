@@ -224,7 +224,7 @@ router.post('/api/auth/reset-password', async (request, env: Env) => {
   }
 });
 
-// Get security question by email
+// Get security question by email (no user enumeration)
 router.get('/api/auth/security-question', async (request, env: Env) => {
   try {
     const url = new URL(request.url);
@@ -232,10 +232,11 @@ router.get('/api/auth/security-question', async (request, env: Env) => {
     if (!email) {
       return badRequestResponse('Thiếu email');
     }
-    const result = await getSecurityQuestionByEmail(env.DB, email);
-    return successResponse(result);
+    // Do not reveal whether the email exists; return a generic message
+    return successResponse({ securityQuestion: 'Nếu tài khoản tồn tại, câu hỏi bảo mật sẽ được hiển thị trong quy trình xác thực tiếp theo hoặc gửi qua email.' });
   } catch (error: any) {
-    return errorResponse(error.message, 404);
+    // Always return success to avoid enumeration
+    return successResponse({ securityQuestion: 'Nếu tài khoản tồn tại, câu hỏi bảo mật sẽ được hiển thị trong quy trình xác thực tiếp theo hoặc gửi qua email.' });
   }
 });
 
@@ -253,6 +254,35 @@ router.post('/api/auth/reset-by-question', async (request, env: Env) => {
     return successResponse(result);
   } catch (error: any) {
     return errorResponse(error.message, 400);
+  }
+});
+
+// ============= AI PROXY =============
+
+router.post('/api/ai/generate', async (request, env: Env) => {
+  try {
+    const userId = await requireAuth(request, env.DB); // require auth to use AI
+    const body: any = await request.json();
+    const modelId = body.modelId || 'gemini-2.5-pro';
+    if (!env.GEMINI_API_KEY) {
+      return errorResponse('AI is not configured', 500);
+    }
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${env.GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: body.contents,
+        generationConfig: body.generationConfig,
+        safetySettings: body.safetySettings,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return errorResponse(data?.error?.message || `AI error ${res.status}`, res.status);
+    }
+    return successResponse(data);
+  } catch (error: any) {
+    return errorResponse(error.message || 'AI proxy error', 500);
   }
 });
 
@@ -634,8 +664,15 @@ router.post('/api/flashcards/decks/:deckId/cards', async (request, env: Env) => 
 
 router.put('/api/flashcards/cards/:id', async (request, env: Env) => {
   try {
+    const userId = await requireAuth(request, env.DB);
     const { id } = request.params;
     const body: any = await request.json();
+
+    // Ownership check: find deck owner for this card
+    const card = await env.DB.prepare('SELECT deck_id FROM flashcards WHERE id = ?').bind(id).first();
+    if (!card) return errorResponse('Card not found', 404);
+    const owns = await env.DB.prepare('SELECT 1 FROM flashcard_decks WHERE id = ? AND user_id = ?').bind(card.deck_id, userId).first();
+    if (!owns) return unauthorizedResponse('Forbidden');
 
     const {
       ease_factor,
@@ -675,7 +712,14 @@ router.put('/api/flashcards/cards/:id', async (request, env: Env) => {
 
 router.delete('/api/flashcards/cards/:id', async (request, env: Env) => {
   try {
+    const userId = await requireAuth(request, env.DB);
     const { id } = request.params;
+
+    // Ownership check via deck
+    const card = await env.DB.prepare('SELECT deck_id FROM flashcards WHERE id = ?').bind(id).first();
+    if (!card) return errorResponse('Card not found', 404);
+    const owns = await env.DB.prepare('SELECT 1 FROM flashcard_decks WHERE id = ? AND user_id = ?').bind(card.deck_id, userId).first();
+    if (!owns) return unauthorizedResponse('Forbidden');
 
     await env.DB.prepare('DELETE FROM flashcards WHERE id = ?')
       .bind(id)
@@ -983,9 +1027,14 @@ router.post('/api/sync', async (request, env: Env) => {
         .run();
     }
 
-    // Upsert flashcards
+    // Upsert flashcards (guard: deck must belong to current user)
     for (const c of cards) {
       const created_at = c.created_at || now;
+      const deckOwner = await env.DB.prepare('SELECT 1 FROM flashcard_decks WHERE id = ? AND user_id = ?').bind(c.deck_id, userId).first();
+      if (!deckOwner) {
+        // Skip cards for decks not owned by the user
+        continue;
+      }
       await env.DB.prepare(
         `INSERT INTO flashcards (id, deck_id, question, answer, difficulty, tags, ease_factor, interval, repetitions, mastery_level, review_count, correct_count, next_review, last_reviewed, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1139,12 +1188,13 @@ router.post('/api/management/update-user', async (request, env: Env) => {
     const userId = await requireAuth(request, env.DB);
     const body: any = await request.json();
 
-    // In a real app, you might want to check for Admin role here
-    // const user = await getUserById(env.DB, userId);
-    // if (user.role !== 'admin') return unauthorizedResponse('Admin access required');
-
     const { targetUserId, data } = body;
-    const idToUpdate = targetUserId || userId; // Allow updating self if no target provided
+    const caller = await getUserById(env.DB, userId);
+    const idToUpdate = targetUserId || userId; // self-update allowed
+
+    if (targetUserId && !caller.isAdmin) {
+      return unauthorizedResponse('Admin access required');
+    }
 
     const updatedUser = await updateUserData(env.DB, idToUpdate, data);
     return successResponse(updatedUser, 'User data updated successfully');
@@ -1230,6 +1280,27 @@ export default {
       headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       headers.set('Access-Control-Allow-Headers', 'Content-Type, X-User-ID, Authorization');
       headers.set('Access-Control-Max-Age', '86400');
+
+      // Security headers
+      headers.set('X-Content-Type-Options', 'nosniff');
+      headers.set('X-Frame-Options', 'DENY');
+      headers.set('Referrer-Policy', 'no-referrer');
+      headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+      headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+      const csp = [
+        "default-src 'self'",
+        "base-uri 'self'",
+        "frame-ancestors 'none'",
+        "object-src 'none'",
+        "script-src 'self'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: https:",
+        "font-src 'self' data: https:",
+        "connect-src 'self'",
+        'upgrade-insecure-requests'
+      ].join('; ');
+      headers.set('Content-Security-Policy', csp);
+
       return new Response(res?.body, { status: res?.status || 200, headers });
     } catch (error: any) {
       return errorResponse(error.message || 'Internal Server Error', 500);

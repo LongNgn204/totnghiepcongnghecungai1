@@ -40,7 +40,7 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Fetch event - network first, then cache
+// Fetch event - hardened caching policy
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -50,34 +50,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // API requests - network first, cache fallback
-  if (url.pathname.includes('/api/') || url.pathname.includes('generativelanguage')) {
+  const isApi = url.pathname.startsWith('/api/');
+  const isAI = url.hostname.endsWith('generativelanguage.googleapis.com');
+  const hasAuth = request.headers.get('Authorization');
+
+  // Do not cache API/AI or any authenticated requests
+  if (isApi || isAI || hasAuth) {
+    // Network only
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Clone response to cache it
-          const responseClone = response.clone();
-          caches.open(DYNAMIC_CACHE).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return response;
-        })
-        .catch(() => {
-          // Return cached response if network fails
-          return caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            // Return offline page or error
-            return new Response(
-              JSON.stringify({ error: 'Offline - No cached data available' }),
-              {
-                headers: { 'Content-Type': 'application/json' },
-                status: 503,
-              }
-            );
-          });
-        })
+      fetch(request).catch(() => new Response(JSON.stringify({ error: 'Offline' }), { status: 503, headers: { 'Content-Type': 'application/json' } }))
     );
     return;
   }
@@ -86,12 +67,14 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cached version and update cache in background
+        // Update cache in background
         fetch(request)
           .then((networkResponse) => {
-            caches.open(DYNAMIC_CACHE).then((cache) => {
-              cache.put(request, networkResponse);
-            });
+            if (networkResponse && networkResponse.ok) {
+              caches.open(DYNAMIC_CACHE).then((cache) => {
+                cache.put(request, networkResponse);
+              });
+            }
           })
           .catch(() => {});
         return cachedResponse;
@@ -100,21 +83,14 @@ self.addEventListener('fetch', (event) => {
       // Not in cache, fetch from network
       return fetch(request)
         .then((response) => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type === 'error') {
-            return response;
-          }
-
-          // Clone response to cache it
+          if (!response || !response.ok) return response;
           const responseClone = response.clone();
           caches.open(DYNAMIC_CACHE).then((cache) => {
             cache.put(request, responseClone);
           });
-
           return response;
         })
         .catch(() => {
-          // Return offline fallback
           if (request.destination === 'document') {
             return caches.match('/index.html');
           }

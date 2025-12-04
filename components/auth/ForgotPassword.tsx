@@ -3,15 +3,14 @@ import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
-type Step = 'request' | 'answer';
+type Step = 'request' | 'verify';
 
 const ForgotPassword: React.FC = () => {
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>('request');
   const [email, setEmail] = useState('');
-  const [securityQuestion, setSecurityQuestion] = useState('');
-  const [securityAnswer, setSecurityAnswer] = useState('');
+  const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -19,23 +18,22 @@ const ForgotPassword: React.FC = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  const handleGetQuestion = async (e: React.FormEvent) => {
+  const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setMessage('');
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/security-question?email=${encodeURIComponent(email)}`);
+      const res = await fetch(`${API_URL}/api/auth/request-reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
       const result = await res.json();
-
-      if (!res.ok) {
-        throw new Error(result.error || 'Không thể lấy câu hỏi bảo mật');
-      }
-
-      setSecurityQuestion(result.data.securityQuestion);
-      setMessage('Đã tìm thấy câu hỏi bảo mật. Vui lòng trả lời để tiếp tục.');
-      setStep('answer');
+      if (!res.ok) throw new Error(result.error || 'Không thể yêu cầu reset');
+      setMessage('Nếu email tồn tại, một mã xác thực đã được gửi. Vui lòng kiểm tra hộp thư.');
+      setStep('verify');
     } catch (err: any) {
       setError(err.message || 'Đã có lỗi xảy ra');
     } finally {
@@ -52,7 +50,6 @@ const ForgotPassword: React.FC = () => {
       setError('Mật khẩu xác nhận không khớp');
       return;
     }
-
     if (newPassword.length < 6) {
       setError('Mật khẩu phải có ít nhất 6 ký tự');
       return;
@@ -60,17 +57,13 @@ const ForgotPassword: React.FC = () => {
 
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/api/auth/reset-by-question`, {
+      const res = await fetch(`${API_URL}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, securityAnswer, newPassword })
+        body: JSON.stringify({ email, token, newPassword })
       });
       const result = await res.json();
-
-      if (!res.ok) {
-        throw new Error(result.error || 'Không thể đổi mật khẩu');
-      }
-
+      if (!res.ok) throw new Error(result.error || 'Không thể đổi mật khẩu');
       setMessage('Đổi mật khẩu thành công! Đang chuyển đến trang đăng nhập...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {
@@ -90,7 +83,7 @@ const ForgotPassword: React.FC = () => {
             </div>
             <h2 className="text-3xl font-bold text-gray-800 mb-2">Quên mật khẩu</h2>
             <p className="text-gray-600">
-              {step === 'request' ? 'Nhập email để lấy câu hỏi bảo mật' : 'Trả lời câu hỏi để đổi mật khẩu'}
+              {step === 'request' ? 'Nhập email để nhận mã xác thực' : 'Nhập mã xác thực và mật khẩu mới'}
             </p>
           </div>
 
@@ -109,7 +102,7 @@ const ForgotPassword: React.FC = () => {
           )}
 
           {step === 'request' && (
-            <form onSubmit={handleGetQuestion} className="space-y-5">
+            <form onSubmit={handleRequestReset} className="space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                   <i className="fas fa-envelope text-purple-500"></i>
@@ -134,39 +127,31 @@ const ForgotPassword: React.FC = () => {
                 {loading ? (
                   <>
                     <i className="fas fa-spinner fa-spin mr-2"></i>
-                    Đang tìm...
+                    Đang gửi...
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-search mr-2"></i>
-                    Tìm câu hỏi bảo mật
+                    <i className="fas fa-paper-plane mr-2"></i>
+                    Gửi mã xác thực
                   </>
                 )}
               </button>
             </form>
           )}
 
-          {step === 'answer' && (
+          {step === 'verify' && (
             <form onSubmit={handleResetPassword} className="space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <i className="fas fa-shield-alt text-blue-500"></i>
-                  Câu hỏi bảo mật
-                </label>
-                <p className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-100 text-gray-700">{securityQuestion}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <i className="fas fa-key text-blue-500"></i>
-                  Câu trả lời của bạn
+                  <i className="fas fa-code text-blue-500"></i>
+                  Mã xác thực
                 </label>
                 <input
                   type="text"
-                  value={securityAnswer}
-                  onChange={(e) => setSecurityAnswer(e.target.value)}
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                  placeholder="Nhập câu trả lời của bạn"
+                  placeholder="Nhập mã 6 chữ số"
                   required
                   disabled={loading}
                 />

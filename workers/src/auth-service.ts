@@ -317,7 +317,7 @@ export async function requestPasswordReset(
 
   if (!user) {
     // For security: don't reveal if email exists
-    return { success: true, message: 'Nếu email tồn tại, mã reset đã được gửi đến email' };
+    return { success: true, message: 'Nếu email tồn tại, hướng dẫn đặt lại mật khẩu đã được gửi.' };
   }
 
   // Generate reset token (6 digit code for simplicity)
@@ -342,23 +342,18 @@ export async function requestPasswordReset(
 
       if (!emailResult.success) {
         console.error('Failed to send reset email:', emailResult.error);
-        // Continue anyway, user can still use code if shown in dev mode
       }
     } catch (error) {
       console.error('Email sending error:', error);
     }
   }
 
-  // Return response (show code in dev mode only)
-  const hasEmail = !!(emailConfig && emailConfig.apiKey);
-
-  // Luôn trả resetCode trong response theo yêu cầu sản phẩm (kể cả khi có email)
+  // Do NOT return the reset code in API responses in production
   return {
     success: true,
-    message: hasEmail
-      ? 'Mã reset đã được gửi đến email của bạn (đồng thời hiển thị bên dưới để nhập nhanh)'
-      : 'Mã reset đã được tạo (Dev mode - email không được gửi)',
-    resetCode
+    message: (emailConfig && emailConfig.apiKey)
+      ? 'Mã reset đã được gửi đến email của bạn.'
+      : 'Nếu email tồn tại, mã reset đã được tạo. Vui lòng kiểm tra email nếu có cấu hình email.'
   };
 }
 

@@ -10,69 +10,50 @@ export const AVAILABLE_MODELS = [
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Phản hồi nhanh, độ trễ thấp (Turbo)' },
 ];
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
 /**
- * Gọi Gemini API để tạo nội dung
+ * Gọi AI qua server proxy để tránh lộ API key
  */
 export async function generateContent(prompt: string, modelId: string = 'gemini-2.5-pro'): Promise<GeminiResponse> {
-  if (!API_KEY || API_KEY === 'your_gemini_api_key_here') {
-    return {
-      text: '',
-      success: false,
-      error: 'Vui lòng cấu hình VITE_GEMINI_API_KEY trong file .env.local'
-    };
-  }
-
   try {
-    const doRequest = async (targetModel: string) => {
-      const response = await fetch(`${BASE_URL}/${targetModel}:generateContent?key=${API_KEY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    const token = localStorage.getItem('auth_token');
+    const response = await fetch(`${API_URL}/api/ai/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        modelId,
+        generationConfig: {
+          temperature: 0.3,
+          topK: 30,
+          topP: 0.9,
+          maxOutputTokens: 8192,
         },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: prompt }]
-          }],
-          generationConfig: {
-            temperature: 0.3,
-            topK: 30,
-            topP: 0.9,
-            maxOutputTokens: 8192,
-          },
-        }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const message = errorData?.error?.message || `${response.status}`;
-        throw new Error(message);
-      }
-      return response.json();
-    };
+        safetySettings: [
+          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        ],
+      }),
+    });
 
-    try {
-      const data = await doRequest(modelId);
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      return { text, success: true };
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const shouldFallback = /not found|unsupported|404|invalid model/i.test(msg);
-      if (shouldFallback && modelId !== 'gemini-2.5-flash') {
-        const data = await doRequest('gemini-2.5-flash');
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        return { text, success: true };
-      }
-      throw err;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const message = errorData?.error || `${response.status}`;
+      throw new Error(message);
     }
+
+    const data = await response.json();
+    const text = data.data?.candidates?.[0]?.content?.parts?.[0]?.text || data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    return { text, success: true };
   } catch (error) {
-    console.error('Gemini API Error:', error);
-    return {
-      text: '',
-      success: false,
-      error: error instanceof Error ? error.message : 'Có lỗi xảy ra khi gọi API'
-    };
+    console.error('AI Proxy Error:', error);
+    return { text: '', success: false, error: error instanceof Error ? error.message : 'Có lỗi xảy ra khi gọi API' };
   }
 }
 
@@ -132,14 +113,6 @@ export async function sendChatMessage(
   modelId: string = 'gemini-2.5-pro',
   history: any[] = []
 ): Promise<GeminiResponse> {
-  if (!API_KEY || API_KEY === 'your_gemini_api_key_here') {
-    return {
-      text: '',
-      success: false,
-      error: 'Vui lòng cấu hình VITE_GEMINI_API_KEY trong file .env.local'
-    };
-  }
-
   try {
     // Construct the contents array from history
     const contents = history.map(msg => ({
@@ -154,22 +127,22 @@ export async function sendChatMessage(
     if (files && files.length > 0) {
       for (const file of files) {
         const filePart = await fileToGenerativePart(file);
-        currentParts.push(filePart);
+        currentParts.push(filePart as any);
       }
     }
 
-    contents.push({
-      role: 'user',
-      parts: currentParts
-    });
+    contents.push({ role: 'user', parts: currentParts });
 
-    const response = await fetch(`${BASE_URL}/${modelId}:generateContent?key=${API_KEY}`, {
+    const token = localStorage.getItem('auth_token');
+    const response = await fetch(`${API_URL}/api/ai/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({
-        contents: contents,
+        contents,
+        modelId,
         generationConfig: {
           temperature: 0.7,
           topK: 40,
@@ -177,44 +150,25 @@ export async function sendChatMessage(
           maxOutputTokens: 8192,
         },
         safetySettings: [
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE'
-          },
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE'
-          },
-          {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE'
-          },
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE'
-          }
+          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
         ]
-      }),
+      })
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'API request failed');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.error || 'API request failed');
     }
 
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const text = data.data?.candidates?.[0]?.content?.parts?.[0]?.text || data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    return {
-      text,
-      success: true,
-    };
+    return { text, success: true };
   } catch (error) {
-    console.error('Gemini API Error:', error);
-    return {
-      text: '',
-      success: false,
-      error: error instanceof Error ? error.message : 'Có lỗi xảy ra khi gọi API'
-    };
+    console.error('AI Proxy Error:', error);
+    return { text: '', success: false, error: error instanceof Error ? error.message : 'Có lỗi xảy ra khi gọi API' };
   }
 }
