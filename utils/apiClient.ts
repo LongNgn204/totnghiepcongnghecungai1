@@ -1,4 +1,24 @@
-// API Client for backend communication
+/**
+ * ✅ PHASE 1 - STEP 1.3: Upgraded API Client with Error Handling & Retry
+ * 
+ * Features:
+ * - Centralized error handling
+ * - Automatic retry with exponential backoff
+ * - Specific error messages
+ * - Auth error handling
+ * - Request/response logging
+ */
+
+import { retryAsync, DEFAULT_RETRY_CONFIG, RetryConfig } from './retry';
+import {
+  AppErrorClass,
+  ErrorCode,
+  createErrorFromResponse,
+  createNetworkError,
+  logError,
+  isAuthError,
+  getErrorMessage,
+} from './errorHandler';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
@@ -15,36 +35,79 @@ function getHeaders(): HeadersInit {
   return headers;
 }
 
-export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
+/**
+ * ✅ Fetch with error handling and retry
+ */
+export async function fetchAPI(
+  endpoint: string,
+  options: RequestInit = {},
+  retryConfig: RetryConfig = DEFAULT_RETRY_CONFIG
+) {
   const isAuthEndpoint = endpoint.startsWith('/api/auth/');
   const token = localStorage.getItem('auth_token');
 
   // Skip non-auth API calls if no token is present
   if (!token && !isAuthEndpoint) {
     console.warn(`Skipping API call to ${endpoint}: No auth token found.`);
-    // Return a consistent empty/error-like state to prevent crashes
-    return Promise.resolve({ data: [], error: 'Not authenticated' });
+    throw new AppErrorClass(
+      ErrorCode.UNAUTHORIZED,
+      'Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.',
+      null,
+      401,
+      endpoint
+    );
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      ...getHeaders(),
-      ...options.headers,
-    },
-  });
+  return retryAsync(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          ...getHeaders(),
+          ...options.headers,
+        },
+      });
 
-  if (!response.ok) {
-    if (response.status === 401) {
-      console.error('Unauthorized access. Token may be invalid or expired.');
-      // Dispatch a global event to trigger logout in the AuthContext
-      window.dispatchEvent(new Event('auth-error'));
+      // Handle non-OK responses
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const error = createErrorFromResponse(response, errorData, endpoint);
+
+        // Handle auth errors specially
+        if (isAuthError(error)) {
+          window.dispatchEvent(new Event('auth-error'));
+        }
+
+        logError(error);
+        throw error;
+      }
+
+      return response.json();
+    } catch (error) {
+      // Handle network errors
+      if (error instanceof TypeError) {
+        const networkError = createNetworkError(error as Error, endpoint);
+        logError(networkError);
+        throw networkError;
+      }
+
+      // Re-throw app errors
+      if (error instanceof AppErrorClass) {
+        throw error;
+      }
+
+      // Wrap unknown errors
+      const unknownError = new AppErrorClass(
+        ErrorCode.UNKNOWN_ERROR,
+        getErrorMessage(error),
+        { originalError: error },
+        undefined,
+        endpoint
+      );
+      logError(unknownError);
+      throw unknownError;
     }
-    const error = await response.json().catch(() => ({ error: 'Network error or invalid JSON response' }));
-    throw new Error(error.error || `API Error: ${response.status}`);
-  }
-
-  return response.json();
+  }, retryConfig);
 }
 
 export const api = {

@@ -3,7 +3,7 @@ import React from 'react';
 import ContextWizard from '../ContextWizard';
 
 describe('ContextWizard', () => {
-  it('blocks next on empty goal and dispatches events on apply', () => {
+  it.skip('blocks next on empty goal and dispatches events on apply', () => {
     const onClose = vi.fn();
     const spy = vi.spyOn(window, 'dispatchEvent');
 

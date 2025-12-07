@@ -1,5 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { generateContent } from '../utils/geminiAPI';
+import { GeneratedQuestionArraySchema } from '../utils/validation';
+import { getErrorMessage } from '../utils/errorHandler';
 import { saveExamToHistory, getExamHistory, ExamHistory, deleteExamFromHistory } from '../utils/examStorage';
 import syncManager from '../utils/syncManager';
 import QuestionCard from './QuestionCard';
@@ -96,28 +98,43 @@ const Product4: React.FC = () => {
       }`;
 
       const response = await generateContent(prompt);
+      if (!response.success) throw new Error(response.error || 'AI không phản hồi');
 
-      // Parse response to ensure it's valid JSON
-      let parsedQuestions;
-      try {
-        // Try to find JSON array in the response if it's wrapped in text
-        const jsonMatch = typeof response === 'string' ? response.match(/\[[\s\S]*\]/) : JSON.stringify(response).match(/\[[\s\S]*\]/);
-        const jsonString = jsonMatch ? jsonMatch[0] : (typeof response === 'string' ? response : JSON.stringify(response));
-        parsedQuestions = JSON.parse(jsonString);
-      } catch (e) {
-        console.error("Failed to parse JSON:", e);
-        throw new Error("Lỗi xử lý dữ liệu từ AI. Vui lòng thử lại.");
+      // Extract JSON array safely (supports code blocks)
+      const extractJSONArray = (text: string): string | null => {
+        const codeBlock = text.match(/```json\n([\s\S]*?)```/i) || text.match(/```\n([\s\S]*?)```/i);
+        if (codeBlock && codeBlock[1]) return codeBlock[1];
+        const arrMatch = text.match(/\[[\s\S]*\]/);
+        return arrMatch ? arrMatch[0] : null;
+      };
+
+      const jsonText = extractJSONArray(response.text);
+      if (!jsonText) throw new Error('AI không trả về đúng định dạng JSON (mảng câu hỏi).');
+
+      let raw: any;
+      try { raw = JSON.parse(jsonText); } catch { throw new Error('Lỗi parse JSON từ phản hồi AI.'); }
+
+      const parsed = GeneratedQuestionArraySchema.safeParse(raw);
+      if (!parsed.success) {
+        throw new Error('Dữ liệu AI không hợp lệ. Vui lòng thử lại với chủ đề/định dạng khác.');
       }
 
-      if (!Array.isArray(parsedQuestions) || parsedQuestions.length === 0) {
-        throw new Error("Không nhận được danh sách câu hỏi hợp lệ.");
-      }
-
-      // Ensure types are correct
-      const typedQuestions = parsedQuestions.map((q: any) => {
-        if (q.options) q.type = 'mc';
-        if (q.statements) q.type = 'tf';
-        return q;
+      // Normalize to our internal types
+      const typedQuestions = parsed.data.map((q: any, idx: number) => {
+        const base: any = {
+          id: idx + 1,
+          question: q.question || q.text || '',
+          explanation: q.explanation,
+          requirement: q.requirement,
+          level: q.level,
+        };
+        if (q.options) {
+          return { ...base, options: q.options, answer: q.answer || q.correctAnswer, type: 'mc' } as QuestionMC;
+        }
+        if (q.statements) {
+          return { ...base, statements: q.statements, type: 'tf' } as QuestionTF;
+        }
+        return base;
       });
 
       setQuestions(typedQuestions);
@@ -125,7 +142,7 @@ const Product4: React.FC = () => {
       setExamTitle(`Đề thi Nông nghiệp Lớp ${grade} - ${difficulty} - ${new Date().toLocaleDateString('vi-VN')}`);
       setStartTime(Date.now());
     } catch (err: any) {
-      setError(err.message || 'Có lỗi xảy ra khi tạo đề thi.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -384,6 +401,9 @@ const Product4: React.FC = () => {
       heroGradientTo="to-lime-700"
       sidebar={sidebarContent}
     >
+      {error && (
+        <div role="alert" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4">{error}</div>
+      )}
       {questions.length === 0 && !loading && (
         <div className="glass-card p-12 text-center animate-fade-in">
           <div className="w-24 h-24 bg-gradient-to-br from-emerald-100 to-lime-100 dark:from-emerald-900/30 dark:to-lime-900/30 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">

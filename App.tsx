@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
 import SyncStatus from './components/SyncStatus';
 import SyncToastListener from './components/SyncToastListener';
+import NetworkStatus from './components/NetworkStatus';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import syncManager from './utils/syncManager';
@@ -151,6 +152,7 @@ const App: React.FC = () => {
       </div>
 
       <div className="relative z-10 flex flex-col min-h-screen">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 bg-blue-600 text-white px-3 py-2 rounded">Bỏ qua tới nội dung chính</a>
         <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
         <SyncToastListener />
         <Header />
@@ -162,8 +164,8 @@ const App: React.FC = () => {
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/san-pham-1" element={<ProtectedRoute><Product1 /></ProtectedRoute>} />
-              <Route path="/san-pham-2" element={<ProtectedRoute><Product2 /></ProtectedRoute>} />
+              <Route path="/san-pham-1" element={<ProtectedRoute><ErrorBoundary componentName="Product1"><Product1 /></ErrorBoundary></ProtectedRoute>} />
+              <Route path="/san-pham-2" element={<ProtectedRoute><ErrorBoundary componentName="Product2"><Product2 /></ErrorBoundary></ProtectedRoute>} />
               <Route path="/san-pham-3" element={
                 <ProtectedRoute>
                   <ErrorBoundary componentName="Product3">
@@ -171,25 +173,25 @@ const App: React.FC = () => {
                   </ErrorBoundary>
                 </ProtectedRoute>
               } />
-              <Route path="/san-pham-4" element={<ProtectedRoute><Product4 /></ProtectedRoute>} />
-              <Route path="/san-pham-5" element={<ProtectedRoute><Product5 /></ProtectedRoute>} />
-              <Route path="/product6" element={<ProtectedRoute><Product6 /></ProtectedRoute>} />
-              <Route path="/product7" element={<ProtectedRoute><Product7 /></ProtectedRoute>} />
-              <Route path="/product8" element={<ProtectedRoute><Product8 /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
-              <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
-              <Route path="/history" element={<ProtectedRoute><ExamHistory /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><PWASettings /></ProtectedRoute>} />
-              <Route path="/home/coding-lab" element={<ProtectedRoute><CodingLab /></ProtectedRoute>} />
+              <Route path="/san-pham-4" element={<ProtectedRoute><ErrorBoundary componentName="Product4"><Product4 /></ErrorBoundary></ProtectedRoute>} />
+              <Route path="/san-pham-5" element={<ProtectedRoute><ErrorBoundary componentName="Product5"><Product5 /></ErrorBoundary></ProtectedRoute>} />
+              <Route path="/product6" element={<ProtectedRoute><ErrorBoundary componentName="Product6"><Product6 /></ErrorBoundary></ProtectedRoute>} />
+              <Route path="/product7" element={<ProtectedRoute><ErrorBoundary componentName="Product7"><Product7 /></ErrorBoundary></ProtectedRoute>} />
+              <Route path="/product8" element={<ProtectedRoute><ErrorBoundary componentName="Product8"><Product8 /></ErrorBoundary></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><ErrorBoundary componentName="Dashboard"><Dashboard /></ErrorBoundary></ProtectedRoute>} />
+              <Route path="/flashcards" element={<ProtectedRoute><ErrorBoundary componentName="Flashcards"><Flashcards /></ErrorBoundary></ProtectedRoute>} />
+              <Route path="/leaderboard" element={<ProtectedRoute><ErrorBoundary componentName="Leaderboard"><Leaderboard /></ErrorBoundary></ProtectedRoute>} />
+              <Route path="/history" element={<ProtectedRoute><ErrorBoundary componentName="ExamHistory"><ExamHistory /></ErrorBoundary></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><ErrorBoundary componentName="Profile"><Profile /></ErrorBoundary></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><ErrorBoundary componentName="PWASettings"><PWASettings /></ErrorBoundary></ProtectedRoute>} />
+              <Route path="/home/coding-lab" element={<ProtectedRoute><ErrorBoundary componentName="CodingLab"><CodingLab /></ErrorBoundary></ProtectedRoute>} />
 
               {/* Public Pages */}
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/privacy" element={<ErrorBoundary componentName="PrivacyPolicy"><PrivacyPolicy /></ErrorBoundary>} />
+              <Route path="/terms" element={<ErrorBoundary componentName="TermsOfService"><TermsOfService /></ErrorBoundary>} />
 
               {/* 404 */}
-              <Route path="*" element={<NotFound />} />
+              <Route path="*" element={<ErrorBoundary componentName="NotFound"><NotFound /></ErrorBoundary>} />
             </Routes>
           </Suspense>
         </main>

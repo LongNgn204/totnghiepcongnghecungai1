@@ -4,6 +4,8 @@ import { FileText, Zap } from 'lucide-react';
 import { QuestionMC, QuestionTF, QuestionLevel } from '../types';
 import QuestionCard from './QuestionCard';
 import { generateContent } from '../utils/geminiAPI';
+import { ExamDataSchema } from '../utils/validation';
+import { getErrorMessage } from '../utils/errorHandler';
 import { api } from '../utils/apiClient';
 
 // Data and logic remain the same
@@ -43,33 +45,82 @@ const Product2: React.FC = () => {
     const allQuestions = useMemo(() => [...mcQuestionsData, ...tfQuestionsData], [mcQuestionsData, tfQuestionsData]);
 
     const handleGenerate = async () => {
+        // Input validation
+        const numMCVal = parseInt(numMC, 10);
+        const numTFVal = parseInt(numTF, 10);
         if (!topic.trim()) {
             setError('Vui lòng nhập chủ đề cần tạo câu hỏi');
             return;
         }
+        if (!['10', '11', '12'].includes(grade)) {
+            setError('Lớp không hợp lệ (chỉ 10, 11, 12)');
+            return;
+        }
+        if (!['Dễ', 'Khó', 'Rất khó'].includes(difficulty)) {
+            setError('Độ khó không hợp lệ (Dễ/Khó/Rất khó)');
+            return;
+        }
+        if (isNaN(numMCVal) || numMCVal < 1 || numMCVal > 50) {
+            setError('Số câu trắc nghiệm phải từ 1 đến 50');
+            return;
+        }
+        if (isNaN(numTFVal) || numTFVal < 1 || numTFVal > 20) {
+            setError('Số câu Đúng/Sai phải từ 1 đến 20');
+            return;
+        }
+
         setLoading(true);
         setError('');
         setHasGenerated(false);
         setUserAnswers({});
         setIsSubmitted(false);
 
-        const prompt = `Tạo bộ câu hỏi môn Công nghệ THPT, chủ đề: "${topic}", lớp ${grade}, độ khó: ${difficulty}. Gồm ${numMC} câu trắc nghiệm 4 lựa chọn và ${numTF} câu Đúng/Sai (mỗi câu 4 ý). Trả về JSON theo format: { "mcQuestions": [{"question", "options", "answer", "requirement", "level"}], "tfQuestions": [{"question", "statements": [{"id": "a", "text": "...", "isCorrect": boolean, "explanation": "..."}], "requirement", "level"}] }`;
+        const prompt = `Tạo bộ câu hỏi môn Công nghệ THPT, chủ đề: "${topic}", lớp ${grade}, độ khó: ${difficulty}. Gồm ${numMCVal} câu trắc nghiệm 4 lựa chọn và ${numTFVal} câu Đúng/Sai (mỗi câu 4 ý). Trả về JSON theo format: { "mcQuestions": [{"question", "options", "answer", "requirement", "level"}], "tfQuestions": [{"question", "statements": [{"id": "a", "text": "...", "isCorrect": boolean, "explanation": "..."}], "requirement", "level"}] }`;
 
         try {
             const response = await generateContent(prompt);
             if (!response.success) throw new Error(response.error || 'Lỗi không xác định');
-            const jsonMatch = response.text.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) throw new Error('AI không trả về đúng định dạng JSON.');
-            const data = JSON.parse(jsonMatch[0]);
 
-            const mcQuestions: QuestionMC[] = (data.mcQuestions || []).map((q: any, idx: number) => ({ ...q, id: idx + 1 }));
-            const tfQuestions: QuestionTF[] = (data.tfQuestions || []).map((q: any, idx: number) => ({ ...q, id: mcQuestions.length + idx + 1 }));
+            // Extract JSON safely (supports code blocks)
+            const extractJSON = (text: string): string | null => {
+                const codeBlock = text.match(/```json\n([\s\S]*?)```/i) || text.match(/```\n([\s\S]*?)```/i);
+                if (codeBlock && codeBlock[1]) return codeBlock[1];
+                const objMatch = text.match(/\{[\s\S]*\}/);
+                return objMatch ? objMatch[0] : null;
+            };
+
+            const jsonText = extractJSON(response.text);
+            if (!jsonText) throw new Error('AI không trả về đúng định dạng JSON.');
+
+            let rawData: any;
+            try {
+                rawData = JSON.parse(jsonText);
+            } catch (e) {
+                throw new Error('Lỗi parse JSON từ phản hồi AI.');
+            }
+
+            const parsed = ExamDataSchema.safeParse(rawData);
+            if (!parsed.success) {
+                throw new Error('Dữ liệu AI không hợp lệ. Vui lòng thử lại với chủ đề/định dạng khác.');
+            }
+
+            const data = parsed.data;
+            const mcQuestions: QuestionMC[] = (data.mcQuestions || []).map((q: any, idx: number) => ({
+                ...q,
+                id: idx + 1,
+                type: 'multiple_choice'
+            }));
+            const tfQuestions: QuestionTF[] = (data.tfQuestions || []).map((q: any, idx: number) => ({
+                ...q,
+                id: mcQuestions.length + idx + 1,
+                type: 'true_false'
+            }));
 
             setMcQuestionsData(mcQuestions);
             setTfQuestionsData(tfQuestions);
             setHasGenerated(true);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Lỗi xử lý dữ liệu.');
+            setError(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -114,8 +165,8 @@ const Product2: React.FC = () => {
             </h3>
             <div className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chủ đề</label>
-                    <input type="text" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="VD: Mạch điện ba pha" className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm dark:text-white" disabled={loading} />
+                    <label htmlFor="product2-topic" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chủ đề</label>
+                    <input id="product2-topic" type="text" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="VD: Mạch điện ba pha" className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm dark:text-white" disabled={loading} />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lớp</label>

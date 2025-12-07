@@ -21,7 +21,9 @@ import {
   requireAuth,
   hashPassword,
   getSecurityQuestionByEmail,
-  resetPasswordBySecurityQuestion
+  resetPasswordBySecurityQuestion,
+  generateToken,
+  decodeToken
 } from './auth-service';
 import {
   updateUserData,
@@ -117,6 +119,43 @@ router.post('/api/auth/logout', async (request, env: Env) => {
     return successResponse(null, 'Logout successful');
   } catch (error: any) {
     return errorResponse(error.message);
+  }
+});
+
+// Refresh access token
+router.post('/api/auth/refresh', async (request, env: Env) => {
+  try {
+    const body: any = await request.json().catch(() => ({}));
+    const authHeader = request.headers.get('Authorization');
+    const provided = body?.refreshToken || (authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null);
+    if (!provided) {
+      return badRequestResponse('Thiếu refresh token');
+    }
+
+    // Validate existing session
+    const session = await env.DB.prepare('SELECT user_id, expires_at FROM auth_sessions WHERE token = ? AND expires_at > ?')
+      .bind(provided, Date.now())
+      .first();
+    if (!session) {
+      return unauthorizedResponse('Phiên đăng nhập không hợp lệ hoặc đã hết hạn');
+    }
+
+    const userId = session.user_id as string;
+
+    // Rotate token: delete old session and create new one
+    await env.DB.prepare('DELETE FROM auth_sessions WHERE token = ?').bind(provided).run();
+
+    const newToken = generateToken(userId);
+    const now = Date.now();
+    const expiresAt = now + (30 * 24 * 60 * 60 * 1000); // 30 days
+
+    await env.DB.prepare(
+      'INSERT INTO auth_sessions (id, user_id, token, expires_at, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).bind(crypto.randomUUID(), userId, newToken, expiresAt, now).run();
+
+    return successResponse({ accessToken: newToken, refreshToken: newToken, expiresAt });
+  } catch (error: any) {
+    return errorResponse(error.message || 'Không thể làm mới token', 400);
   }
 });
 

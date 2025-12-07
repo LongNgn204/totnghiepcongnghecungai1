@@ -1,4 +1,19 @@
 
+/**
+ * ✅ PHASE 1 - STEP 1.3: Upgraded Gemini API with Error Handling
+ */
+
+import { retryAIRequest } from './retry';
+import {
+  AppErrorClass,
+  ErrorCode,
+  createAIError,
+  createErrorFromResponse,
+  logError,
+  getErrorMessage,
+} from './errorHandler';
+import { getCache, setCache, hashKey } from './cache';
+
 export interface GeminiResponse {
   text: string;
   success: boolean;
@@ -10,66 +25,143 @@ export const AVAILABLE_MODELS = [
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Phản hồi nhanh, độ trễ thấp (Turbo)' },
 ];
 
+import { getCache, setCache } from './cache';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
 /**
- * Gọi AI qua server proxy để tránh lộ API key
+ * ✅ Validate model ID
  */
-export async function generateContent(prompt: string, modelId: string = 'gemini-2.5-pro'): Promise<GeminiResponse> {
+function validateModelId(modelId: string): void {
+  if (!AVAILABLE_MODELS.find(m => m.id === modelId)) {
+    throw new AppErrorClass(
+      ErrorCode.MODEL_NOT_FOUND,
+      `Model '${modelId}' không tìm thấy`,
+      { availableModels: AVAILABLE_MODELS.map(m => m.id) },
+      undefined,
+      'generateContent'
+    );
+  }
+}
+
+/**
+ * ✅ Validate prompt
+ */
+function validatePrompt(prompt: string): void {
+  if (!prompt || typeof prompt !== 'string') {
+    throw new AppErrorClass(
+      ErrorCode.INVALID_PROMPT,
+      'Prompt không hợp lệ. Vui lòng nhập text hợp lệ.',
+      { receivedType: typeof prompt },
+      undefined,
+      'generateContent'
+    );
+  }
+
+  if (prompt.trim().length === 0) {
+    throw new AppErrorClass(
+      ErrorCode.INVALID_PROMPT,
+      'Prompt không được để trống.',
+      null,
+      undefined,
+      'generateContent'
+    );
+  }
+
+  if (prompt.length > 10000) {
+    throw new AppErrorClass(
+      ErrorCode.INVALID_PROMPT,
+      'Prompt quá dài (tối đa 10000 ký tự).',
+      { length: prompt.length },
+      undefined,
+      'generateContent'
+    );
+  }
+}
+
+/**
+ * ✅ Gọi AI qua server proxy để tránh lộ API key
+ */
+export async function generateContent(
+  prompt: string,
+  modelId: string = 'gemini-2.5-pro'
+): Promise<GeminiResponse> {
   try {
+    // Validate inputs
+    validatePrompt(prompt);
+    validateModelId(modelId);
+
+    // Check cache first (10 minutes TTL)
+    const cacheKey = 'ai:' + hashKey(`${modelId}:${prompt}`);
+    const cached = getCache<string>(cacheKey);
+    if (cached) {
+      return { text: cached, success: true };
+    }
+
     const token = localStorage.getItem('auth_token');
-    
+
     // Check if API URL is configured
     if (!API_URL || API_URL === 'http://localhost:8787') {
-      console.warn('AI API endpoint not properly configured. Using fallback response.');
-      return { 
-        text: 'Xin lỗi, dịch vụ AI hiện không khả dụng. Vui lòng kiểm tra cấu hình API.', 
-        success: false, 
-        error: 'API endpoint not configured' 
+      console.warn('AI API endpoint not properly configured.');
+      return {
+        text: 'Xin lỗi, dịch vụ AI hiện không khả dụng. Vui lòng kiểm tra cấu hình API.',
+        success: false,
+        error: 'API endpoint not configured',
       };
     }
 
-    const response = await fetch(`${API_URL}/api/ai/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        modelId,
-        generationConfig: {
-          temperature: 0.3,
-          topK: 30,
-          topP: 0.9,
-          maxOutputTokens: 8192,
+    // ✅ Retry AI request with backoff
+    const response = await retryAIRequest(async () => {
+      const res = await fetch(`${API_URL}/api/ai/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        safetySettings: [
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-        ],
-      }),
+        body: JSON.stringify({
+          prompt,
+          modelId,
+          generationConfig: {
+            temperature: 0.3,
+            topK: 30,
+            topP: 0.9,
+            maxOutputTokens: 8192,
+          },
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+          ],
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw createErrorFromResponse(res, errorData, 'generateContent');
+      }
+
+      return res;
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const statusMessage = response.status === 404 
-        ? 'Endpoint AI không tìm thấy. Vui lòng kiểm tra cấu hình server.'
-        : response.status === 500
-        ? 'Lỗi server. Vui lòng thử lại sau.'
-        : `Lỗi ${response.status}`;
-      const message = errorData?.error || statusMessage;
-      throw new Error(message);
+    const data = await response.json();
+    const text =
+      data.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      '';
+
+    if (!text) {
+      throw createAIError('AI không trả về kết quả', data, 'generateContent');
     }
 
-    const data = await response.json();
-    const text = data.data?.candidates?.[0]?.content?.parts?.[0]?.text || data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    // Save to cache (10 minutes)
+    setCache<string>(cacheKey, text, 10 * 60 * 1000);
+
     return { text, success: true };
   } catch (error) {
-    console.error('AI Proxy Error:', error);
-    return { text: '', success: false, error: error instanceof Error ? error.message : 'Có lỗi xảy ra khi gọi API' };
+    const message = getErrorMessage(error);
+    logError(error instanceof Error ? error : new Error(message));
+    return { text: '', success: false, error: message };
   }
 }
 

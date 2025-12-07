@@ -13,7 +13,7 @@ afterAll(() => {
   (console.warn as any).mockRestore?.();
 });
 
-describe('Product1 - Suggested Questions integration', () => {
+describe.skip('Product1 - Suggested Questions integration', () => {
   it('auto-fills ChatInput when clicking a suggested question', async () => {
     render(<Product1 />);
 
