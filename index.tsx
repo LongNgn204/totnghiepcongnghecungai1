@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { registerServiceWorker } from './utils/pwaUtils';
+import { initializeCacheConfigs } from './utils/cacheManager';
 import App from './App';
 import './index.css';
 
@@ -14,8 +15,9 @@ if (!rootElement) {
 
 const RootApp = () => {
   useEffect(() => {
-    // Register service worker on load (frontend-only)
+    // Initialize cache configs and register service worker on load (frontend-only)
     if (typeof window !== 'undefined') {
+      initializeCacheConfigs();
       registerServiceWorker();
     }
   }, []);

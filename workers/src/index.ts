@@ -303,6 +303,15 @@ router.post('/api/ai/generate', async (request, env: Env) => {
     const userId = await requireAuth(request, env.DB); // require auth to use AI
     const body: any = await request.json();
     const modelId = body.modelId || 'gemini-2.5-pro';
+    // Build contents from either explicit contents or a simple prompt
+    const contents = Array.isArray(body.contents)
+      ? body.contents
+      : (body.prompt
+          ? [{ role: 'user', parts: [{ text: String(body.prompt) }]}]
+          : undefined);
+    if (!contents) {
+      return badRequestResponse('Thiếu contents hoặc prompt để gọi AI');
+    }
     if (!env.GEMINI_API_KEY) {
       return errorResponse('AI is not configured', 500);
     }
@@ -310,7 +319,7 @@ router.post('/api/ai/generate', async (request, env: Env) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: body.contents,
+        contents,
         generationConfig: body.generationConfig,
         safetySettings: body.safetySettings,
       }),

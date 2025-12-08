@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../utils/apiClient';
 import { useAppStore } from '../store/appStore';
 import { getCache, setCache } from '../utils/cache';
+import Pagination from './Pagination';
 import {
   History,
   FileText,
@@ -16,11 +17,7 @@ import {
   AlertTriangle,
   Calendar,
   CheckCircle,
-  Edit,
-  ChevronsLeft,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsRight
+  Edit
 } from 'lucide-react';
 
 // Local type (compatible with local and remote shapes)
@@ -332,10 +329,10 @@ const ExamHistory: React.FC = () => {
 
       {/* Exam List */}
       {loading ? (
-        <div className="glass-card p-16 text-center">Đang tải lịch sử...</div>
+        <div className="glass-card p-16 text-center" role="status" aria-busy="true">Đang tải lịch sử...</div>
       ) : paginatedHistory.length === 0 ? (
         <div className="glass-card p-16 text-center">
-          <div className="bg-gray-50 dark:bg-gray-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="bg-gray-50 dark:bg-gray-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" aria-hidden>
             <FileText className="w-10 h-10 text-gray-300 dark:text-gray-600" />
           </div>
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
@@ -348,6 +345,7 @@ const ExamHistory: React.FC = () => {
             <Link
               to="/san-pham-3"
               className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all flex items-center gap-2 font-bold shadow-md hover:-translate-y-0.5"
+              aria-label="Đi tới đề Công nghiệp"
             >
               <Factory className="w-5 h-5" />
               Đề Công nghiệp
@@ -355,6 +353,7 @@ const ExamHistory: React.FC = () => {
             <Link
               to="/san-pham-4"
               className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all flex items-center gap-2 font-bold shadow-md hover:-translate-y-0.5"
+              aria-label="Đi tới đề Nông nghiệp"
             >
               <Tractor className="w-5 h-5" />
               Đề Nông nghiệp
@@ -432,6 +431,7 @@ const ExamHistory: React.FC = () => {
                     to={`/xem-lai/${exam.id}`}
                     className="px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all flex items-center gap-2 font-bold shadow-md hover:-translate-y-0.5"
                     title="Xem lại đề thi"
+                    aria-label={`Xem lại đề thi ${exam.examTitle}`}
                   >
                     <Eye className="w-4 h-4" />
                     Xem lại
@@ -440,6 +440,7 @@ const ExamHistory: React.FC = () => {
                     onClick={() => handleDelete(exam.id)}
                     className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all flex items-center justify-center shadow-md hover:-translate-y-0.5"
                     title="Xóa đề thi này"
+                    aria-label={`Xóa đề thi ${exam.examTitle}`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -451,43 +452,15 @@ const ExamHistory: React.FC = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
-              <button
-                onClick={() => setExamPage(1)}
-                disabled={currentPage <= 1}
-                className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 disabled:opacity-50"
-                aria-label="Trang đầu"
-              >
-                <ChevronsLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setExamPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage <= 1}
-                className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 disabled:opacity-50"
-                aria-label="Trang trước"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300">
-                Trang {currentPage}/{totalPages}
-              </span>
-              <button
-                onClick={() => setExamPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage >= totalPages}
-                className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 disabled:opacity-50"
-                aria-label="Trang sau"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setExamPage(totalPages)}
-                disabled={currentPage >= totalPages}
-                className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 disabled:opacity-50"
-                aria-label="Trang cuối"
-              >
-                <ChevronsRight className="w-4 h-4" />
-              </button>
-            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={examPageSize}
+              totalItems={sortedHistory.length}
+              onPageChange={setExamPage}
+              onPageSizeChange={setExamPageSize}
+              pageSizeOptions={[5, 10, 20, 50]}
+            />
           )}
         </>
       )}

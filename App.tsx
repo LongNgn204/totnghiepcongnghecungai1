@@ -67,6 +67,18 @@ const App: React.FC = () => {
     window.scrollTo(0, 0);
   }, [location]);
 
+  // Keyboard shortcuts (Ctrl/Cmd+K -> focus chat search)
+  React.useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        window.dispatchEvent(new Event('focus-chat-search'));
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   // Initialize sync manager
   React.useEffect(() => {
     // Load last sync time
@@ -156,6 +168,13 @@ const App: React.FC = () => {
         <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
         <SyncToastListener />
         <Header />
+
+        {/* Live region for status updates */}
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {syncStatus === 'syncing' && 'Đang đồng bộ dữ liệu.'}
+          {syncStatus === 'success' && 'Đồng bộ thành công.'}
+          {syncStatus === 'error' && 'Đồng bộ thất bại.'}
+        </div>
 
         <main id="main-content" className="flex-1 pt-16" role="main">
           {/* Disclaimer Banner */}

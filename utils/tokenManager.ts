@@ -11,7 +11,7 @@
 
 import { AppErrorClass, ErrorCode, createAuthError } from './errorHandler';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+const API_URL = (import.meta.env.VITE_API_URL as string) || (import.meta.env.MODE === 'development' ? 'http://localhost:8787' : '');
 
 export interface TokenData {
   accessToken: string;

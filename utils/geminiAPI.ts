@@ -25,9 +25,9 @@ export const AVAILABLE_MODELS = [
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Phản hồi nhanh, độ trễ thấp (Turbo)' },
 ];
 
-import { getCache, setCache } from './cache';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+
+const API_URL = (import.meta.env.VITE_API_URL as string) || (import.meta.env.MODE === 'development' ? 'http://localhost:8787' : '') ;
 
 /**
  * ✅ Validate model ID

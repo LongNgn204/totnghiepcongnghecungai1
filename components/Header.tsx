@@ -69,7 +69,7 @@ const Header: React.FC = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden xl:flex items-center space-x-1">
+            <nav className="hidden xl:flex items-center space-x-1" role="navigation" aria-label="Điều hướng chính">
               {navItems.map((item) => {
                 const active = isActive(item.path);
                 const Icon = item.icon;
@@ -77,6 +77,7 @@ const Header: React.FC = () => {
                   <Link
                     key={item.path}
                     to={item.path}
+                    aria-current={active ? 'page' : undefined}
                     className={`
                       flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
                       ${active
@@ -162,6 +163,9 @@ const Header: React.FC = () => {
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="xl:hidden p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                aria-label={isMenuOpen ? 'Đóng menu' : 'Mở menu'}
+                aria-expanded={isMenuOpen}
+                aria-controls="mobile-menu"
               >
                 {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
@@ -171,7 +175,7 @@ const Header: React.FC = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="xl:hidden glass-panel border-t border-gray-200/20 dark:border-gray-700/30">
+          <div id="mobile-menu" className="xl:hidden glass-panel border-t border-gray-200/20 dark:border-gray-700/30" role="dialog" aria-modal="true">
             <div className="px-4 pt-2 pb-4 space-y-1">
               {navItems.map((item) => {
                 const active = isActive(item.path);

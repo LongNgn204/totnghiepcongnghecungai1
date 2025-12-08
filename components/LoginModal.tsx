@@ -21,8 +21,22 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const firstFieldRef = React.useRef<HTMLInputElement | null>(null);
+
+    React.useEffect(() => {
+        if (isOpen) {
+            // Focus first field when modal opens
+            setTimeout(() => firstFieldRef.current?.focus(), 0);
+        }
+    }, [isOpen, mode]);
 
     if (!isOpen) return null;
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Escape') {
+            onClose();
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -83,8 +97,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
-            <div className="glass-panel w-full max-w-md p-0 overflow-hidden shadow-2xl animate-scale-in border-0">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="login-modal-title" onKeyDown={handleKeyDown}>
+            <div className="glass-panel w-full max-w-md p-0 overflow-hidden shadow-2xl animate-scale-in border-0" role="document">
                 {/* Header */}
                 <div className="relative p-8 text-center overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary-600 to-secondary-600 opacity-90"></div>
@@ -106,7 +120,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                         <div className="bg-white/20 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm shadow-lg transform rotate-3 hover:rotate-0 transition-all duration-300">
                             {mode === 'login' ? <User className="w-10 h-10 text-white" /> : <UserPlus className="w-10 h-10 text-white" />}
                         </div>
-                        <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">
+                        <h2 id="login-modal-title" className="text-3xl font-bold text-white mb-2 tracking-tight">
                             {mode === 'login' ? 'Đăng Nhập' : 'Đăng Ký'}
                         </h2>
                         <p className="text-blue-100 text-sm font-medium">STEM Vietnam - Học tập ôn thi cùng AI</p>

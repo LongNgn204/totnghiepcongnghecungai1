@@ -11,7 +11,8 @@ export default defineConfig(({ mode }) => {
       globals: true,
       setupFiles: './vitest.setup.ts',
       css: true,
-      restoreMocks: true
+      restoreMocks: true,
+      exclude: ['e2e/**', 'node_modules/**', 'dist/**']
     },
     server: {
       port: 3000,

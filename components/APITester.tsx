@@ -21,7 +21,7 @@ const APITester: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'https://your-worker.workers.dev';
+  const apiUrl: string = (import.meta.env.VITE_API_URL as string) || (import.meta.env.MODE === 'development' ? 'http://localhost:8787' : '');
 
   const testEndpoint = async () => {
     setLoading(true);

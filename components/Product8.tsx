@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import ProductTemplate from './layout/ProductTemplate';
 import { BookOpen, GraduationCap, Filter, Sparkles, Shuffle, ExternalLink, List, CheckCircle, PlayCircle, ChevronRight, ChevronDown } from 'lucide-react';
+import OptimizedImage from './OptimizedImage';
 
 interface Book {
   id: number;
@@ -367,7 +368,7 @@ const Product8: React.FC = () => {
                 className="group glass-card p-4 flex items-center gap-6 hover:border-amber-400 dark:hover:border-amber-600 transition-all duration-300"
               >
                 <div className="w-24 h-32 flex-shrink-0 rounded-lg overflow-hidden shadow-md group-hover:shadow-xl transition-all">
-                  <img src={book.cover} alt={book.title} className="w-full h-full object-cover" />
+                  <OptimizedImage src={book.cover} alt={book.title} className="w-full h-full object-cover" width={96} height={128} lazy />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">

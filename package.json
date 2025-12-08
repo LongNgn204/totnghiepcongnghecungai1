@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run --reporter=dot",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "e2e": "playwright test -c e2e/playwright.config.ts"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
