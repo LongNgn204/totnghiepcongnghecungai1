@@ -8,9 +8,25 @@ binding = "DB"
 database_name = "ai-hoc-tap-db"
 database_id = "5e6f80b8-02cd-4d7a-8f5e-a17fd24dd60d"
 
+# Cloudflare AI Gateway binding (for Gemini API routing)
+# This allows us to route requests through Cloudflare's AI Gateway
+# which provides caching, rate limiting, and monitoring
+[[ai_gateway]]
+binding = "AI_GATEWAY"
+
 # Environment variables
 [vars]
 ALLOWED_ORIGINS = "http://localhost:3000,http://localhost:5173,https://your-domain.pages.dev"
+# Use Cloudflare AI Gateway endpoint instead of direct Gemini API
+USE_AI_GATEWAY = "true"
+GEMINI_API_KEY_LOCATION = "secret"  # Store in Cloudflare secret, not env var
 
 # Production secrets (set via: wrangler secret put GEMINI_API_KEY)
 # GEMINI_API_KEY = "your-gemini-key"
+
+# Cloudflare AI Gateway configuration
+[env.production]
+vars = { USE_AI_GATEWAY = "true" }
+
+[env.development]
+vars = { USE_AI_GATEWAY = "false" }

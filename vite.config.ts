@@ -5,7 +5,17 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
+  
+  // Determine API URL based on environment
+  const apiUrl = env.VITE_API_URL || 
+    (mode === 'production' 
+      ? 'https://ai-hoc-tap-api.your-account.workers.dev'
+      : 'http://localhost:8787');
+
   return {
+    define: {
+      'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
+    },
     test: {
       environment: 'jsdom',
       globals: true,

@@ -29,6 +29,7 @@ import {
   updateUserData,
   changeUserPassword as changeUserPasswordAdmin
 } from './management/data-manager';
+import { callGeminiAI } from './ai-gateway-service';
 
 export interface Env {
   DB: D1Database;
@@ -303,33 +304,41 @@ router.post('/api/ai/generate', async (request, env: Env) => {
     const userId = await requireAuth(request, env.DB); // require auth to use AI
     const body: any = await request.json();
     const modelId = body.modelId || 'gemini-2.5-pro';
+    
     // Build contents from either explicit contents or a simple prompt
     const contents = Array.isArray(body.contents)
       ? body.contents
       : (body.prompt
           ? [{ role: 'user', parts: [{ text: String(body.prompt) }]}]
           : undefined);
+    
     if (!contents) {
       return badRequestResponse('Thiếu contents hoặc prompt để gọi AI');
     }
+    
     if (!env.GEMINI_API_KEY) {
       return errorResponse('AI is not configured', 500);
     }
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${env.GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+
+    // ✅ Use AI Gateway Service (supports both direct API and Cloudflare AI Gateway)
+    try {
+      const data = await callGeminiAI(
+        modelId,
         contents,
-        generationConfig: body.generationConfig,
-        safetySettings: body.safetySettings,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      return errorResponse(data?.error?.message || `AI error ${res.status}`, res.status);
+        { GEMINI_API_KEY: env.GEMINI_API_KEY },
+        body.generationConfig,
+        body.safetySettings
+      );
+      return successResponse(data);
+    } catch (aiError: any) {
+      console.error('AI Gateway error:', aiError);
+      return errorResponse(
+        aiError.message || 'Lỗi khi gọi dịch vụ AI',
+        500
+      );
     }
-    return successResponse(data);
   } catch (error: any) {
+    console.error('AI proxy error:', error);
     return errorResponse(error.message || 'AI proxy error', 500);
   }
 });
