@@ -59,7 +59,7 @@ export function getfriendlyErrorMessage(error: any, context?: Partial<ErrorConte
 
   // AI-specific errors
   if (lowerError.includes('api request failed')) {
-    return '🤖 AI Gemini không phản hồi. Vui lòng thử lại hoặc kiểm tra kết nối mạng.';
+    return '🤖 AI không phản hồi. Vui lòng thử lại hoặc kiểm tra kết nối mạng.';
   }
 
   if (lowerError.includes('ai chưa trả về') || lowerError.includes('định dạng')) {
@@ -96,7 +96,7 @@ export function getfriendlyErrorMessage(error: any, context?: Partial<ErrorConte
 
   // Generic fallback based on context
   if (context?.type === 'api') {
-    return '🔌 Không thể kết nối với AI Gemini. Vui lòng kiểm tra kết nối và thử lại.';
+    return '🔌 Không thể kết nối với AI. Vui lòng kiểm tra kết nối và thử lại.';
   }
 
   if (context?.type === 'network') {
@@ -121,11 +121,11 @@ export function getErrorSuggestions(error: any): string[] {
     ];
   }
 
-  if (lowerError.includes('api key')) {
+  if (lowerError.includes('api key') || lowerError.includes('not configured')) {
     return [
-      'Liên hệ quản trị viên để cấp API key',
-      'Kiểm tra file .env.local có chứa VITE_GEMINI_API_KEY',
-      'Xác nhận API key còn hiệu lực'
+      'Kiểm tra cấu hình Cloudflare AI Workers',
+      'Xác nhận AI binding đã được cấu hình trong wrangler.toml',
+      'Liên hệ quản trị viên nếu vấn đề vẫn tiếp tục'
     ];
   }
 

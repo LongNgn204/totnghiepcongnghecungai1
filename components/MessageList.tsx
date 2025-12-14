@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChatMessage } from '../utils/chatStorage';
 import MessageContent from './MessageContent';
 import FeedbackForm from './FeedbackForm';
+import TextToSpeech from './TextToSpeech';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 
 interface MessageListProps {
@@ -73,7 +74,7 @@ const MessageList: React.FC<MessageListProps> = ({
                 {message.role === 'assistant' && (
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-500 to-red-500 animate-pulse" />
-                    <span className="font-medium text-sm text-gray-600 dark:text-gray-400">Gemini</span>
+                    <span className="font-medium text-sm text-gray-600 dark:text-gray-400">AI Assistant</span>
                   </div>
                 )}
 
@@ -104,16 +105,24 @@ const MessageList: React.FC<MessageListProps> = ({
                 )}
 
                 {message.role === 'assistant' && (
-                  <div className="mt-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => openFeedback(message.id, 'up')} className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition-colors" title="Hữu ích">
-                      <ThumbsUp className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => openFeedback(message.id, 'down')} className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors" title="Chưa tốt">
-                      <ThumbsDown className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => navigator.clipboard.writeText(message.content)} className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors" title="Sao chép">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                    </button>
+                  <div className="mt-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* TTS Component */}
+                    <TextToSpeech 
+                      text={message.content} 
+                      language="vi-VN"
+                      className="flex-shrink-0"
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={() => openFeedback(message.id, 'up')} className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition-colors" title="Hữu ích">
+                        <ThumbsUp className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => openFeedback(message.id, 'down')} className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors" title="Chưa tốt">
+                        <ThumbsDown className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => navigator.clipboard.writeText(message.content)} className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors" title="Sao chép">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -123,7 +132,7 @@ const MessageList: React.FC<MessageListProps> = ({
             <div className="flex flex-col items-start animate-pulse">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-500 to-red-500" />
-                <span className="font-medium text-sm text-gray-600 dark:text-gray-400">Gemini</span>
+                <span className="font-medium text-sm text-gray-600 dark:text-gray-400">AI Assistant</span>
               </div>
               <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
               <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded"></div>

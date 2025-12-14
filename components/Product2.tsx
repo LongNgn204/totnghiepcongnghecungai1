@@ -205,7 +205,7 @@ const Product2: React.FC = () => {
         <ProductTemplate
             icon={<FileText size={200} />}
             title="Sản phẩm học tập số 2: Ngân hàng câu hỏi"
-            subtitle="Tạo bộ câu hỏi trắc nghiệm và đúng/sai tự động từ SGK với AI Gemini 2.5 Pro"
+            subtitle="Tạo bộ câu hỏi trắc nghiệm và đúng/sai tự động từ SGK với AI Llama 3.1 8B"
             heroGradientFrom="from-green-600"
             heroGradientTo="to-teal-700"
             sidebar={sidebar}

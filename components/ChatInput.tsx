@@ -128,7 +128,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             onChange={(e) => onInputChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSendMessage(); } }}
             onPaste={onPaste}
-            placeholder="Nhập câu hỏi cho Gemini..."
+            placeholder="Nhập câu hỏi cho AI..."
             className="flex-1 bg-transparent border-0 focus:ring-0 p-3 max-h-32 min-h-[48px] resize-none text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400"
             rows={1}
             disabled={loading}
@@ -175,7 +175,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           </button>
         </div>
         <p className="text-[11px] text-center text-gray-400 dark:text-gray-500 mt-3">
-          Gemini có thể đưa ra thông tin không chính xác, kể cả về con người, vì vậy hãy kiểm tra lại các câu trả lời.
+          AI có thể đưa ra thông tin không chính xác, vì vậy hãy kiểm tra lại các câu trả lời.
         </p>
       </div>
     </div>

@@ -4,7 +4,7 @@
 
 # 🎓 AI Hỗ Trợ Học Tập Công Nghệ - Luyện Thi THPT Quốc Gia
 
-Nền tảng học tập thông minh sử dụng **Google Gemini 2.0 AI** để hỗ trợ học sinh ôn tập và luyện thi tốt nghiệp THPT môn Công nghệ.
+Nền tảng học tập thông minh sử dụng **Llama 3.1 8B AI** (qua Cloudflare AI Workers) để hỗ trợ học sinh ôn tập và luyện thi tốt nghiệp THPT môn Công nghệ.
 
 Dựa trên **SGK Kết nối tri thức với cuộc sống** và **SGK Cánh Diều** - Chương trình GDPT 2018
 
@@ -19,7 +19,7 @@ Dựa trên **SGK Kết nối tri thức với cuộc sống** và **SGK Cánh D
 - Thông tin liên hệ và hỗ trợ
 
 ### 📚 Sản Phẩm 1: Hệ Thống Hóa Kiến Thức
-- ✅ Chat AI thông minh với Gemini 2.0
+- ✅ Chat AI thông minh với Llama 3.1 8B
 - ✅ Upload file: PDF, DOCX, hình ảnh
 - ✅ Trả lời chi tiết 500-1500 từ với sơ đồ minh họa
 - ✅ Markdown rendering đầy đủ
@@ -57,7 +57,7 @@ Dựa trên **SGK Kết nối tri thức với cuộc sống** và **SGK Cánh D
 
 | Công nghệ | Phiên bản | Mô tả |
 |-----------|-----------|-------|
-| **Google Gemini AI** | 2.0 Flash Exp | Trí tuệ nhân tạo thế hệ mới nhất |
+| **Llama 3.1 8B** | Cloudflare AI Workers | Trí tuệ nhân tạo miễn phí, nhanh chóng |
 | **React** | 19.2.0 | Framework JavaScript hiện đại |
 | **TypeScript** | Latest | Type-safe JavaScript |
 | **Vite** | 6.4.1 | Build tool siêu nhanh |
@@ -81,13 +81,10 @@ cd ai-hỗ-trợ-học-tập-công-nghệ-(lớp-6-12)
 npm install
 ```
 
-### 3. Cấu Hình API Key
-Tạo file `.env.local` trong thư mục gốc:
-```bash
-VITE_GEMINI_API_KEY=your_api_key_here
-```
+### 3. Cấu Hình (Không cần API Key)
+Llama 3.1 8B sử dụng Cloudflare AI Workers - **hoàn toàn miễn phí**, không cần API key!
 
-**Lấy API key miễn phí tại:** https://aistudio.google.com/app/apikey
+Chỉ cần deploy backend worker với cấu hình AI binding trong `wrangler.toml`.
 
 ### 4. Chạy Development Server
 ```bash
@@ -185,10 +182,11 @@ npm run build
 ## 🎯 Tính Năng Nổi Bật
 
 ### 🤖 AI Thông Minh
-- Sử dụng Gemini 2.0 Flash Exp - model AI mới nhất của Google
+- Sử dụng Llama 3.1 8B - model AI mạnh mẽ qua Cloudflare AI Workers
 - Trả lời chi tiết 500-1500 từ
 - Hiểu ngữ cảnh và câu hỏi phức tạp
 - Hỗ trợ đa phương tiện (text, hình ảnh, PDF)
+- **Miễn phí hoàn toàn** - không cần API key
 
 ### 🎨 Giao Diện Đẹp
 - Responsive design - hoạt động mượt mà trên mọi thiết bị
@@ -277,4 +275,4 @@ Chúng tôi rất hoan nghênh mọi đóng góp! Để đóng góp:
 ---
 
 *Phát triển với ❤️ bởi đội ngũ AI Education*  
-*Powered by Google Gemini 2.0 AI 🤖*
+*Powered by Llama 3.1 8B AI (Cloudflare AI Workers) 🤖*

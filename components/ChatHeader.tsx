@@ -23,7 +23,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         </button>
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-medium text-gray-700">{title}</h2>
-          <span className="px-2 py-0.5 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 text-xs rounded-full font-medium">Gemini 2.5 Pro</span>
+          <span className="px-2 py-0.5 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 text-xs rounded-full font-medium">Llama 3.1 8B</span>
         </div>
       </div>
       {showExport && (

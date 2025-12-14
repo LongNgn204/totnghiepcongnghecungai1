@@ -162,7 +162,17 @@ export const api = {
     recordSession: (data: any) => fetchAPI('/api/progress/sessions', { method: 'POST', body: JSON.stringify(data) }),
     getStats: () => fetchAPI('/api/progress/stats'),
     getChart: (period: string) => fetchAPI(`/api/progress/chart/${period}`),
-  }
+  },
+  leaderboard: {
+    get: () => fetchAPI('/api/leaderboard'),
+  },
+  sync: {
+    sync: (data: any) => fetchAPI('/api/sync', { method: 'POST', body: JSON.stringify(data) }),
+    getChanges: (since?: number) => {
+      const queryString = since ? `?since=${since}` : '';
+      return fetchAPI(`/api/sync/changes${queryString}`);
+    },
+  },
 };
 
 export const flashcardsAPI = api.flashcards;

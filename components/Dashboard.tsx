@@ -119,7 +119,7 @@ const Dashboard: React.FC = () => {
             </h1>
 
             <p className="text-indigo-100 text-lg max-w-xl mb-8 leading-relaxed">
-              Hôm nay là một ngày tuyệt vời để bứt phá giới hạn! AI Gemini đã sẵn sàng hỗ trợ bạn.
+              Hôm nay là một ngày tuyệt vời để bứt phá giới hạn! AI Llama 3.1 8B đã sẵn sàng hỗ trợ bạn.
             </p>
 
             <div className="flex flex-wrap gap-4">

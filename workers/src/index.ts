@@ -29,11 +29,13 @@ import {
   updateUserData,
   changeUserPassword as changeUserPasswordAdmin
 } from './management/data-manager';
-import { callGeminiAI } from './ai-gateway-service';
+import { callAIWorker } from './ai-worker-service';
 
 export interface Env {
   DB: D1Database;
+  AI?: any; // Cloudflare AI Workers binding
   GEMINI_API_KEY?: string;
+  USE_AI_WORKERS?: string;
   ALLOWED_ORIGINS?: string;
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
@@ -303,7 +305,8 @@ router.post('/api/ai/generate', async (request, env: Env) => {
   try {
     const userId = await requireAuth(request, env.DB); // require auth to use AI
     const body: any = await request.json();
-    const modelId = body.modelId || 'gemini-2.5-pro';
+    // Chỉ dùng llama-3.1-8b-instruct
+    const modelId = 'llama-3.1-8b-instruct';
     
     // Build contents from either explicit contents or a simple prompt
     const contents = Array.isArray(body.contents)
@@ -316,22 +319,27 @@ router.post('/api/ai/generate', async (request, env: Env) => {
       return badRequestResponse('Thiếu contents hoặc prompt để gọi AI');
     }
     
-    if (!env.GEMINI_API_KEY) {
-      return errorResponse('AI is not configured', 500);
+    if (!env.AI) {
+      return errorResponse('Cloudflare AI Workers chưa được cấu hình. Vui lòng kiểm tra wrangler.toml', 500);
     }
 
-    // ✅ Use AI Gateway Service (supports both direct API and Cloudflare AI Gateway)
+    // ✅ Chỉ sử dụng AI Worker Service (Llama 3.1 8B)
     try {
-      const data = await callGeminiAI(
-        modelId,
+
+      // Luôn dùng Cloudflare AI Workers (Llama 3.1 8B)
+      const data = await callAIWorker(
+        'llama-3.1-8b-instruct', // Force llama model
         contents,
-        { GEMINI_API_KEY: env.GEMINI_API_KEY },
-        body.generationConfig,
-        body.safetySettings
+        { 
+          AI: env.AI, 
+          USE_AI_WORKERS: 'true',
+          GEMINI_API_KEY: env.GEMINI_API_KEY // Optional fallback
+        },
+        body.generationConfig
       );
       return successResponse(data);
     } catch (aiError: any) {
-      console.error('AI Gateway error:', aiError);
+      console.error('AI Service error:', aiError);
       return errorResponse(
         aiError.message || 'Lỗi khi gọi dịch vụ AI',
         500

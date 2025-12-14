@@ -21,7 +21,7 @@ describe.skip('Product1 - Suggested Questions integration', () => {
     const suggestedItem = await screen.findByText(question);
     fireEvent.click(suggestedItem);
 
-    const input = await screen.findByPlaceholderText('Nhập câu hỏi cho Gemini...');
+    const input = await screen.findByPlaceholderText('Nhập câu hỏi cho AI...');
 
     await waitFor(() => {
       expect(input).toHaveValue(question);

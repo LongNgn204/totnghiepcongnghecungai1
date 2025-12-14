@@ -18,7 +18,7 @@ const TechBadge: React.FC = () => {
           <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <i className="fas fa-brain text-purple-600"></i>
-              <span>Google Gemini 2.0</span>
+              <span>Llama 3.1 8B (Cloudflare AI)</span>
             </div>
             <div className="flex items-center gap-2">
               <i className="fab fa-react text-cyan-600"></i>

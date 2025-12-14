@@ -21,8 +21,7 @@ export interface GeminiResponse {
 }
 
 export const AVAILABLE_MODELS = [
-  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'Mô hình mạnh mẽ nhất (Next Gen)' },
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Phản hồi nhanh, độ trễ thấp (Turbo)' },
+  { id: 'llama-3.1-8b-instruct', name: 'Llama 3.1 8B', description: 'Llama 3.1 8B qua Cloudflare AI Workers (Miễn phí, nhanh)' },
 ];
 
 
@@ -84,7 +83,7 @@ function validatePrompt(prompt: string): void {
  */
 export async function generateContent(
   prompt: string,
-  modelId: string = 'gemini-2.5-pro'
+  modelId: string = 'llama-3.1-8b-instruct'
 ): Promise<GeminiResponse> {
   try {
     // Validate inputs
@@ -218,7 +217,7 @@ export async function fileToGenerativePart(file: File) {
 export async function sendChatMessage(
   message: string,
   files?: File[],
-  modelId: string = 'gemini-2.5-pro',
+  modelId: string = 'llama-3.1-8b-instruct',
   history: any[] = []
 ): Promise<GeminiResponse> {
   try {

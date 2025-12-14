@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { sendChatMessage, AVAILABLE_MODELS } from '../utils/geminiAPI';
+import { sendChatMessage } from '../utils/geminiAPI';
 import { recordQuestion, recordAnswer } from '../utils/analyticsTracker';
 import {
   ChatSession,
@@ -28,8 +28,8 @@ const ChatInterface: React.FC = () => {
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].id);
-  const [showModelSelector, setShowModelSelector] = useState(false);
+  // Chỉ dùng llama-3.1-8b-instruct
+  const selectedModel = 'llama-3.1-8b-instruct';
   const [showEnhancer, setShowEnhancer] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState<boolean>(() => {
     try { return localStorage.getItem('chat.memoryEnabled') === 'true'; } catch { return false; }
@@ -38,7 +38,6 @@ const ChatInterface: React.FC = () => {
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const modelSelectorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { loadChatHistory(); }, []);
   useEffect(() => { try { localStorage.setItem('chat.memoryEnabled', String(memoryEnabled)); } catch {} }, [memoryEnabled]);
@@ -64,16 +63,6 @@ const ChatInterface: React.FC = () => {
     };
   }, []);
 
-  // Close model selector when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modelSelectorRef.current && !modelSelectorRef.current.contains(event.target as Node)) {
-        setShowModelSelector(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const loadChatHistory = async () => {
     const history = searchQuery ? await searchChats(searchQuery) : await getChatHistory();
@@ -256,38 +245,11 @@ const ChatInterface: React.FC = () => {
       />
 
       <div className="flex-1 flex flex-col relative">
-        {/* Model Selector - Gemini Style */}
+        {/* Model Badge - Llama 3.1 8B */}
         <div className="absolute top-4 left-4 z-20">
-          <div className="relative" ref={modelSelectorRef}>
-            <button
-              onClick={() => setShowModelSelector(!showModelSelector)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              {AVAILABLE_MODELS.find(m => m.id === selectedModel)?.name || selectedModel}
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${showModelSelector ? 'rotate-180' : ''} `}><polyline points="6 9 12 15 18 9"></polyline></svg>
-            </button>
-
-            {showModelSelector && (
-              <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden animate-fade-in-up">
-                <div className="p-2">
-                  {AVAILABLE_MODELS.map(model => (
-                    <button
-                      key={model.id}
-                      onClick={() => { setSelectedModel(model.id); setShowModelSelector(false); }}
-                      className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors flex items-center justify-between ${selectedModel === model.id ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
-                    >
-                      <div>
-                        <div className="font-medium text-sm">{model.name}</div>
-                        <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{model.description}</div>
-                      </div>
-                      {selectedModel === model.id && (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-300">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span>Llama 3.1 8B</span>
           </div>
         </div>
 
