@@ -45,14 +45,23 @@ export interface Env {
 const router = Router();
 
 // CORS preflight with allowlist
+// Chú thích: Fix CORS - khi ALLOWED_ORIGINS rỗng hoặc không set, cho phép tất cả origins
 router.options('*', (request, env: Env) => {
-  const origin = request.headers.get('Origin') || '';
-  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
-  const isAllowed = allowed.length === 0 || allowed.includes(origin) || allowed.includes('*');
+  const origin = request.headers.get('Origin') || '*';
+  const allowedStr = (env.ALLOWED_ORIGINS || '').trim();
+
+  // Nếu không có ALLOWED_ORIGINS hoặc rỗng, cho phép tất cả
+  let isAllowed = true;
+  if (allowedStr && allowedStr !== '*') {
+    const allowed = allowedStr.split(',').map(o => o.trim()).filter(Boolean);
+    isAllowed = allowed.includes(origin) || allowed.includes('*');
+  }
+
   const headers = new Headers(corsHeaders);
   headers.set('Vary', 'Origin');
-  headers.set('Access-Control-Allow-Origin', isAllowed ? origin || '*' : 'null');
-  return new Response(null, { headers });
+  // Luôn trả về origin thực hoặc '*', không bao giờ trả về 'null'
+  headers.set('Access-Control-Allow-Origin', isAllowed ? origin : '*');
+  return new Response(null, { status: 204, headers });
 });
 
 
@@ -307,18 +316,18 @@ router.post('/api/ai/generate', async (request, env: Env) => {
     const body: any = await request.json();
     // Chỉ dùng llama-3.1-8b-instruct
     const modelId = 'llama-3.1-8b-instruct';
-    
+
     // Build contents from either explicit contents or a simple prompt
     const contents = Array.isArray(body.contents)
       ? body.contents
       : (body.prompt
-          ? [{ role: 'user', parts: [{ text: String(body.prompt) }]}]
-          : undefined);
-    
+        ? [{ role: 'user', parts: [{ text: String(body.prompt) }] }]
+        : undefined);
+
     if (!contents) {
       return badRequestResponse('Thiếu contents hoặc prompt để gọi AI');
     }
-    
+
     if (!env.AI) {
       return errorResponse('Cloudflare AI Workers chưa được cấu hình. Vui lòng kiểm tra wrangler.toml', 500);
     }
@@ -330,8 +339,8 @@ router.post('/api/ai/generate', async (request, env: Env) => {
       const data = await callAIWorker(
         'llama-3.1-8b-instruct', // Force llama model
         contents,
-        { 
-          AI: env.AI, 
+        {
+          AI: env.AI,
           USE_AI_WORKERS: 'true',
           GEMINI_API_KEY: env.GEMINI_API_KEY // Optional fallback
         },

@@ -1,7 +1,9 @@
 // Service Worker for PWA offline functionality
-const CACHE_NAME = 'ai-hoc-tap-v1';
-const STATIC_CACHE = 'static-v1';
-const DYNAMIC_CACHE = 'dynamic-v1';
+// Chú thích: Tăng version khi deploy để trigger update notification
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `ai-hoc-tap-${CACHE_VERSION}`;
+const STATIC_CACHE = `static-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 
 // Files to cache on install
 const STATIC_FILES = [
@@ -12,29 +14,42 @@ const STATIC_FILES = [
 
 // Install event - cache static files
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing...');
+  console.log('[Service Worker] Installing new version...');
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
       console.log('[Service Worker] Caching static files');
       return cache.addAll(STATIC_FILES);
     })
   );
+  // Bỏ qua waiting, kích hoạt ngay lập tức
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and notify clients
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating...');
+  console.log('[Service Worker] Activating new version...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== STATIC_CACHE && name !== DYNAMIC_CACHE)
+          .filter((name) => !name.includes(CACHE_VERSION))
           .map((name) => {
             console.log('[Service Worker] Deleting old cache:', name);
             return caches.delete(name);
           })
       );
+    }).then(() => {
+      // Chú thích: Gửi message tới tất cả clients để thông báo có update mới
+      return self.clients.matchAll({ type: 'window' });
+    }).then((clients) => {
+      clients.forEach((client) => {
+        client.postMessage({
+          type: 'UPDATE_AVAILABLE',
+          version: CACHE_VERSION,
+          timestamp: Date.now()
+        });
+      });
+      console.log('[Service Worker] Notified all clients about update');
     })
   );
   return self.clients.claim();
@@ -76,7 +91,7 @@ self.addEventListener('fetch', (event) => {
               });
             }
           })
-          .catch(() => {});
+          .catch(() => { });
         return cachedResponse;
       }
 
@@ -103,7 +118,7 @@ self.addEventListener('fetch', (event) => {
 // Background sync for pending actions
 self.addEventListener('sync', (event) => {
   console.log('[Service Worker] Background sync:', event.tag);
-  
+
   if (event.tag === 'sync-exam-results') {
     event.waitUntil(syncExamResults());
   } else if (event.tag === 'sync-flashcards') {
@@ -116,7 +131,7 @@ self.addEventListener('sync', (event) => {
 // Push notifications
 self.addEventListener('push', (event) => {
   console.log('[Service Worker] Push received:', event);
-  
+
   const data = event.data ? event.data.json() : {};
   const title = data.title || 'AI Học Tập';
   const options = {
@@ -137,7 +152,7 @@ self.addEventListener('push', (event) => {
 // Notification click
 self.addEventListener('notificationclick', (event) => {
   console.log('[Service Worker] Notification clicked:', event.action);
-  
+
   event.notification.close();
 
   if (event.action === 'open' || !event.action) {

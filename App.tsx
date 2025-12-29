@@ -8,6 +8,7 @@ import SyncToastListener from './components/SyncToastListener';
 import NetworkStatus from './components/NetworkStatus';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
+import UpdateNotification from './components/UpdateNotification';
 import syncManager from './utils/syncManager';
 import {
   Facebook,
@@ -166,6 +167,7 @@ const App: React.FC = () => {
       <div className="relative z-10 flex flex-col min-h-screen">
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 bg-blue-600 text-white px-3 py-2 rounded">Bỏ qua tới nội dung chính</a>
         <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
+        <UpdateNotification />
         <SyncToastListener />
         <Header />
 

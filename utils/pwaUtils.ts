@@ -14,25 +14,34 @@ export const registerServiceWorker = async (): Promise<boolean> => {
       const registration = await navigator.serviceWorker.register('/service-worker.js', {
         scope: '/',
       });
-      
+
       console.log('[PWA] Service Worker registered:', registration.scope);
-      
+
       // Check for updates
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('[PWA] New version available! Please refresh.');
-              // Notify user about update
-              if (window.confirm('Có phiên bản mới! Bạn có muốn cập nhật không?')) {
-                window.location.reload();
-              }
+              console.log('[PWA] New version available! Dispatching update event.');
+              // Chú thích: Dispatch custom event thay vì confirm() để UI component bắt
+              window.dispatchEvent(new CustomEvent('pwa-update-available', {
+                detail: { timestamp: Date.now() }
+              }));
             }
           });
         }
       });
-      
+
+      // Lắng nghe message từ Service Worker
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data?.type === 'UPDATE_AVAILABLE') {
+          window.dispatchEvent(new CustomEvent('pwa-update-available', {
+            detail: event.data
+          }));
+        }
+      });
+
       return true;
     } catch (error) {
       console.error('[PWA] Service Worker registration failed:', error);
@@ -58,9 +67,9 @@ export const unregisterServiceWorker = async (): Promise<boolean> => {
 export const getPWAStatus = (): PWAStatus => {
   const isOnline = navigator.onLine;
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                       (window.navigator as any).standalone === true;
+    (window.navigator as any).standalone === true;
   const isInstalled = isStandalone || document.referrer.includes('android-app://');
-  
+
   return {
     isOnline,
     isInstalled,
@@ -73,10 +82,10 @@ export const getPWAStatus = (): PWAStatus => {
 export const addOnlineListener = (callback: (isOnline: boolean) => void): (() => void) => {
   const handleOnline = () => callback(true);
   const handleOffline = () => callback(false);
-  
+
   window.addEventListener('online', handleOnline);
   window.addEventListener('offline', handleOffline);
-  
+
   // Return cleanup function
   return () => {
     window.removeEventListener('online', handleOnline);
@@ -93,7 +102,7 @@ export const setupInstallPrompt = (callback: (canInstall: boolean) => void): voi
     deferredPrompt = e;
     callback(true);
   });
-  
+
   window.addEventListener('appinstalled', () => {
     console.log('[PWA] App installed successfully');
     deferredPrompt = null;
@@ -106,13 +115,13 @@ export const showInstallPrompt = async (): Promise<boolean> => {
     console.log('[PWA] Install prompt not available');
     return false;
   }
-  
+
   deferredPrompt.prompt();
   const { outcome } = await deferredPrompt.userChoice;
-  
+
   console.log(`[PWA] User response: ${outcome}`);
   deferredPrompt = null;
-  
+
   return outcome === 'accepted';
 };
 
@@ -215,7 +224,7 @@ export class OfflineDB {
 
   async save(storeName: string, data: any): Promise<void> {
     if (!this.db) await this.open();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([storeName], 'readwrite');
       const store = transaction.objectStore(storeName);
@@ -228,7 +237,7 @@ export class OfflineDB {
 
   async get(storeName: string, key: string): Promise<any> {
     if (!this.db) await this.open();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([storeName], 'readonly');
       const store = transaction.objectStore(storeName);
@@ -241,7 +250,7 @@ export class OfflineDB {
 
   async getAll(storeName: string): Promise<any[]> {
     if (!this.db) await this.open();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([storeName], 'readonly');
       const store = transaction.objectStore(storeName);
@@ -254,7 +263,7 @@ export class OfflineDB {
 
   async delete(storeName: string, key: string): Promise<void> {
     if (!this.db) await this.open();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([storeName], 'readwrite');
       const store = transaction.objectStore(storeName);
@@ -267,7 +276,7 @@ export class OfflineDB {
 
   async clear(storeName: string): Promise<void> {
     if (!this.db) await this.open();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([storeName], 'readwrite');
       const store = transaction.objectStore(storeName);
