@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { X, Mail, Lock, User, LogIn, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, Mail, Lock, User, LogIn, UserPlus, AlertCircle, CheckCircle, Shield, Key } from 'lucide-react';
 
 interface LoginModalProps {
     isOpen: boolean;
@@ -12,11 +12,22 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     const { login, register } = useAuth();
     const navigate = useNavigate();
     const [mode, setMode] = useState<'login' | 'register'>('login');
+    // Chú thích: Thêm các trường bắt buộc cho API register
+    const securityQuestions = [
+        'Tên trường tiểu học của bạn là gì?',
+        'Tên người bạn thân nhất thời thơ ấu của bạn là gì?',
+        'Tên con thú cưng đầu tiên của bạn là gì?',
+        'Thành phố nơi bạn sinh ra là gì?',
+        'Tên đường phố bạn đã lớn lên là gì?'
+    ];
     const [formData, setFormData] = useState({
         email: '',
         password: '',
         displayName: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        username: '',
+        securityQuestion: securityQuestions[0],
+        securityAnswer: ''
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -57,7 +68,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                     throw new Error('Vui lòng nhập tên hiển thị');
                 }
 
-                await register(formData.email, formData.password, formData.displayName);
+                // Chú thích: Gọi register với object đầy đủ thay vì 3 tham số riêng lẻ
+                await register({
+                    username: formData.username || formData.email.split('@')[0], // Auto-gen từ email nếu không nhập
+                    email: formData.email,
+                    password: formData.password,
+                    displayName: formData.displayName,
+                    securityQuestion: formData.securityQuestion,
+                    securityAnswer: formData.securityAnswer
+                });
                 setSuccess('Đăng ký thành công!');
                 setTimeout(() => {
                     onClose();
@@ -85,7 +104,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             email: '',
             password: '',
             displayName: '',
-            confirmPassword: ''
+            confirmPassword: '',
+            username: '',
+            securityQuestion: securityQuestions[0],
+            securityAnswer: ''
         });
         setError('');
         setSuccess('');
@@ -243,6 +265,49 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                                         className="w-full pl-12 pr-4 py-3.5 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white transition-all outline-none"
                                         placeholder="••••••••"
                                         required={mode === 'register'}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Security Question (Register only) */}
+                        {mode === 'register' && (
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1">
+                                    Câu hỏi bảo mật
+                                </label>
+                                <div className="relative group">
+                                    <Shield className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-primary-500 transition-colors w-5 h-5" />
+                                    <select
+                                        value={formData.securityQuestion}
+                                        onChange={(e) => setFormData({ ...formData, securityQuestion: e.target.value })}
+                                        className="w-full pl-12 pr-4 py-3.5 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white transition-all outline-none appearance-none cursor-pointer"
+                                        required={mode === 'register'}
+                                    >
+                                        {securityQuestions.map((q) => (
+                                            <option key={q} value={q}>{q}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Security Answer (Register only) */}
+                        {mode === 'register' && (
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1">
+                                    Câu trả lời bảo mật
+                                </label>
+                                <div className="relative group">
+                                    <Key className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-primary-500 transition-colors w-5 h-5" />
+                                    <input
+                                        type="text"
+                                        value={formData.securityAnswer}
+                                        onChange={(e) => setFormData({ ...formData, securityAnswer: e.target.value })}
+                                        className="w-full pl-12 pr-4 py-3.5 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white transition-all outline-none"
+                                        placeholder="Ít nhất 3 ký tự"
+                                        required={mode === 'register'}
+                                        minLength={3}
                                     />
                                 </div>
                             </div>
