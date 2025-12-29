@@ -15,7 +15,7 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.44.7",
-    "itty-router": "^4.0.0"
+    "itty-router": "^4.2.2"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240620.0",

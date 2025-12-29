@@ -7,109 +7,134 @@ import React, { useState, useEffect } from 'react';
  */
 
 interface UpdateNotificationProps {
-    onRefresh?: () => void;
-    onDismiss?: () => void;
+  onRefresh?: () => void;
+  onDismiss?: () => void;
 }
 
 export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
-    onRefresh,
-    onDismiss,
+  onRefresh,
+  onDismiss,
 }) => {
-    const [visible, setVisible] = useState(false);
-    const [isHiding, setIsHiding] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [isHiding, setIsHiding] = useState(false);
 
-    useEffect(() => {
-        // Lắng nghe message từ Service Worker khi có bản cập nhật mới
-        const handleServiceWorkerMessage = (event: MessageEvent) => {
-            if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
-                setVisible(true);
-            }
-        };
+  // Chú thích: Debounce key để tránh hiển thị notification liên tục sau khi user đã cập nhật
+  const DEBOUNCE_KEY = 'pwa-update-dismissed';
+  const DEBOUNCE_DURATION = 5 * 60 * 1000; // 5 phút - không hiển thị lại trong 5 phút
 
-        // Lắng nghe custom event từ pwaUtils
-        const handleUpdateAvailable = () => {
-            setVisible(true);
-        };
-
-        navigator.serviceWorker?.addEventListener('message', handleServiceWorkerMessage);
-        window.addEventListener('pwa-update-available', handleUpdateAvailable);
-
-        return () => {
-            navigator.serviceWorker?.removeEventListener('message', handleServiceWorkerMessage);
-            window.removeEventListener('pwa-update-available', handleUpdateAvailable);
-        };
-    }, []);
-
-    const handleRefresh = () => {
-        onRefresh?.();
-        // Xóa tất cả cache và reload
-        if ('caches' in window) {
-            caches.keys().then((names) => {
-                names.forEach((name) => caches.delete(name));
-            });
+  useEffect(() => {
+    // Kiểm tra đã bị dismiss gần đây chưa
+    const checkDebounce = (): boolean => {
+      const dismissedAt = sessionStorage.getItem(DEBOUNCE_KEY);
+      if (dismissedAt) {
+        const elapsed = Date.now() - parseInt(dismissedAt, 10);
+        if (elapsed < DEBOUNCE_DURATION) {
+          return true; // Còn trong thời gian debounce, không hiển thị
         }
-        window.location.reload();
+      }
+      return false;
     };
 
-    const handleDismiss = () => {
-        setIsHiding(true);
-        setTimeout(() => {
-            setVisible(false);
-            setIsHiding(false);
-            onDismiss?.();
-        }, 300);
+    // Lắng nghe message từ Service Worker khi có bản cập nhật mới
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
+        // Chỉ hiển thị nếu chưa bị debounce
+        if (!checkDebounce()) {
+          setVisible(true);
+        }
+      }
     };
 
-    if (!visible) return null;
+    // Lắng nghe custom event từ pwaUtils
+    const handleUpdateAvailable = () => {
+      if (!checkDebounce()) {
+        setVisible(true);
+      }
+    };
 
-    return (
-        <div
-            className={`update-notification ${isHiding ? 'hiding' : ''}`}
-            role="alert"
-            aria-live="polite"
-        >
-            <div className="update-notification-content">
-                <div className="update-notification-icon">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    >
-                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                        <path d="M3 3v5h5" />
-                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                        <path d="M16 21h5v-5" />
-                    </svg>
-                </div>
-                <div className="update-notification-text">
-                    <h4>Có bản cập nhật mới!</h4>
-                    <p>Nhấn để tải phiên bản mới nhất.</p>
-                </div>
-                <div className="update-notification-actions">
-                    <button
-                        className="update-btn-refresh"
-                        onClick={handleRefresh}
-                        aria-label="Tải lại trang"
-                    >
-                        Cập nhật
-                    </button>
-                    <button
-                        className="update-btn-dismiss"
-                        onClick={handleDismiss}
-                        aria-label="Bỏ qua"
-                    >
-                        ✕
-                    </button>
-                </div>
-            </div>
+    navigator.serviceWorker?.addEventListener('message', handleServiceWorkerMessage);
+    window.addEventListener('pwa-update-available', handleUpdateAvailable);
 
-            <style>{`
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', handleServiceWorkerMessage);
+      window.removeEventListener('pwa-update-available', handleUpdateAvailable);
+    };
+  }, []);
+
+  const handleRefresh = () => {
+    onRefresh?.();
+    // Chú thích: Lưu debounce trước khi reload để tránh loop notification
+    sessionStorage.setItem('pwa-update-dismissed', Date.now().toString());
+    // Xóa tất cả cache và reload
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => caches.delete(name));
+      });
+    }
+    window.location.reload();
+  };
+
+  const handleDismiss = () => {
+    setIsHiding(true);
+    // Chú thích: Lưu thời điểm dismiss vào sessionStorage để debounce
+    sessionStorage.setItem('pwa-update-dismissed', Date.now().toString());
+    setTimeout(() => {
+      setVisible(false);
+      setIsHiding(false);
+      onDismiss?.();
+    }, 300);
+  };
+
+  if (!visible) return null;
+
+  return (
+    <div
+      className={`update-notification ${isHiding ? 'hiding' : ''}`}
+      role="alert"
+      aria-live="polite"
+    >
+      <div className="update-notification-content">
+        <div className="update-notification-icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+            <path d="M16 21h5v-5" />
+          </svg>
+        </div>
+        <div className="update-notification-text">
+          <h4>Có bản cập nhật mới!</h4>
+          <p>Nhấn để tải phiên bản mới nhất.</p>
+        </div>
+        <div className="update-notification-actions">
+          <button
+            className="update-btn-refresh"
+            onClick={handleRefresh}
+            aria-label="Tải lại trang"
+          >
+            Cập nhật
+          </button>
+          <button
+            className="update-btn-dismiss"
+            onClick={handleDismiss}
+            aria-label="Bỏ qua"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <style>{`
         .update-notification {
           position: fixed;
           top: 20px;
@@ -253,8 +278,8 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
           }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default UpdateNotification;

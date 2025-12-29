@@ -96,7 +96,7 @@ const Home: React.FC = () => {
 
           {/* Main Heading */}
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-tight animate-fade-in-up delay-100">
-            <span className="block mb-2 sm:mb-3">GIÁO DỤC STEM</span>
+            <span className="block mb-2 sm:mb-3">GIÁO DỤC CÔNG NGHỆ - STEM</span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-500">
               TƯ DUY KIẾN TẠO THỰC TẾ
             </span>
