@@ -1,278 +1,231 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+  <img src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" width="100%" alt="STEM Vietnam Banner" />
+  
+  # 🚀 STEM Vietnam - AI Learning Platform
+
+  [![React](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![Vite](https://img.shields.io/badge/Vite-6.2-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+  [![Tailwind](https://img.shields.io/badge/Tailwind-3.4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+  [![Gemini](https://img.shields.io/badge/Gemini-2.5_Pro-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+
+  **Nền tảng học tập thông minh cho học sinh THPT Việt Nam**
+  
+  Hỗ trợ ôn thi môn **Công nghệ** với AI | Dựa trên SGK **Kết nối tri thức** & **Cánh Diều**
+
+  [Demo](https://stem-vietnam.vercel.app) · [Báo lỗi](https://github.com/LongNgn204/totnghiepcongnghecungai1/issues) · [Đề xuất tính năng](https://github.com/LongNgn204/totnghiepcongnghecungai1/issues)
+
 </div>
-
-# 🎓 AI Hỗ Trợ Học Tập Công Nghệ - Luyện Thi THPT Quốc Gia
-
-Nền tảng học tập thông minh sử dụng **Llama 3.1 8B AI** (qua Cloudflare AI Workers) để hỗ trợ học sinh ôn tập và luyện thi tốt nghiệp THPT môn Công nghệ.
-
-Dựa trên **SGK Kết nối tri thức với cuộc sống** và **SGK Cánh Diều** - Chương trình GDPT 2018
 
 ---
 
 ## ✨ Tính Năng Chính
 
-### 🏠 Trang Chủ
-- Giới thiệu tổng quan về nền tảng
-- Hiển thị 3 sản phẩm chính với mô tả chi tiết
-- Công nghệ sử dụng (8 công nghệ hiện đại)
-- Thông tin liên hệ và hỗ trợ
+<table>
+<tr>
+<td width="50%">
 
-### 📚 Sản Phẩm 1: Hệ Thống Hóa Kiến Thức
-- ✅ Chat AI thông minh với Llama 3.1 8B
-- ✅ Upload file: PDF, DOCX, hình ảnh
-- ✅ Trả lời chi tiết 500-1500 từ với sơ đồ minh họa
-- ✅ Markdown rendering đầy đủ
-- ✅ Lưu lịch sử chat tự động (LocalStorage)
-- ✅ Export chat ra file text
-- ✅ Tìm kiếm chat
+### 🤖 Chat AI Thông Minh
+- Trò chuyện với **Gemini 2.5 Pro**
+- Upload file PDF, DOCX, hình ảnh
+- Trả lời chi tiết với sơ đồ minh họa
+- Lưu lịch sử chat tự động
+- Export chat ra file
 
-### ❓ Sản Phẩm 2: Tạo Câu Hỏi Trắc Nghiệm
-- ✅ Tự động tạo câu hỏi 4 lựa chọn
-- ✅ Tự động tạo câu hỏi Đúng/Sai
-- ✅ Phân loại mức độ: Nhận biết, Thông hiểu, Vận dụng
-- ✅ Ghi rõ YCCĐ (Yêu cầu cần đạt) theo SGK
-- ✅ Hiển thị kết quả bằng Mermaid diagram
-- ✅ Tùy chỉnh số lượng câu hỏi
+</td>
+<td width="50%">
 
-### 📝 Sản Phẩm 3: Tạo Đề Thi THPT - Công Nghiệp
-- ✅ 28 câu hỏi đúng format thi THPT Quốc Gia
-- ✅ Phân bổ chuẩn: 24 câu Trắc nghiệm 4 lựa chọn + 4 câu Đúng/Sai
-- ✅ Nội dung: Công nghệ 10-11 (12 câu) + Điện (6 câu) + Điện tử (6 câu) + Đúng/Sai (4 câu)
-- ✅ Phân bố mức độ: 43% Nhận biết, 43% Thông hiểu, 14% Vận dụng
-- ✅ In đề thi với CSS tối ưu
-- ✅ Tải đề thi ra file .txt
+### 📝 Tạo Đề Thi THPT
+- **28 câu** đúng format thi THPT Quốc Gia
+- 24 câu trắc nghiệm + 4 câu Đúng/Sai
+- Phân bố mức độ chuẩn BGD
+- Hỗ trợ cả **Công nghiệp** & **Nông nghiệp**
+- In đề / Tải PDF
 
-### 🚜 Sản Phẩm 4: Tạo Đề Thi THPT - Nông Nghiệp
-- ✅ 28 câu hỏi đúng format thi THPT Quốc Gia
-- ✅ Phân bổ chuẩn: 24 câu Trắc nghiệm 4 lựa chọn + 4 câu Đúng/Sai
-- ✅ Nội dung: Công nghệ 10-11 (12 câu) + Trồng trọt (6 câu) + Chăn nuôi (6 câu) + Đúng/Sai (4 câu)
-- ✅ Phân bố mức độ: 43% Nhận biết, 43% Thông hiểu, 14% Vận dụng
-- ✅ In đề thi với CSS tối ưu
-- ✅ Tải đề thi ra file .txt
+</td>
+</tr>
+<tr>
+<td width="50%">
 
----
+### 🎴 Flashcards Thông Minh
+- Tạo flashcard từ nội dung bất kỳ
+- Spaced repetition học hiệu quả
+- Đồng bộ đa thiết bị
+- Thống kê tiến độ học
 
-## 🛠️ Công Nghệ Sử Dụng
+</td>
+<td width="50%">
 
-| Công nghệ | Phiên bản | Mô tả |
-|-----------|-----------|-------|
-| **Llama 3.1 8B** | Cloudflare AI Workers | Trí tuệ nhân tạo miễn phí, nhanh chóng |
-| **React** | 19.2.0 | Framework JavaScript hiện đại |
-| **TypeScript** | Latest | Type-safe JavaScript |
-| **Vite** | 6.4.1 | Build tool siêu nhanh |
-| **Tailwind CSS** | 3.x | Utility-first CSS framework |
-| **React Router** | 7.9.6 | Routing library |
-| **Mermaid.js** | 11.12.1 | Tạo diagram & flowchart |
-| **LocalStorage** | Web API | Lưu trữ dữ liệu client-side |
+### 💻 Coding Lab
+- Học lập trình tương tác
+- Bài tập từ cơ bản đến nâng cao
+- Code editor trực tiếp
+- Mô phỏng Arduino
+
+</td>
+</tr>
+</table>
 
 ---
 
-## 📦 Cài Đặt & Chạy Dự Án
+## 🛠️ Tech Stack
 
-### 1. Clone Repository
-```bash
-git clone [repository-url]
-cd ai-hỗ-trợ-học-tập-công-nghệ-(lớp-6-12)
-```
+| Layer | Technologies |
+|-------|-------------|
+| **Frontend** | React 19, TypeScript, Tailwind CSS, Zustand |
+| **AI/LLM** | Google Gemini 2.5 Pro (via Cloudflare AI Gateway) |
+| **Backend** | Cloudflare Workers, D1 Database |
+| **Tooling** | Vite 6, Vitest, Playwright, ESLint |
+| **Features** | PWA, Offline-first, Real-time Sync |
 
-### 2. Cài Đặt Dependencies
+---
+
+## 🚀 Quick Start
+
+### 1. Clone & Install
+
 ```bash
+git clone https://github.com/LongNgn204/totnghiepcongnghecungai1.git
+cd totnghiepcongnghecungai1
 npm install
 ```
 
-### 3. Cấu Hình (Không cần API Key)
-Llama 3.1 8B sử dụng Cloudflare AI Workers - **hoàn toàn miễn phí**, không cần API key!
+### 2. Cấu hình môi trường
 
-Chỉ cần deploy backend worker với cấu hình AI binding trong `wrangler.toml`.
+```bash
+cp .env.local.example .env.local
+# Chỉnh sửa .env.local với API keys của bạn
+```
 
-### 4. Chạy Development Server
+### 3. Chạy Development Server
+
 ```bash
 npm run dev
 ```
 
-Truy cập: `http://localhost:3000`
+Truy cập: `http://localhost:5173`
 
-### 5. Build cho Production
+### 4. Build Production
+
 ```bash
 npm run build
+npm run preview
+```
+
+---
+
+## 📁 Cấu Trúc Project
+
+```
+├── components/          # React components (63 files)
+│   ├── Home.tsx         # Landing page
+│   ├── Product1.tsx     # Chat AI
+│   ├── Product2.tsx     # Tạo câu hỏi
+│   ├── Product3-4.tsx   # Tạo đề thi
+│   ├── CodingLab.tsx    # Coding Lab
+│   └── ...
+├── utils/               # Utilities (24 files)
+│   ├── geminiAPI.ts     # Gemini API client
+│   ├── chatStorage.ts   # LocalStorage helper
+│   └── ...
+├── store/               # Zustand stores
+├── workers/             # Cloudflare Workers backend
+├── data/                # Static data (lessons, quizzes)
+├── hooks/               # Custom React hooks
+└── schemas/             # Zod validation schemas
 ```
 
 ---
 
 ## 📖 Hướng Dẫn Sử Dụng
 
-### 🏠 Trang Chủ
-- Xem giới thiệu tổng quan về nền tảng
-- Khám phá 3 sản phẩm chính
-- Xem công nghệ sử dụng
-- Liên hệ hỗ trợ
-
-### 📚 Sản Phẩm 1: Hệ Thống Hóa Kiến Thức
-1. Click "Bắt Đầu Chat" hoặc vào menu SP1
-2. Nhập câu hỏi (ví dụ: "Giải thích động cơ không đồng bộ 3 pha")
-3. (Tùy chọn) Click icon 📎 để upload file PDF/DOCX/hình ảnh
-4. Nhấn Enter hoặc nút gửi
-5. Xem câu trả lời chi tiết với:
+### Chat AI (Sản phẩm 1)
+1. Vào menu **"Hỏi AI"**
+2. Nhập câu hỏi (VD: *"Giải thích động cơ không đồng bộ 3 pha"*)
+3. Có thể upload file PDF/DOCX/ảnh để AI phân tích
+4. Xem câu trả lời với:
    - Khái niệm, cấu tạo, nguyên lý
-   - Công thức toán học
-   - Sơ đồ minh họa (text-art)
-   - Ví dụ thực tế
-   - YCCĐ theo SGK KNTT & Cánh Diều
-6. Click "Xuất file" để lưu lịch sử chat
+   - Công thức toán học (LaTeX)
+   - Sơ đồ minh họa
+   - YCCĐ theo SGK
 
-### ❓ Sản Phẩm 2: Tạo Câu Hỏi Trắc Nghiệm
-1. Chọn lớp: 10, 11, hoặc 12
-2. Nhập chủ đề (ví dụ: "Dòng điện xoay chiều 3 pha")
-3. Chọn số lượng câu trắc nghiệm 4 lựa chọn (4-10 câu)
-4. Chọn số lượng câu Đúng/Sai (1-5 câu)
-5. Nhấn "Tạo Câu Hỏi"
-6. Xem kết quả với:
-   - Câu hỏi có 4 phương án
-   - Đáp án chính xác
-   - Mức độ (Nhận biết/Thông hiểu/Vận dụng)
-   - YCCĐ theo SGK KNTT & Cánh Diều
-
-### 📝 Sản Phẩm 3 & 4: Tạo Đề Thi THPT (Công Nghiệp & Nông Nghiệp)
-1. Chọn chuyên đề: Công nghiệp (SP3) hoặc Nông nghiệp (SP4)
-2. Nhấn nút "🎯 Tạo Đề Thi THPT"
+### Tạo Đề Thi (Sản phẩm 3-4)
+1. Chọn **Công nghiệp** hoặc **Nông nghiệp**
+2. Nhấn **"🎯 Tạo Đề Thi THPT"**
 3. Chờ AI tạo đề (~30-60 giây)
-4. Xem đề thi với **28 câu** (24 TN + 4 Đ/S):
-   - Câu 1-8: Công nghệ 10-11 (Phần cơ sở)
-   - Câu 9-14: Chuyên đề 1 (Điện/Trồng trọt)
-   - Câu 15-20: Chuyên đề 2 (Điện tử/Chăn nuôi)
-   - Câu 21-24: Công nghệ 10-11 (Tiếp)
-   - Câu 25-28: Đúng/Sai (4 câu)
-5. Nhấn "🖨️ In Đề Thi" để in
-6. Nhấn "💾 Tải Kết Quả" để lưu file .txt
+4. Xem đề thi với **28 câu** chuẩn format
+5. **In đề** hoặc **Tải PDF**
 
 ---
 
-## 📁 Cấu Trúc Dự Án
+## 🧪 Testing
 
-```
-📦 ai-hỗ-trợ-học-tập-công-nghệ-(lớp-6-12)
-├── 📂 components/
-│   ├── 🏠 Home.tsx              # Trang chủ/Landing page
-│   ├── 🧭 Header.tsx            # Navigation bar
-│   ├── 💬 ChatInterface.tsx     # Chat AI component
-│   ├── 📚 Product1.tsx          # Chat wrapper
-│   ├── ❓ Product2.tsx          # Question generator
-│   ├── 📝 Product3.tsx          # Exam generator
-│   ├── 🎴 QuestionCard.tsx      # Question display
-│   ├── 📊 MermaidDiagram.tsx    # Diagram renderer
-│   └── 👥 MemberTable.tsx       # Team info
-├── 📂 utils/
-│   ├── 🤖 geminiAPI.ts          # Gemini API functions
-│   └── 💾 chatStorage.ts        # LocalStorage helper
-├── 📄 types.ts                  # TypeScript definitions
-├── 📄 App.tsx                   # Main app + routing
-├── 📄 index.tsx                 # Entry point
-├── 🎨 index.css                 # Global CSS + markdown styles
-├── 🌐 index.html                # HTML template
-├── ⚙️ vite.config.ts            # Vite configuration
-├── 📝 tsconfig.json             # TypeScript config
-├── 📦 package.json              # Dependencies
-├── 🔐 .env.local                # API keys (gitignored)
-└── 📖 README.md                 # Documentation
+```bash
+# Unit tests
+npm run test
+
+# Watch mode
+npm run test:watch
+
+# E2E tests
+npm run e2e
 ```
 
 ---
 
-## 🎯 Tính Năng Nổi Bật
+## 🌐 Deployment
 
-### 🤖 AI Thông Minh
-- Sử dụng Llama 3.1 8B - model AI mạnh mẽ qua Cloudflare AI Workers
-- Trả lời chi tiết 500-1500 từ
-- Hiểu ngữ cảnh và câu hỏi phức tạp
-- Hỗ trợ đa phương tiện (text, hình ảnh, PDF)
-- **Miễn phí hoàn toàn** - không cần API key
+### Frontend (Vercel/Cloudflare Pages)
 
-### 🎨 Giao Diện Đẹp
-- Responsive design - hoạt động mượt mà trên mọi thiết bị
-- Dark mode support - bảo vệ mắt khi học đêm
-- Animation mượt mà với Tailwind CSS
-- Icons đẹp từ Font Awesome
+```bash
+npm run build
+# Deploy thư mục dist/
+```
 
-### 💾 Lưu Trữ Thông Minh
-- LocalStorage - không cần server
-- Tự động lưu lịch sử chat
-- Export dữ liệu ra file text
-- Không giới hạn số lượng chat
+### Backend (Cloudflare Workers)
 
-### 📊 Markdown & Diagram
-- Render markdown đầy đủ (heading, bold, code, list, table)
-- Syntax highlighting cho code blocks
-- Mermaid diagram cho flowchart
-- CSS tối ưu cho in ấn
+```bash
+cd workers
+npm install
+npx wrangler deploy
+```
 
----
-
-## 🎓 Mục Tiêu Giáo Dục
-
-1. **Hỗ trợ học sinh:**
-   - Giải đáp thắc mắc 24/7
-   - Luyện tập với ngân hàng câu hỏi phong phú
-   - Làm quen với format đề thi THPT
-
-2. **Hỗ trợ giáo viên:**
-   - Tạo câu hỏi nhanh chóng
-   - Tạo đề thi chuẩn format
-   - Tiết kiệm thời gian biên soạn
-
-3. **Tuân thủ chương trình:**
-   - Bám sát SGK Cánh Diều
-   - Theo GDPT 2018
-   - Đúng format thi THPT Quốc Gia
+Chi tiết: xem [`workers/README.md`](./workers/README.md)
 
 ---
 
 ## 📞 Liên Hệ & Hỗ Trợ
 
-### 📧 Email
-**longhngn.hnue@gmail.com**
-
-### 📱 Zalo / Điện thoại
-**0896636181**
-
-### ⏰ Giờ Hỗ Trợ
-- **8:00 - 22:00** hàng ngày
-- Phản hồi trong vòng **24 giờ**
-
-### 💬 Các Vấn Đề Được Hỗ Trợ
-- ✅ Cài đặt và cấu hình
-- ✅ Lỗi kỹ thuật
-- ✅ Hướng dẫn sử dụng
-- ✅ Đề xuất tính năng mới
-- ✅ Báo cáo lỗi nội dung
+| | |
+|---|---|
+| 📧 **Email** | stu725114073@hnue.edu.vn |
+| 📱 **Điện thoại** | 0896636181 |
+| ⏰ **Giờ hỗ trợ** | T2-T7: 8:00 - 21:00 |
 
 ---
 
 ## 🤝 Đóng Góp
 
-Chúng tôi rất hoan nghênh mọi đóng góp! Để đóng góp:
-
 1. **Fork** repository này
-2. Tạo **branch mới**: `git checkout -b feature/TinhNangMoi`
-3. **Commit** thay đổi: `git commit -m 'Thêm tính năng XYZ'`
-4. **Push** lên branch: `git push origin feature/TinhNangMoi`
+2. Tạo branch mới: `git checkout -b feature/TinhNangMoi`
+3. Commit: `git commit -m 'feat: Thêm tính năng XYZ'`
+4. Push: `git push origin feature/TinhNangMoi`
 5. Tạo **Pull Request**
 
 ---
 
 ## 📄 License
 
-**MIT License** - Tự do sử dụng cho mục đích giáo dục
+MIT License - Tự do sử dụng cho mục đích giáo dục.
 
 ---
 
-## 🌟 Lời Kết
+<div align="center">
 
-> "Học tập không còn là gánh nặng khi có AI đồng hành!" 
+**Phát triển với ❤️ bởi Nguyễn Hoàng Long**
 
-**Chúc các em học tập hiệu quả và đạt điểm cao trong kỳ thi THPT Quốc Gia! 🎓✨**
+*Đồ án tốt nghiệp - Trường Đại học Sư phạm Hà Nội*
 
----
+Powered by **Google Gemini 2.5 Pro** 🤖
 
-*Phát triển với ❤️ bởi đội ngũ AI Education*  
-*Powered by Llama 3.1 8B AI (Cloudflare AI Workers) 🤖*
+</div>

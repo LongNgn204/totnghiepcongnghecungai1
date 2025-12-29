@@ -2,13 +2,21 @@
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
-  Referrer-Policy: no-referrer
-  Permissions-Policy: geolocation=(), microphone=(), camera=()
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none';
-    script-src 'self';
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' data: https:;
-    font-src 'self' data:;
-    connect-src 'self' https://ai-hoc-tap-api.stu725114073.workers.dev;
-    upgrade-insecure-requests
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(self), camera=()
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://ai-hoc-tap-api.stu725114073.workers.dev https://*.googleapis.com https://*.google.com wss://*.firebaseio.com https://*.firebaseio.com; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests
 
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/manifest.json
+  Cache-Control: public, max-age=86400
+
+/service-worker.js
+  Cache-Control: no-cache, no-store, must-revalidate
