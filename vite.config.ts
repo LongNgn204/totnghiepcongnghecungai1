@@ -5,11 +5,12 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
-  
+
   // Determine API URL based on environment
-  const apiUrl = env.VITE_API_URL || 
-    (mode === 'production' 
-      ? 'https://ai-hoc-tap-api.your-account.workers.dev'
+  // Chú thích: URL worker production thực tế của project
+  const apiUrl = env.VITE_API_URL ||
+    (mode === 'production'
+      ? 'https://ai-hoc-tap-api.stu725114073.workers.dev'
       : 'http://localhost:8787');
 
   return {
@@ -40,17 +41,17 @@ export default defineConfig(({ mode }) => {
           theme_color: '#ffffff',
           icons: [
             {
-              src: 'pwa-192x192.png',
+              src: 'icons/icon-192x192.png',
               sizes: '192x192',
               type: 'image/png',
             },
             {
-              src: 'pwa-512x512.png',
+              src: 'icons/icon-512x512.png',
               sizes: '512x512',
               type: 'image/png',
             },
             {
-              src: 'pwa-512x512.png',
+              src: 'icons/icon-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any maskable',
