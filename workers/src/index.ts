@@ -1350,7 +1350,8 @@ export default {
       // Attach dynamic CORS to all responses
       const headers = new Headers(res?.headers || {});
       headers.set('Vary', 'Origin');
-      headers.set('Access-Control-Allow-Origin', isAllowed ? (origin || '*') : 'null');
+      // Luôn trả về origin thực hoặc '*', không bao giờ trả về 'null' để tránh lỗi CORS
+      headers.set('Access-Control-Allow-Origin', isAllowed ? (origin || '*') : '*');
       headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       headers.set('Access-Control-Allow-Headers', 'Content-Type, X-User-ID, Authorization');
       headers.set('Access-Control-Max-Age', '86400');
