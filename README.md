@@ -522,7 +522,7 @@ erDiagram
 | Email | stu725114073@hnue.edu.vn |
 | Điện thoại | 0896636181 |
 | Trường | Đại học Sư phạm Hà Nội |
-| Chuyên ngành | Công nghệ thông tin |
+| Chuyên ngành | Sư phạm Công nghệ - GD STEM|
 
 ---
 
