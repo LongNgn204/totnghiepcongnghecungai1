@@ -8,23 +8,28 @@ import { generateWithRAG } from '../../lib/rag/generator';
 import { CHAT_PROMPT } from '../../lib/prompts';
 import type { ChatMessage } from '../../types';
 import type { Conversation, FileAttachment } from '../../types/chat';
+import { useAuthStore } from '../../lib/auth';
 
-// Chú thích: LocalStorage key
-const STORAGE_KEY = 'stem-vietnam-chat-history';
+// Chú thích: LocalStorage key prefix
+const STORAGE_PREFIX = 'stem-vietnam-chat-history';
 
-// Chú thích: Load conversations từ localStorage
-function loadConversations(): Conversation[] {
+function getStorageKey(userId: string) {
+    return `${STORAGE_PREFIX}-${userId}`;
+}
+
+// Chú thích: Load conversations từ localStorage theo userId
+function loadConversations(userId: string): Conversation[] {
     try {
-        const data = localStorage.getItem(STORAGE_KEY);
+        const data = localStorage.getItem(getStorageKey(userId));
         return data ? JSON.parse(data) : [];
     } catch {
         return [];
     }
 }
 
-// Chú thích: Save conversations vào localStorage
-function saveConversations(conversations: Conversation[]) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+// Chú thích: Save conversations vào localStorage theo userId
+function saveConversations(userId: string, conversations: Conversation[]) {
+    localStorage.setItem(getStorageKey(userId), JSON.stringify(conversations));
 }
 
 // Chú thích: Generate title từ first message
@@ -35,27 +40,32 @@ function generateTitle(message: string): string {
 }
 
 export default function ChatPage() {
+    const { user } = useAuthStore();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Chú thích: Load saved conversations on mount
+    // Chú thích: Load saved conversations on mount or user change
     useEffect(() => {
-        const saved = loadConversations();
+        if (!user?.id) return;
+
+        const saved = loadConversations(user.id);
         setConversations(saved);
         if (saved.length > 0) {
             setActiveId(saved[0].id);
+        } else {
+            setActiveId(null);
         }
-    }, []);
+    }, [user?.id]);
 
     // Chú thích: Save whenever conversations change
     useEffect(() => {
-        if (conversations.length > 0) {
-            saveConversations(conversations);
+        if (user?.id && conversations.length > 0) {
+            saveConversations(user.id, conversations);
         }
-    }, [conversations]);
+    }, [conversations, user?.id]);
 
     // Chú thích: Auto scroll
     useEffect(() => {

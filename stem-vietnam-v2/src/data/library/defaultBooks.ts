@@ -86,7 +86,7 @@ const CHUYEN_DE_CANH_DIEU: Document[] = [
         grade: '10',
         topic: 'Chuyên đề Trồng trọt',
         source: BOOK_PUBLISHERS.CANH_DIEU,
-        fileUrl: '/books/Chuyên đề học Công nghệ trồng trọt 10 – Cánh diều.pdf',
+        fileUrl: 'https://drive.google.com/file/d/PLACEHOLDER_ID/view?usp=sharing', // Cần cập nhật link Google Drive thực tế
         createdAt: Date.now(),
     },
     // LỚP 11
