@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import type { Document } from '../../types';
 import { DEFAULT_LIBRARY, BOOK_PUBLISHERS, checkDocumentExists } from '../../data/library/defaultBooks';
+import { useAppStore } from '../../stores/appStore';
+
 
 // Chú thích: Categories tabs - theo loại tài liệu thực tế
 const TABS = [
@@ -34,6 +36,8 @@ export default function LibraryPage() {
     const [showUpload, setShowUpload] = useState(false);
     const [filterGrade, setFilterGrade] = useState<'all' | '10' | '11' | '12'>('all');
     const [filterPublisher, setFilterPublisher] = useState<'all' | string>('all');
+
+    const { useDefaultLibrary, toggleDefaultLibrary } = useAppStore();
 
     const [uploadForm, setUploadForm] = useState({
         title: '',
@@ -274,6 +278,26 @@ export default function LibraryPage() {
                                     </span>
                                 </div>
 
+                                {doc.id === 'master-drive-link' && (
+                                    <div className="flex items-center gap-2 mb-3 bg-primary-50 dark:bg-primary-900/30 p-2 rounded-lg">
+                                        <button
+                                            onClick={toggleDefaultLibrary}
+                                            className={`${useDefaultLibrary ? 'bg-primary-600' : 'bg-slate-300'}
+                                                relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none`}
+                                        >
+                                            <span className="sr-only">Use Default Library</span>
+                                            <span
+                                                aria-hidden="true"
+                                                className={`${useDefaultLibrary ? 'translate-x-4' : 'translate-x-0'}
+                                                    pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out`}
+                                            />
+                                        </button>
+                                        <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                                            {useDefaultLibrary ? 'AI đang học từ nguồn này' : 'AI bỏ qua nguồn này'}
+                                        </span>
+                                    </div>
+                                )}
+
                                 {/* Actions */}
                                 {hasFile && (
                                     <a
@@ -282,8 +306,8 @@ export default function LibraryPage() {
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-2 text-xs text-primary-600 hover:text-primary-700 font-medium"
                                     >
-                                        <Download size={14} />
-                                        Xem PDF
+                                        {doc.fileUrl.startsWith('http') ? <LinkIcon size={14} /> : <Download size={14} />}
+                                        {doc.fileUrl.startsWith('http') ? 'Mở liên kết' : 'Xem PDF'}
                                     </a>
                                 )}
                             </div>

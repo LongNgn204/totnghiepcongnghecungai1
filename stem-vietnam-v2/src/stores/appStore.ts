@@ -6,6 +6,10 @@ interface AppState {
     isDarkMode: boolean;
     toggleDarkMode: () => void;
 
+    // RAG settings
+    useDefaultLibrary: boolean;
+    toggleDefaultLibrary: () => void;
+
     // Loading states
     isLoading: boolean;
     setLoading: (loading: boolean) => void;
@@ -21,6 +25,9 @@ export const useAppStore = create<AppState>((set) => ({
     isDarkMode: false,
 
     toggleDarkMode: () => { },
+
+    useDefaultLibrary: true, // Default to true as requested
+    toggleDefaultLibrary: () => set((state) => ({ useDefaultLibrary: !state.useDefaultLibrary })),
 
     isLoading: false,
     setLoading: (loading) => set({ isLoading: loading }),

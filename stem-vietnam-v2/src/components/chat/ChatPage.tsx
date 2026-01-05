@@ -1,6 +1,7 @@
 // Chú thích: Chat Page - Gemini-style UI với Sidebar và File Upload
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Sparkles, Menu, X } from 'lucide-react';
+import { Sparkles, Menu, X, BrainCircuit, Clock } from 'lucide-react';
+import { useAppStore } from '../../stores/appStore';
 import ChatSidebar from './ChatSidebar';
 import ChatInput from './ChatInput';
 import MessageBubble from './MessageBubble';
@@ -41,10 +42,13 @@ function generateTitle(message: string): string {
 
 export default function ChatPage() {
     const { user } = useAuthStore();
+    const { useDefaultLibrary } = useAppStore();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [thinkingStep, setThinkingStep] = useState<string>('Phân tích câu hỏi...');
+    const [elapsedTime, setElapsedTime] = useState(0);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Chú thích: Load saved conversations on mount or user change
@@ -144,13 +148,31 @@ export default function ChatPage() {
         }));
 
         setIsLoading(true);
+        const startTime = Date.now();
+        setThinkingStep('Phân tích câu hỏi...');
+        setElapsedTime(0);
+
+        // Timer effect
+        const timerInterval = setInterval(() => {
+            setElapsedTime((Date.now() - startTime) / 1000);
+        }, 100);
+
+        // Simulation of thinking steps
+        setTimeout(() => setThinkingStep(useDefaultLibrary ? 'Tra cứu Thư viện chuẩn...' : 'Tìm kiếm thông tin...'), 800);
+        setTimeout(() => setThinkingStep('Tổng hợp câu trả lời...'), 2000);
 
         try {
             // Chú thích: Gọi AI (TODO: xử lý files)
             const response = await generateWithRAG({
                 query: message,
-                systemPrompt: CHAT_PROMPT,
+                systemPrompt: CHAT_PROMPT + (useDefaultLibrary
+                    ? '\n\nIMPORTANT: You have access to the National Standard Library (Google Drive). Prioritize information from standard textbooks and the provided context.'
+                    : '\n\nIMPORTANT: Do NOT use the National Standard Library context. Only answer based on user-provided context or general knowledge.'),
+                filters: {}, // TODO: pass filters from UI if needed
             });
+
+            clearInterval(timerInterval);
+
 
             const assistantMessage: ChatMessage = {
                 id: (Date.now() + 1).toString(),
@@ -256,18 +278,31 @@ export default function ChatPage() {
                             ))}
 
                             {isLoading && (
-                                <div className="flex gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                                        <Sparkles size={16} className="text-white animate-pulse" />
-                                    </div>
-                                    <div className="bg-white dark:bg-slate-800 rounded-2xl rounded-tl-sm px-4 py-3 border border-slate-200 dark:border-slate-700 shadow-sm">
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex gap-1">
-                                                <div className="w-2 h-2 rounded-full bg-primary-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-                                                <div className="w-2 h-2 rounded-full bg-primary-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-                                                <div className="w-2 h-2 rounded-full bg-primary-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                                <div className="flex justify-start">
+                                    <div className="bg-white dark:bg-slate-800 rounded-2xl rounded-tl-none p-4 shadow-sm border border-slate-100 dark:border-slate-700 max-w-[80%]">
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative">
+                                                <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center animate-pulse">
+                                                    <BrainCircuit className="text-primary-600 animate-spin-slow" size={18} />
+                                                </div>
+                                                <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-0.5">
+                                                    <Clock size={10} className="text-slate-400" />
+                                                </div>
                                             </div>
-                                            <span className="text-sm text-slate-500">Đang suy nghĩ...</span>
+                                            <div>
+                                                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                                    {thinkingStep}
+                                                </p>
+                                                <p className="text-xs text-slate-400 flex items-center gap-1">
+                                                    <span>{elapsedTime.toFixed(1)}s</span>
+                                                    {useDefaultLibrary && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span className="text-primary-500">Dùng thư viện chuẩn</span>
+                                                        </>
+                                                    )}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
