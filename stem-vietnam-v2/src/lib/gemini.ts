@@ -1,112 +1,68 @@
-// Chú thích: Gemini API client - wrapper cho Google Generative AI SDK
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+// Chú thích: Gemini API client - Wrapper gọi Cloudflare Workers Backend
+// Đã chuyển từ gọi trực tiếp SDK sang gọi qua Backend để bảo mật và dùng Vertex AI
+import { sendChatMessage, streamChatMessage } from './api';
 
-// Chú thích: Singleton instance cho Gemini client
-let geminiInstance: GoogleGenerativeAI | null = null;
-let modelInstance: GenerativeModel | null = null;
-
-// Chú thích: Khởi tạo Gemini client với API key từ env
-export function initGemini(apiKey?: string): GoogleGenerativeAI {
-    const key = apiKey || import.meta.env.VITE_GEMINI_API_KEY;
-
-    if (!key) {
-        throw new Error('VITE_GEMINI_API_KEY is required');
-    }
-
-    if (!geminiInstance) {
-        geminiInstance = new GoogleGenerativeAI(key);
-    }
-
-    return geminiInstance;
-}
-
-// Chú thích: Lấy model Gemini 2.5 Pro (hoặc fallback)
-export function getModel(): GenerativeModel {
-    if (!modelInstance) {
-        const gemini = initGemini();
-        // Chú thích: Dùng gemini-2.0-flash-exp cho tốc độ, fallback 1.5-pro nếu cần
-        modelInstance = gemini.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-    }
-    return modelInstance;
-}
-
-// Chú thích: Interface cho response từ Gemini
 export interface GeminiResponse {
     text: string;
     tokensIn: number;
     tokensOut: number;
 }
 
-// Chú thích: Gọi Gemini với prompt và optional context từ RAG
+// Chú thích: Giữ lại signature cũ để không break code hiện tại
 export async function callGemini(params: {
     systemPrompt: string;
     userMessage: string;
-    context?: string; // RAG context
-    customPrompt?: string; // User custom prompt
+    context?: string;
+    customPrompt?: string;
 }): Promise<GeminiResponse> {
     const { systemPrompt, userMessage, context, customPrompt } = params;
-    const model = getModel();
 
-    // Chú thích: Build full prompt với context và custom prompt
-    let fullPrompt = systemPrompt;
+    // Chú thích: Combine prompts vì backend API chỉ nhận message & context
+    // System prompt đã được hardcode ở backend cho nhất quán, 
+    // nhưng nếu cần custom thì có thể sửa backend để nhận thêm param.
+    // Hiện tại ta sẽ gộp customPrompt vào userMessage để gửi đi.
 
-    if (context) {
-        fullPrompt += `\n\n--- CONTEXT TỪ TÀI LIỆU ---\n${context}\n--- HẾT CONTEXT ---\n`;
-    }
-
+    let finalMessage = userMessage;
     if (customPrompt) {
-        fullPrompt += `\n\nYêu cầu bổ sung từ người dùng: ${customPrompt}\n`;
+        finalMessage += `\n\n${customPrompt}`;
     }
 
-    fullPrompt += `\n\nCâu hỏi/Yêu cầu: ${userMessage}`;
+    // Chú thích: Gọi backend
+    const result = await sendChatMessage(finalMessage, context);
 
-    const t0 = Date.now();
-
-    try {
-        const result = await model.generateContent(fullPrompt);
-        const response = result.response;
-        const text = response.text();
-
-        // Chú thích: Log nhẹ cho observability
-        const latency = Date.now() - t0;
-        console.info('[gemini] call done', {
-            latency,
-            textLen: text.length,
-            hasContext: !!context
-        });
-
-        return {
-            text,
-            tokensIn: 0, // SDK không trả về, cần estimate nếu cần
-            tokensOut: 0,
-        };
-    } catch (error) {
-        console.error('[gemini] error:', error);
-        throw error;
+    if (!result.success || !result.response) {
+        throw new Error(result.error || 'Failed to get response from AI backend');
     }
+
+    return {
+        text: result.response,
+        tokensIn: 0,
+        tokensOut: 0
+    };
 }
 
-// Chú thích: Stream response từ Gemini (dùng cho chat real-time)
 export async function* streamGemini(params: {
     systemPrompt: string;
     userMessage: string;
     context?: string;
 }): AsyncGenerator<string> {
-    const { systemPrompt, userMessage, context } = params;
-    const model = getModel();
+    const { userMessage, context } = params;
 
-    let fullPrompt = systemPrompt;
-    if (context) {
-        fullPrompt += `\n\n--- CONTEXT ---\n${context}\n--- HẾT CONTEXT ---\n`;
+    // Chú thích: Gọi stream từ backend
+    const generator = streamChatMessage(userMessage, context);
+
+    for await (const chunk of generator) {
+        yield chunk;
     }
-    fullPrompt += `\n\nCâu hỏi: ${userMessage}`;
+}
 
-    const result = await model.generateContentStream(fullPrompt);
+// Chú thích: Function legacy không còn dùng nhưng giữ để tránh lỗi import
+export function initGemini(apiKey?: string): any {
+    console.warn('initGemini is deprecated. Using backend API instead.');
+    return null;
+}
 
-    for await (const chunk of result.stream) {
-        const text = chunk.text();
-        if (text) {
-            yield text;
-        }
-    }
+export function getModel(): any {
+    console.warn('getModel is deprecated. Using backend API instead.');
+    return null;
 }
