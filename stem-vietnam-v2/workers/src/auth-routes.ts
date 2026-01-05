@@ -97,7 +97,10 @@ export async function handleRegister(request: Request, env: AuthEnv): Promise<Re
 
     } catch (error) {
         console.error('[auth] register error:', error);
-        return jsonResponse({ error: 'Lỗi server' }, 500, env.CORS_ORIGIN);
+        return jsonResponse({
+            error: 'Lỗi server',
+            details: error instanceof Error ? error.message : String(error)
+        }, 500, env.CORS_ORIGIN);
     }
 }
 
@@ -157,7 +160,10 @@ export async function handleLogin(request: Request, env: AuthEnv): Promise<Respo
             stack: error instanceof Error ? error.stack : undefined,
             error
         });
-        return jsonResponse({ error: 'Lỗi server' }, 500, env.CORS_ORIGIN);
+        return jsonResponse({
+            error: 'Lỗi server',
+            details: error instanceof Error ? error.message : String(error)
+        }, 500, env.CORS_ORIGIN);
     }
 }
 
@@ -194,7 +200,10 @@ export async function handleMe(request: Request, env: AuthEnv): Promise<Response
 
     } catch (error) {
         console.error('[auth] me error:', error);
-        return jsonResponse({ error: 'Lỗi server' }, 500, env.CORS_ORIGIN);
+        return jsonResponse({
+            error: 'Lỗi server',
+            details: error instanceof Error ? error.message : String(error)
+        }, 500, env.CORS_ORIGIN);
     }
 }
 

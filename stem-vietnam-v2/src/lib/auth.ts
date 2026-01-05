@@ -48,7 +48,8 @@ export const useAuthStore = create<AuthState>()(
                     const data = await res.json();
 
                     if (!res.ok) {
-                        set({ error: data.error || 'Đăng nhập thất bại', isLoading: false });
+                        const errorMsg = data.details ? `${data.error}: ${data.details}` : (data.error || 'Đăng nhập thất bại');
+                        set({ error: errorMsg, isLoading: false });
                         return false;
                     }
 
