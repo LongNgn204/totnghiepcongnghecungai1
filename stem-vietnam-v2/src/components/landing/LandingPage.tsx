@@ -279,17 +279,12 @@ export default function LandingPage() {
                                 <Sparkles className="w-5 h-5 text-white" />
                             </div>
                             <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
-                                STEM Vietnam
+                                Học Công Nghệ
                             </span>
                         </div>
 
                         <div className="flex items-center gap-4">
-                            <button
-                                onClick={toggleDarkMode}
-                                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                            >
-                                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                            </button>
+                            {/* Dark mode button removed */}
                             <Link
                                 to="/chat"
                                 className="hidden sm:flex btn-primary text-sm py-2 px-4"
@@ -315,18 +310,18 @@ export default function LandingPage() {
                     <AnimatedSection animation="fade-up">
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-sm font-medium mb-8">
                             <Zap className="w-4 h-4" />
-                            Powered by AI & SGK chính thống
+                            AI hỗ trợ – Thầy cô kiểm chứng – Học sinh tiến bộ
                         </div>
                     </AnimatedSection>
 
                     <AnimatedSection animation="fade-up" delay={100}>
                         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white leading-tight">
-                            Ôn Thi{' '}
+                            Luyện đề{' '}
                             <span className="bg-gradient-to-r from-primary-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                                Công Nghệ THPT
+                                Công Nghệ
                             </span>
                             <br />
-                            với Trí Tuệ Nhân Tạo
+                            theo chuẩn chương trình
                         </h1>
                     </AnimatedSection>
 
@@ -548,11 +543,11 @@ export default function LandingPage() {
                                     <Sparkles className="w-5 h-5 text-white" />
                                 </div>
                                 <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
-                                    STEM Vietnam
+                                    Học Công Nghệ
                                 </span>
                             </div>
                             <p className="text-sm text-slate-600 dark:text-slate-400">
-                                Nền tảng ôn thi Công nghệ THPT với AI thông minh.
+                                Luyện đề Công nghệ theo chuẩn chương trình.
                             </p>
                         </div>
 
@@ -589,7 +584,7 @@ export default function LandingPage() {
                     </div>
 
                     <div className="pt-8 border-t border-slate-200 dark:border-slate-800 text-center text-sm text-slate-500 dark:text-slate-400">
-                        © 2026 STEM Vietnam. Long Nguyen
+                        © 2026 Học Công Nghệ. Long Nguyen
                     </div>
                 </div>
             </footer>

@@ -207,7 +207,7 @@ export default function ChatPage() {
                             <Sparkles size={16} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="font-semibold text-slate-900 dark:text-white">STEM AI Assistant</h1>
+                            <h1 className="font-semibold text-slate-900 dark:text-white">Học Công Nghệ AI</h1>
                             <p className="text-xs text-slate-500">Powered by Gemini + Google Search</p>
                         </div>
                     </div>

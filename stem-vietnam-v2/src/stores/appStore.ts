@@ -17,16 +17,10 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-    // Chú thích: Dark mode từ system preference hoặc localStorage
-    isDarkMode: typeof window !== 'undefined'
-        ? window.matchMedia('(prefers-color-scheme: dark)').matches
-        : false,
+    // Chú thích: Luôn tắt dark mode
+    isDarkMode: false,
 
-    toggleDarkMode: () => set((state) => {
-        const newMode = !state.isDarkMode;
-        document.documentElement.classList.toggle('dark', newMode);
-        return { isDarkMode: newMode };
-    }),
+    toggleDarkMode: () => { },
 
     isLoading: false,
     setLoading: (loading) => set({ isLoading: loading }),

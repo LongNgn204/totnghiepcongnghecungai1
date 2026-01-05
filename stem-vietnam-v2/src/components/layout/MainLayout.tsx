@@ -50,10 +50,10 @@ export default function MainLayout() {
                     {/* Logo */}
                     <div className="p-6 border-b border-slate-200 dark:border-slate-700">
                         <h1 className="text-xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
-                            STEM Vietnam
+                            Học Công Nghệ
                         </h1>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            Ôn thi Công nghệ THPT
+                            Luyện đề theo chuẩn chương trình
                         </p>
                     </div>
 

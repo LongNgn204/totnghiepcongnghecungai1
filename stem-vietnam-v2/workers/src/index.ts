@@ -1,8 +1,9 @@
-// Chú thích: Entry point cho Cloudflare Workers API (Vertex AI + Auth + Conversations)
+// Chú thích: Entry point cho Cloudflare Workers API (Vertex AI + Auth + Conversations + Admin)
 import { callGemini, streamGemini } from './gemini';
 import { VertexAICredentials } from './gcp-auth';
 import { handleRegister, handleLogin, handleMe, getUserFromToken, AuthEnv } from './auth-routes';
 import { getConversations, getConversation, createConversation, deleteConversation, addMessage, ConvoEnv } from './conversation-routes';
+import { getUsers, getUser, deleteUser, updateUser, getStats, AdminEnv } from './admin-routes';
 
 // Chú thích: Environment interface
 interface Env {
@@ -301,6 +302,33 @@ export default {
                 const user = await getUserFromToken(request, env as unknown as AuthEnv);
                 if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
                 return deleteConversation(convoMatch[1], user, env as unknown as ConvoEnv);
+            }
+            // Admin: Delete user
+            const adminUserMatch = path.match(/^\/api\/admin\/users\/([^/]+)$/);
+            if (adminUserMatch) {
+                return deleteUser(adminUserMatch[1], env as unknown as AdminEnv);
+            }
+        }
+
+        // PUT routes (Admin update)
+        if (request.method === 'PUT') {
+            const adminUserMatch = path.match(/^\/api\/admin\/users\/([^/]+)$/);
+            if (adminUserMatch) {
+                return updateUser(adminUserMatch[1], request, env as unknown as AdminEnv);
+            }
+        }
+
+        // Admin GET routes
+        if (request.method === 'GET') {
+            if (path === '/api/admin/users') {
+                return getUsers(env as unknown as AdminEnv);
+            }
+            if (path === '/api/admin/stats') {
+                return getStats(env as unknown as AdminEnv);
+            }
+            const adminUserMatch = path.match(/^\/api\/admin\/users\/([^/]+)$/);
+            if (adminUserMatch) {
+                return getUser(adminUserMatch[1], env as unknown as AdminEnv);
             }
         }
 

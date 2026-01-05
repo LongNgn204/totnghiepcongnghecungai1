@@ -13,6 +13,10 @@ const QuestionFormPage = lazy(() => import('./components/forms/QuestionFormPage'
 const ExamFormPage = lazy(() => import('./components/forms/ExamFormPage'));
 const SemesterExamFormPage = lazy(() => import('./components/forms/SemesterExamFormPage'));
 const LibraryPage = lazy(() => import('./components/library/LibraryPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+import AuthGuard from './components/auth/AuthGuard';
 
 // Chú thích: Loading fallback component
 function PageLoader() {
@@ -39,9 +43,10 @@ function App() {
   const { isDarkMode, notification, clearNotification } = useAppStore();
 
   // Chú thích: Apply dark mode class on mount
+  // Chú thích: Dark mode disabled
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDarkMode);
-  }, [isDarkMode]);
+    document.documentElement.classList.remove('dark');
+  }, []);
 
   return (
     <BrowserRouter>
@@ -68,36 +73,63 @@ function App() {
           </Suspense>
         } />
 
-        {/* Main app routes with sidebar */}
+        {/* Auth pages - standalone */}
+        <Route path="/login" element={
+          <Suspense fallback={<FullPageLoader />}>
+            <LoginPage />
+          </Suspense>
+        } />
+        <Route path="/register" element={
+          <Suspense fallback={<FullPageLoader />}>
+            <RegisterPage />
+          </Suspense>
+        } />
+        <Route path="/admin" element={
+          <Suspense fallback={<FullPageLoader />}>
+            <AdminPage />
+          </Suspense>
+        } />
+
+        {/* Main app routes with sidebar - Protected */}
         <Route element={<MainLayout />}>
           <Route path="chat" element={
-            <Suspense fallback={<PageLoader />}>
-              <ChatPage />
-            </Suspense>
+            <AuthGuard>
+              <Suspense fallback={<PageLoader />}>
+                <ChatPage />
+              </Suspense>
+            </AuthGuard>
           } />
 
           <Route path="questions" element={
-            <Suspense fallback={<PageLoader />}>
-              <QuestionFormPage />
-            </Suspense>
+            <AuthGuard>
+              <Suspense fallback={<PageLoader />}>
+                <QuestionFormPage />
+              </Suspense>
+            </AuthGuard>
           } />
 
           <Route path="exam/thpt" element={
-            <Suspense fallback={<PageLoader />}>
-              <ExamFormPage />
-            </Suspense>
+            <AuthGuard>
+              <Suspense fallback={<PageLoader />}>
+                <ExamFormPage />
+              </Suspense>
+            </AuthGuard>
           } />
 
           <Route path="exam/semester" element={
-            <Suspense fallback={<PageLoader />}>
-              <SemesterExamFormPage />
-            </Suspense>
+            <AuthGuard>
+              <Suspense fallback={<PageLoader />}>
+                <SemesterExamFormPage />
+              </Suspense>
+            </AuthGuard>
           } />
 
           <Route path="library" element={
-            <Suspense fallback={<PageLoader />}>
-              <LibraryPage />
-            </Suspense>
+            <AuthGuard>
+              <Suspense fallback={<PageLoader />}>
+                <LibraryPage />
+              </Suspense>
+            </AuthGuard>
           } />
         </Route>
       </Routes>
