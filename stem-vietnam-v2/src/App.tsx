@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
 import MainLayout from './components/layout/MainLayout';
+import VersionCheck from './components/common/VersionCheck';
 import { useAppStore } from './stores/appStore';
 
 // Chú thích: Lazy load pages cho better performance
@@ -50,6 +51,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <VersionCheck />
       {/* Notification Toast */}
       {notification && (
         <div className={`

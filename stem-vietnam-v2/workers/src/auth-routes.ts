@@ -104,6 +104,11 @@ export async function handleRegister(request: Request, env: AuthEnv): Promise<Re
 // Chú thích: Login endpoint
 export async function handleLogin(request: Request, env: AuthEnv): Promise<Response> {
     try {
+        if (!env.JWT_SECRET) {
+            console.error('[auth] Critical error: JWT_SECRET is missing in environment variables');
+            return jsonResponse({ error: 'Server configuration error' }, 500, env.CORS_ORIGIN);
+        }
+
         const body = await request.json() as { email: string; password: string };
         const { email, password } = body;
 
@@ -117,12 +122,14 @@ export async function handleLogin(request: Request, env: AuthEnv): Promise<Respo
         ).bind(email.toLowerCase()).first<User>();
 
         if (!user) {
+            console.log('[auth] Login failed: User not found for email', email);
             return jsonResponse({ error: 'Email hoặc password không đúng' }, 401, env.CORS_ORIGIN);
         }
 
         // Verify password
         const valid = await verifyPassword(password, user.password_hash);
         if (!valid) {
+            console.log('[auth] Login failed: Invalid password for user', email);
             return jsonResponse({ error: 'Email hoặc password không đúng' }, 401, env.CORS_ORIGIN);
         }
 
@@ -145,7 +152,11 @@ export async function handleLogin(request: Request, env: AuthEnv): Promise<Respo
         }, 200, env.CORS_ORIGIN);
 
     } catch (error) {
-        console.error('[auth] login error:', error);
+        console.error('[auth] login error details:', {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+            error
+        });
         return jsonResponse({ error: 'Lỗi server' }, 500, env.CORS_ORIGIN);
     }
 }
