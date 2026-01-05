@@ -159,10 +159,10 @@ function StatCounter({ value, label, suffix = '' }: { value: number; label: stri
 
     return (
         <div ref={ref} className="text-center">
-            <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
+            <div className="text-4xl md:text-5xl font-bold text-white">
                 {count.toLocaleString()}{suffix}
             </div>
-            <p className="text-slate-600 dark:text-slate-400 mt-2">{label}</p>
+            <p className="text-slate-300 mt-2 font-medium">{label}</p>
         </div>
     );
 }
@@ -431,26 +431,30 @@ export default function LandingPage() {
             </section>
 
             {/* Stats Section */}
-            <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-600 to-primary-800 dark:from-primary-900 dark:to-slate-900">
+            <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950">
                 <div className="max-w-7xl mx-auto">
                     <AnimatedSection animation="fade-up" className="text-center mb-16">
+                        <p className="text-emerald-400 font-semibold tracking-wider uppercase text-sm mb-3">Thống Kê Nền Tảng</p>
                         <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-                            Được Tin Dùng Bởi Học Sinh Cả Nước
+                            Đồng Hành Cùng Thế Hệ Học Sinh Mới
                         </h2>
+                        <p className="text-slate-400 max-w-2xl mx-auto">
+                            Hệ thống được xây dựng dựa trên chương trình SGK mới nhất của Bộ Giáo dục và Đào tạo
+                        </p>
                     </AnimatedSection>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        <div className="text-center">
-                            <StatCounter value={10000} label="Câu hỏi" suffix="+" />
+                        <div className="text-center p-6 rounded-2xl bg-slate-800/50 border border-slate-700">
+                            <StatCounter value={500} label="Câu Hỏi Trắc Nghiệm" suffix="+" />
                         </div>
-                        <div className="text-center">
-                            <StatCounter value={50} label="Bài học" suffix="+" />
+                        <div className="text-center p-6 rounded-2xl bg-slate-800/50 border border-slate-700">
+                            <StatCounter value={35} label="Bài Học SGK" suffix="+" />
                         </div>
-                        <div className="text-center">
-                            <StatCounter value={100} label="Độ phủ SGK" suffix="%" />
+                        <div className="text-center p-6 rounded-2xl bg-slate-800/50 border border-slate-700">
+                            <StatCounter value={100} label="Phủ Sóng Chương Trình" suffix="%" />
                         </div>
-                        <div className="text-center">
-                            <StatCounter value={5000} label="Học sinh" suffix="+" />
+                        <div className="text-center p-6 rounded-2xl bg-slate-800/50 border border-slate-700">
+                            <StatCounter value={24} label="Hỗ Trợ AI" suffix="/7" />
                         </div>
                     </div>
                 </div>
@@ -493,28 +497,41 @@ export default function LandingPage() {
             <section className="py-24 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-4xl mx-auto">
                     <AnimatedSection animation="zoom">
-                        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-600 via-purple-600 to-pink-600 p-12 text-center">
+                        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-12 text-center">
                             {/* Decorative circles */}
                             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
                             <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
 
                             <div className="relative z-10">
+                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-6">
+                                    <Sparkles className="w-4 h-4" />
+                                    Công cụ học tập thông minh
+                                </div>
                                 <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-                                    Sẵn Sàng Để Chinh Phục Kỳ Thi?
+                                    Bắt Đầu Hành Trình Chinh Phục Môn Công Nghệ
                                 </h2>
-                                <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-                                    Tham gia ngay để trải nghiệm phương pháp học tập thông minh với AI.
-                                    Hoàn toàn miễn phí!
+                                <p className="text-white/90 text-lg mb-8 max-w-2xl mx-auto">
+                                    Trải nghiệm ngay nền tảng ôn thi Công nghệ THPT được phát triển bởi
+                                    sinh viên Khoa Kỹ thuật và Công nghệ - Trường Đại học Sư phạm Hà Nội.
                                 </p>
-                                <Link
-                                    to="/chat"
-                                    className="inline-flex items-center gap-2 bg-white text-primary-600 font-bold px-8 py-4 rounded-xl 
-                                               hover:bg-primary-50 hover:scale-105 transition-all duration-300 shadow-xl"
-                                >
-                                    <Sparkles className="w-5 h-5" />
-                                    Bắt Đầu Miễn Phí
-                                    <ArrowRight className="w-5 h-5" />
-                                </Link>
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                    <Link
+                                        to="/chat"
+                                        className="inline-flex items-center gap-2 bg-white text-emerald-700 font-bold px-8 py-4 rounded-xl 
+                                                   hover:bg-emerald-50 hover:scale-105 transition-all duration-300 shadow-xl"
+                                    >
+                                        <MessageCircle className="w-5 h-5" />
+                                        Hỏi Đáp Với AI
+                                    </Link>
+                                    <Link
+                                        to="/library"
+                                        className="inline-flex items-center gap-2 bg-white/20 text-white font-bold px-8 py-4 rounded-xl 
+                                                   hover:bg-white/30 transition-all duration-300 border border-white/30"
+                                    >
+                                        <Library className="w-5 h-5" />
+                                        Xem Thư Viện SGK
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     </AnimatedSection>
@@ -565,7 +582,7 @@ export default function LandingPage() {
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <Award className="w-4 h-4" />
-                                    <span>Đội ngũ chuyên gia khoa Kỹ Thuật và Công Nghệ</span>
+                                    <span>Phát triển bởi sinh viên Khoa Kỹ thuật và Công nghệ - Trường Đại học Sư phạm Hà Nội.</span>
                                 </li>
                             </ul>
                         </div>
