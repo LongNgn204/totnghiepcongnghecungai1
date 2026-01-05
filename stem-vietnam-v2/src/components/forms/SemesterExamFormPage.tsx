@@ -1,0 +1,232 @@
+// Chú thích: Form tạo đề giữa kỳ / cuối kỳ
+// Cấu trúc: 28 câu trắc nghiệm + 2 câu tự luận + đáp án đầy đủ
+import { useState } from 'react';
+import { GraduationCap, Sparkles, Download, BookOpen } from 'lucide-react';
+import { generateWithRAG } from '../../lib/rag/generator';
+import { SEMESTER_EXAM_PROMPT } from '../../lib/prompts';
+import { BOOK_PUBLISHERS } from '../../data/library/defaultBooks';
+
+export default function SemesterExamFormPage() {
+    const [formData, setFormData] = useState({
+        grade: '12' as '10' | '11' | '12',
+        examType: 'midterm' as 'midterm' | 'final',
+        bookPublisher: 'all' as 'all' | string,
+        customPrompt: '',
+    });
+    const [isLoading, setIsLoading] = useState(false);
+    const [result, setResult] = useState<string>('');
+
+    const handleGenerate = async () => {
+        setIsLoading(true);
+        setResult('');
+
+        try {
+            const examTypeName = formData.examType === 'midterm' ? 'giữa kỳ' : 'cuối kỳ';
+
+            // Chú thích: Build query với đầy đủ yêu cầu
+            const query = `Tạo đề kiểm tra ${examTypeName} môn Công nghệ lớp ${formData.grade}`;
+
+            // Chú thích: Build custom prompt với cấu trúc đề mới
+            const structurePrompt = `
+Cấu trúc đề BẮT BUỘC:
+- PHẦN I: 28 câu trắc nghiệm (A, B, C, D)
+  + Phân bố: 10 Nhớ, 10 Hiểu, 6 Vận dụng, 2 Vận dụng cao
+- PHẦN II: 2 câu tự luận
+  + Câu 1: Vận dụng (5 điểm)
+  + Câu 2: Vận dụng cao (5 điểm)
+- PHẢI có ĐÁP ÁN đầy đủ ở cuối đề
+`;
+
+            const bookPrompt = formData.bookPublisher !== 'all'
+                ? `Ưu tiên nội dung từ bộ sách ${formData.bookPublisher}`
+                : '';
+
+            const fullCustomPrompt = [
+                structurePrompt,
+                bookPrompt,
+                formData.customPrompt,
+            ].filter(Boolean).join('\n');
+
+            const response = await generateWithRAG({
+                query,
+                systemPrompt: SEMESTER_EXAM_PROMPT,
+                customPrompt: fullCustomPrompt,
+                filters: { grade: formData.grade },
+            });
+
+            setResult(response.text);
+        } catch (error) {
+            console.error('[semester-exam] error:', error);
+            setResult('Đã có lỗi xảy ra. Vui lòng thử lại.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="max-w-5xl mx-auto">
+            {/* Header */}
+            <div className="mb-8">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                    <GraduationCap className="text-primary-500" />
+                    Tạo Đề Giữa Kỳ / Cuối Kỳ
+                </h1>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">
+                    Hỗ trợ học sinh ôn thi kiểm tra định kỳ
+                </p>
+            </div>
+
+            {/* RAG notice */}
+            <div className="glass-card p-3 mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                <p className="text-sm text-green-700 dark:text-green-300 flex items-center gap-2">
+                    <BookOpen size={16} />
+                    <span><strong>RAG Enabled:</strong> AI sẽ tạo đề dựa trên nội dung SGK trong Thư viện</span>
+                </p>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-6">
+                {/* Form */}
+                <div className="glass-panel p-6 space-y-5">
+                    {/* Chọn lớp */}
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                            Lớp
+                        </label>
+                        <div className="flex gap-2">
+                            {(['10', '11', '12'] as const).map((grade) => (
+                                <button
+                                    key={grade}
+                                    onClick={() => setFormData(prev => ({ ...prev, grade }))}
+                                    className={`flex-1 py-3 rounded-xl font-semibold transition-all ${formData.grade === grade
+                                            ? 'bg-primary-600 text-white'
+                                            : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                        }`}
+                                >
+                                    Lớp {grade}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Loại đề */}
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                            Loại kiểm tra
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={() => setFormData(prev => ({ ...prev, examType: 'midterm' }))}
+                                className={`p-4 rounded-xl text-center transition-all border-2 ${formData.examType === 'midterm'
+                                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                        : 'border-slate-200 dark:border-slate-700'
+                                    }`}
+                            >
+                                <p className="font-semibold">📋 Giữa kỳ</p>
+                                <p className="text-xs text-slate-500 mt-1">Nửa đầu học kỳ</p>
+                            </button>
+                            <button
+                                onClick={() => setFormData(prev => ({ ...prev, examType: 'final' }))}
+                                className={`p-4 rounded-xl text-center transition-all border-2 ${formData.examType === 'final'
+                                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                        : 'border-slate-200 dark:border-slate-700'
+                                    }`}
+                            >
+                                <p className="font-semibold">📝 Cuối kỳ</p>
+                                <p className="text-xs text-slate-500 mt-1">Toàn bộ học kỳ</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Bộ sách - MỚI */}
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                            Bộ sách mong muốn
+                            <span className="text-slate-400 font-normal ml-2">(Tuỳ chọn)</span>
+                        </label>
+                        <select
+                            value={formData.bookPublisher}
+                            onChange={(e) => setFormData(prev => ({ ...prev, bookPublisher: e.target.value }))}
+                            className="input-field"
+                        >
+                            <option value="all">Tất cả bộ sách</option>
+                            {Object.values(BOOK_PUBLISHERS).map(pub => (
+                                <option key={pub} value={pub}>{pub}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Cấu trúc đề - MỚI */}
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Cấu trúc đề:</p>
+                        <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+                            <li>• <strong>28 câu trắc nghiệm</strong> (A, B, C, D)</li>
+                            <li>• <strong>2 câu tự luận</strong> (VD + VDC)</li>
+                            <li>• Có <strong>đáp án đầy đủ</strong></li>
+                        </ul>
+                    </div>
+
+                    {/* Custom Prompt */}
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                            Tuỳ chỉnh AI
+                            <span className="text-slate-400 font-normal ml-2">(Có thể bỏ qua)</span>
+                        </label>
+                        <textarea
+                            value={formData.customPrompt}
+                            onChange={(e) => setFormData(prev => ({ ...prev, customPrompt: e.target.value }))}
+                            placeholder="VD: Tập trung vào các chương đã học trong kỳ..."
+                            rows={2}
+                            className="input-field resize-none"
+                        />
+                    </div>
+
+                    {/* Generate button */}
+                    <button
+                        onClick={handleGenerate}
+                        disabled={isLoading}
+                        className="btn-primary w-full flex items-center justify-center gap-2"
+                    >
+                        {isLoading ? (
+                            <>
+                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                                Đang tạo...
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles size={20} />
+                                Tạo Đề Kiểm Tra
+                            </>
+                        )}
+                    </button>
+                </div>
+
+                {/* Result */}
+                <div className="lg:col-span-2 glass-panel p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold text-slate-900 dark:text-white">
+                            Đề Kiểm Tra {formData.examType === 'midterm' ? 'Giữa Kỳ' : 'Cuối Kỳ'} Lớp {formData.grade}
+                        </h3>
+                        {result && (
+                            <button className="btn-secondary py-2 px-4 flex items-center gap-2 text-sm">
+                                <Download size={16} />
+                                Tải PDF
+                            </button>
+                        )}
+                    </div>
+
+                    {result ? (
+                        <pre className="whitespace-pre-wrap text-sm bg-slate-50 dark:bg-slate-900 p-4 rounded-xl overflow-auto max-h-[600px]">
+                            {result}
+                        </pre>
+                    ) : (
+                        <div className="h-96 flex flex-col items-center justify-center text-slate-400">
+                            <GraduationCap size={48} className="mb-4 opacity-50" />
+                            <p>Đề kiểm tra sẽ hiển thị ở đây</p>
+                            <p className="text-sm mt-2">28 câu TN + 2 câu tự luận + đáp án</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}

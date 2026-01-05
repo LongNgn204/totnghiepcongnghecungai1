@@ -254,7 +254,7 @@ const Product5: React.FC = () => {
           <div className="glass-card p-6 border-t-4 border-t-amber-500">
             <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 font-bold">Thẻ đến hạn ôn</p>
             <p className="text-3xl font-bold text-amber-500 mt-2">{dueCardsCount}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Ưu tiên ôn trong tab “Ôn tập” để giữ streak.</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Ôn tập đều đặn để ghi nhớ lâu hơn.</p>
           </div>
         </div>
 

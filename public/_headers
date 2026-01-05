@@ -4,7 +4,7 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(self), camera=()
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://ai-hoc-tap-api.stu725114073.workers.dev https://*.googleapis.com https://*.google.com wss://*.firebaseio.com https://*.firebaseio.com https://cdn.jsdelivr.net; media-src 'self' blob:; worker-src 'self' blob: https://cdn.jsdelivr.net; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://ai-hoc-tap-api.stu725114073.workers.dev https://*.googleapis.com https://*.google.com wss://*.firebaseio.com https://*.firebaseio.com; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
