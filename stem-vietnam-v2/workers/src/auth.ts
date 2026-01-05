@@ -74,6 +74,19 @@ export interface JWTPayload {
     exp: number;
 }
 
+// Chú thích: Helper to handle Unicode in btoa/atob
+function base64UrlEncode(str: string): string {
+    return btoa(unescape(encodeURIComponent(str)))
+        .replace(/=/g, '')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_');
+}
+
+function base64UrlDecode(str: string): string {
+    const padded = str.replace(/-/g, '+').replace(/_/g, '/');
+    return decodeURIComponent(escape(atob(padded)));
+}
+
 // Chú thích: Create JWT token
 export async function createJWT(payload: Omit<JWTPayload, 'iat' | 'exp'>, secret: string, expiresInHours = 24 * 7): Promise<string> {
     const encoder = new TextEncoder();
@@ -87,8 +100,8 @@ export async function createJWT(payload: Omit<JWTPayload, 'iat' | 'exp'>, secret
         exp: now + expiresInHours * 3600,
     };
 
-    const headerB64 = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    const payloadB64 = btoa(JSON.stringify(fullPayload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const headerB64 = base64UrlEncode(JSON.stringify(header));
+    const payloadB64 = base64UrlEncode(JSON.stringify(fullPayload));
 
     const data = `${headerB64}.${payloadB64}`;
 
@@ -134,15 +147,20 @@ export async function verifyJWT(token: string, secret: string): Promise<JWTPaylo
         if (!valid) return null;
 
         // Decode payload
-        const payloadPadded = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
-        const payload: JWTPayload = JSON.parse(atob(payloadPadded));
+        try {
+            const payloadJson = base64UrlDecode(payloadB64);
+            const payload: JWTPayload = JSON.parse(payloadJson);
 
-        // Check expiration
-        if (payload.exp < Math.floor(Date.now() / 1000)) {
+            // Check expiration
+            if (payload.exp < Math.floor(Date.now() / 1000)) {
+                return null;
+            }
+
+            return payload;
+        } catch (e) {
+            console.error('JWT Decode Error:', e);
             return null;
         }
-
-        return payload;
     } catch {
         return null;
     }
