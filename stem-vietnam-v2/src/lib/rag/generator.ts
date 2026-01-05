@@ -33,9 +33,11 @@ export async function generateWithRAG(params: {
         customPrompt,
     });
 
+    // Chú thích: Chỉ trả về sourceChunks khi thực sự có context và có chunks
+    // Tránh hiển thị nguồn không liên quan cho các câu hỏi general
     return {
         text: response.text,
-        sourceChunks: chunks,
+        sourceChunks: context && chunks.length > 0 ? chunks : [],
     };
 }
 

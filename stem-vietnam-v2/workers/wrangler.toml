@@ -6,7 +6,7 @@ compatibility_date = "2024-12-30"
 # Chú thích: Token budget cho mỗi request
 MAX_TOKEN_BUDGET = "50000"
 
-# Vertex AI Configuration - US region để test (preview models chưa available ở Asia)
+# Vertex AI Configuration
 VERTEX_PROJECT_ID = "voltaic-syntax-482104-b7"
 VERTEX_LOCATION = "us-central1"
 # Fallback region

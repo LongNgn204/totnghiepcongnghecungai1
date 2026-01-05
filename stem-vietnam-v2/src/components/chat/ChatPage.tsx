@@ -95,7 +95,7 @@ export default function ChatPage() {
                             >
                                 <p className="whitespace-pre-wrap">{msg.content}</p>
 
-                                {/* Chú thích: Hiển thị nguồn RAG nếu có */}
+                                {/* Chú thích: Hiển thị nguồn RAG nếu có - với link click được */}
                                 {msg.sourceChunks && msg.sourceChunks.length > 0 && (
                                     <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-600">
                                         <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-2">
@@ -104,9 +104,15 @@ export default function ChatPage() {
                                         </p>
                                         <div className="space-y-1">
                                             {msg.sourceChunks.slice(0, 3).map((chunk, idx) => (
-                                                <p key={idx} className="text-xs text-slate-400 dark:text-slate-500">
+                                                <a
+                                                    key={idx}
+                                                    href={chunk.document.url || '#'}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-xs text-primary-500 hover:text-primary-600 hover:underline block cursor-pointer"
+                                                >
                                                     [{idx + 1}] {chunk.document.title}
-                                                </p>
+                                                </a>
                                             ))}
                                         </div>
                                     </div>

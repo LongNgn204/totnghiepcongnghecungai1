@@ -1,11 +1,19 @@
 // Chú thích: Vertex AI Gemini client cho Cloudflare Workers
+// Sử dụng Gemini 3 Pro với Google Search Grounding cho dữ liệu real-time
 import { getAccessToken, VertexAICredentials } from './gcp-auth';
+
+// Chú thích: Model configuration - Gemini 2.0 Flash (stable, working)
+const GEMINI_MODEL = 'gemini-2.0-flash';
 
 // Chú thích: Interface cho response từ Gemini
 export interface GeminiResponse {
     text: string;
     tokensIn: number;
     tokensOut: number;
+    groundingMetadata?: {
+        searchQueries?: string[];
+        webSearchQueries?: string[];
+    };
 }
 
 // Chú thích: Vertex AI endpoint URL
@@ -17,7 +25,7 @@ function getVertexAIStreamEndpoint(projectId: string, location: string, model: s
     return `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:streamGenerateContent?alt=sse`;
 }
 
-// Chú thích: Gọi Vertex AI với prompt
+// Chú thích: Gọi Vertex AI với prompt và Google Search Grounding
 export async function callGemini(
     credentials: VertexAICredentials,
     params: {
@@ -25,9 +33,10 @@ export async function callGemini(
         userMessage: string;
         context?: string;
         customPrompt?: string;
+        useGrounding?: boolean; // Bật Google Search grounding
     }
 ): Promise<GeminiResponse> {
-    const { systemPrompt, userMessage, context, customPrompt } = params;
+    const { systemPrompt, userMessage, context, customPrompt, useGrounding = true } = params;
 
     // Chú thích: Lấy access token
     const accessToken = await getAccessToken(credentials);
@@ -45,8 +54,8 @@ export async function callGemini(
 
     fullPrompt += `\n\nCâu hỏi/Yêu cầu: ${userMessage}`;
 
-    // Chú thích: Vertex AI request body
-    const requestBody = {
+    // Chú thích: Vertex AI request body với Google Search Grounding
+    const requestBody: Record<string, unknown> = {
         contents: [
             {
                 role: 'user',
@@ -59,10 +68,19 @@ export async function callGemini(
         },
     };
 
+    // Chú thích: Thêm Google Search grounding tool để lấy thông tin mới nhất
+    if (useGrounding) {
+        requestBody.tools = [
+            {
+                google_search: {}
+            }
+        ];
+    }
+
     const endpoint = getVertexAIEndpoint(
         credentials.projectId,
         credentials.location,
-        'gemini-2.0-flash-exp'
+        GEMINI_MODEL
     );
 
     const t0 = Date.now();
@@ -87,6 +105,18 @@ export async function callGemini(
                 content: {
                     parts: Array<{ text: string }>;
                 };
+                groundingMetadata?: {
+                    searchEntryPoint?: {
+                        renderedContent?: string;
+                    };
+                    groundingChunks?: Array<{
+                        web?: {
+                            uri?: string;
+                            title?: string;
+                        };
+                    }>;
+                    webSearchQueries?: string[];
+                };
             }>;
             usageMetadata?: {
                 promptTokenCount: number;
@@ -95,6 +125,7 @@ export async function callGemini(
         };
 
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const groundingMetadata = data.candidates?.[0]?.groundingMetadata;
 
         // Chú thích: Log cho observability
         const latency = Date.now() - t0;
@@ -102,12 +133,18 @@ export async function callGemini(
             latency,
             textLen: text.length,
             hasContext: !!context,
+            hasGrounding: !!groundingMetadata,
+            model: GEMINI_MODEL,
+            searchQueries: groundingMetadata?.webSearchQueries,
         });
 
         return {
             text,
             tokensIn: data.usageMetadata?.promptTokenCount || 0,
             tokensOut: data.usageMetadata?.candidatesTokenCount || 0,
+            groundingMetadata: groundingMetadata ? {
+                webSearchQueries: groundingMetadata.webSearchQueries,
+            } : undefined,
         };
     } catch (error) {
         console.error('[vertex-ai] error:', error);
@@ -115,16 +152,17 @@ export async function callGemini(
     }
 }
 
-// Chú thích: Stream response từ Vertex AI
+// Chú thích: Stream response từ Vertex AI với Google Search Grounding
 export async function* streamGemini(
     credentials: VertexAICredentials,
     params: {
         systemPrompt: string;
         userMessage: string;
         context?: string;
+        useGrounding?: boolean;
     }
 ): AsyncGenerator<string> {
-    const { systemPrompt, userMessage, context } = params;
+    const { systemPrompt, userMessage, context, useGrounding = true } = params;
 
     const accessToken = await getAccessToken(credentials);
 
@@ -134,7 +172,7 @@ export async function* streamGemini(
     }
     fullPrompt += `\n\nCâu hỏi: ${userMessage}`;
 
-    const requestBody = {
+    const requestBody: Record<string, unknown> = {
         contents: [
             {
                 role: 'user',
@@ -147,10 +185,19 @@ export async function* streamGemini(
         },
     };
 
+    // Chú thích: Thêm Google Search grounding
+    if (useGrounding) {
+        requestBody.tools = [
+            {
+                google_search: {}
+            }
+        ];
+    }
+
     const endpoint = getVertexAIStreamEndpoint(
         credentials.projectId,
         credentials.location,
-        'gemini-2.0-flash-exp'
+        GEMINI_MODEL
     );
 
     const response = await fetch(endpoint, {
