@@ -8,9 +8,9 @@ MAX_TOKEN_BUDGET = "50000"
 
 # Vertex AI Configuration
 VERTEX_PROJECT_ID = "voltaic-syntax-482104-b7"
-VERTEX_LOCATION = "us-central1"
+VERTEX_LOCATION = "asia-southeast1"
 # Fallback region
-VERTEX_LOCATION_FALLBACK = "us-east1"
+VERTEX_LOCATION_FALLBACK = "us-central1"
 
 # Chú thích: Môi trường development
 [env.dev]
