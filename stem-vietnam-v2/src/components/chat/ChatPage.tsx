@@ -116,7 +116,7 @@ export default function ChatPage() {
             role: 'user',
             content: message,
             timestamp: Date.now(),
-            attachments: files.map(f => ({ name: f.file.name, type: f.type })),
+            attachments: files.map(f => ({ name: f.file.name, type: f.type, url: URL.createObjectURL(f.file) })),
         };
 
         // Chú thích: Add user message

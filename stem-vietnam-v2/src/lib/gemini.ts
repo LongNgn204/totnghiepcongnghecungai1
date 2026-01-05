@@ -15,7 +15,7 @@ export async function callGemini(params: {
     context?: string;
     customPrompt?: string;
 }): Promise<GeminiResponse> {
-    const { systemPrompt, userMessage, context, customPrompt } = params;
+    const { systemPrompt: _systemPrompt, userMessage, context, customPrompt } = params;
 
     // Chú thích: Combine prompts vì backend API chỉ nhận message & context
     // System prompt đã được hardcode ở backend cho nhất quán, 
@@ -57,7 +57,7 @@ export async function* streamGemini(params: {
 }
 
 // Chú thích: Function legacy không còn dùng nhưng giữ để tránh lỗi import
-export function initGemini(apiKey?: string): any {
+export function initGemini(_apiKey?: string): any {
     console.warn('initGemini is deprecated. Using backend API instead.');
     return null;
 }

@@ -13,8 +13,8 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
             {/* Avatar */}
             <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${isUser
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gradient-to-br from-violet-500 to-purple-600 text-white'
+                ? 'bg-primary-500 text-white'
+                : 'bg-gradient-to-br from-violet-500 to-purple-600 text-white'
                 }`}>
                 {isUser ? <User size={16} /> : <Sparkles size={16} />}
             </div>
@@ -22,8 +22,8 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
             {/* Content */}
             <div className={`flex-1 max-w-[85%] ${isUser ? 'text-right' : ''}`}>
                 <div className={`inline-block rounded-2xl px-4 py-3 ${isUser
-                        ? 'bg-primary-500 text-white rounded-tr-sm'
-                        : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-tl-sm shadow-sm'
+                    ? 'bg-primary-500 text-white rounded-tr-sm'
+                    : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-tl-sm shadow-sm'
                     }`}>
                     {/* Message text with markdown-like formatting */}
                     <div className="whitespace-pre-wrap text-[15px] leading-relaxed">
@@ -56,7 +56,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                             {message.sourceChunks.slice(0, 3).map((chunk, idx) => (
                                 <a
                                     key={idx}
-                                    href={chunk.document.url || '#'}
+                                    href={chunk.document.fileUrl || '#'}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-2 text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:underline"

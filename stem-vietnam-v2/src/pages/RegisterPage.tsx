@@ -151,7 +151,7 @@ export default function RegisterPage() {
                     {/* Submit */}
                     <button
                         type="submit"
-                        disabled={isLoading || passwordMismatch}
+                        disabled={isLoading || Boolean(passwordMismatch)}
                         className="w-full mt-6 py-2.5 rounded-lg bg-primary-500 text-white font-medium flex items-center justify-center gap-2 hover:bg-primary-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                         {isLoading ? (

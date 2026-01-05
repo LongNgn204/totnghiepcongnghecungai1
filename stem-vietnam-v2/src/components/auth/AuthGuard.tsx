@@ -1,7 +1,7 @@
 // Chú thích: Auth Guard - Bắt buộc đăng nhập với popup thông báo
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, X, UserPlus } from 'lucide-react';
+import { LogIn, UserPlus } from 'lucide-react';
 import { useAuthStore } from '../../lib/auth';
 
 interface AuthGuardProps {

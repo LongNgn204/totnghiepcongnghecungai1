@@ -14,11 +14,9 @@ import {
     Zap,
     Users,
     Award,
-    ArrowRight,
-    Moon,
-    Sun
+    ArrowRight
 } from 'lucide-react';
-import { useAppStore } from '../../stores/appStore';
+
 
 // Chú thích: Custom hook cho scroll-triggered animations
 function useInView(threshold = 0.1) {
@@ -228,7 +226,7 @@ function ParticlesBackground() {
 }
 
 export default function LandingPage() {
-    const { isDarkMode, toggleDarkMode } = useAppStore();
+    // const { isDarkMode, toggleDarkMode } = useAppStore();
 
     const features = [
         {

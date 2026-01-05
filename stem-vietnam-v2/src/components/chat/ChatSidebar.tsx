@@ -1,6 +1,6 @@
 // Chú thích: Chat Sidebar - Lịch sử conversations giống Gemini AI
-import { useState, useEffect } from 'react';
-import { Plus, MessageSquare, Trash2, MoreVertical, Search } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, MessageSquare, Trash2, Search } from 'lucide-react';
 import type { Conversation } from '../../types/chat';
 
 interface ChatSidebarProps {
@@ -80,8 +80,8 @@ export default function ChatSidebar({
                             <div
                                 key={conv.id}
                                 className={`group relative flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-all ${activeId === conv.id
-                                        ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                                    : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                                     }`}
                                 onClick={() => onSelect(conv.id)}
                                 onMouseEnter={() => setHoveredId(conv.id)}

@@ -40,7 +40,7 @@ function FullPageLoader() {
 }
 
 function App() {
-  const { isDarkMode, notification, clearNotification } = useAppStore();
+  const { notification, clearNotification } = useAppStore();
 
   // Chú thích: Apply dark mode class on mount
   // Chú thích: Dark mode disabled
