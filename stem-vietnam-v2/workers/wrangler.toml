@@ -34,3 +34,15 @@ vars = { CORS_ORIGIN = "https://stem-vietnam.pages.dev" }
 #
 # VERTEX_PRIVATE_KEY_ID: (optional) Key ID từ file JSON
 # npx wrangler secret put VERTEX_PRIVATE_KEY_ID
+
+# JWT Secret for auth
+# npx wrangler secret put JWT_SECRET
+
+# ============================================
+# D1 Database
+# ============================================
+[[d1_databases]]
+binding = "DB"
+database_name = "stem-vietnam-db"
+database_id = "976ec8f9-bf7a-411a-a3d8-856b05e71a20"
+

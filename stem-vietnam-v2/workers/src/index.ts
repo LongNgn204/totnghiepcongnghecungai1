@@ -1,6 +1,8 @@
-// Chú thích: Entry point cho Cloudflare Workers API (Vertex AI)
+// Chú thích: Entry point cho Cloudflare Workers API (Vertex AI + Auth + Conversations)
 import { callGemini, streamGemini } from './gemini';
 import { VertexAICredentials } from './gcp-auth';
+import { handleRegister, handleLogin, handleMe, getUserFromToken, AuthEnv } from './auth-routes';
+import { getConversations, getConversation, createConversation, deleteConversation, addMessage, ConvoEnv } from './conversation-routes';
 
 // Chú thích: Environment interface
 interface Env {
@@ -13,6 +15,10 @@ interface Env {
     VERTEX_CLIENT_EMAIL: string;
     VERTEX_PRIVATE_KEY: string;
     VERTEX_PRIVATE_KEY_ID?: string;
+    JWT_SECRET: string;
+
+    // D1 Database
+    DB: D1Database;
 
     // CORS
     CORS_ORIGIN: string;
@@ -56,8 +62,8 @@ Format JSON: { "question": "...", "options": ["A...", "B...", "C...", "D..."], "
 function corsHeaders(origin: string): HeadersInit {
     return {
         'Access-Control-Allow-Origin': origin || '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, DELETE',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
 }
 
@@ -253,6 +259,48 @@ export default {
                     return handleChatStream(request, env);
                 case '/api/generate':
                     return handleGenerate(request, env);
+                // Auth routes
+                case '/api/auth/register':
+                    return handleRegister(request, env as unknown as AuthEnv);
+                case '/api/auth/login':
+                    return handleLogin(request, env as unknown as AuthEnv);
+                // Conversation routes
+                case '/api/conversations': {
+                    const user = await getUserFromToken(request, env as unknown as AuthEnv);
+                    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
+                    return createConversation(request, user, env as unknown as ConvoEnv);
+                }
+            }
+        }
+
+        // GET routes
+        if (request.method === 'GET') {
+            // Auth me
+            if (path === '/api/auth/me') {
+                return handleMe(request, env as unknown as AuthEnv);
+            }
+            // Get all conversations
+            if (path === '/api/conversations') {
+                const user = await getUserFromToken(request, env as unknown as AuthEnv);
+                if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
+                return getConversations(user, env as unknown as ConvoEnv);
+            }
+            // Get single conversation
+            const convoMatch = path.match(/^\/api\/conversations\/([^/]+)$/);
+            if (convoMatch) {
+                const user = await getUserFromToken(request, env as unknown as AuthEnv);
+                if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
+                return getConversation(convoMatch[1], user, env as unknown as ConvoEnv);
+            }
+        }
+
+        // DELETE routes
+        if (request.method === 'DELETE') {
+            const convoMatch = path.match(/^\/api\/conversations\/([^/]+)$/);
+            if (convoMatch) {
+                const user = await getUserFromToken(request, env as unknown as AuthEnv);
+                if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
+                return deleteConversation(convoMatch[1], user, env as unknown as ConvoEnv);
             }
         }
 
