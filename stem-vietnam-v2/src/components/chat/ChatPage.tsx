@@ -162,9 +162,16 @@ export default function ChatPage() {
         setTimeout(() => setThinkingStep('Tổng hợp câu trả lời...'), 2000);
 
         try {
-            // Chú thích: Gọi AI (TODO: xử lý files)
+            // Chú thích: Lấy lịch sử chat gần nhất (6 tin nhắn) để AI nhớ context
+            const currentMessages = conversations.find(c => c.id === currentId)?.messages || [];
+            const chatHistory = currentMessages.slice(-6).map(m =>
+                `${m.role === 'user' ? 'User' : 'AI'}: ${m.content.slice(0, 500)}`
+            ).join('\n');
+
+            // Chú thích: Gọi AI với chat history
             const response = await generateWithRAG({
                 query: message,
+                chatHistory, // Gửi kèm lịch sử để AI nhớ context
                 systemPrompt: CHAT_PROMPT + (useDefaultLibrary
                     ? '\n\nIMPORTANT: You have access to the National Standard Library (Google Drive). Prioritize information from standard textbooks and the provided context.'
                     : '\n\nIMPORTANT: Do NOT use the National Standard Library context. Only answer based on user-provided context or general knowledge.'),
@@ -193,6 +200,7 @@ export default function ChatPage() {
                 return c;
             }));
         } catch (error) {
+            clearInterval(timerInterval); // Chú thích: Fix memory leak - clear timer khi error
             console.error('[chat] error:', error);
             const errorMessage: ChatMessage = {
                 id: (Date.now() + 1).toString(),

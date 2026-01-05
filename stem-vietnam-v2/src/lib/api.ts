@@ -25,7 +25,8 @@ export interface GenerateResponse {
 // Chú thích: Gửi tin nhắn chat đến backend
 export async function sendChatMessage(
     message: string,
-    context?: string
+    context?: string,
+    systemPrompt?: string // Chú thích: Cho phép gửi systemPrompt tùy chỉnh từ frontend
 ): Promise<ChatResponse> {
     try {
         const response = await fetch(`${API_URL}/api/chat`, {
@@ -33,7 +34,7 @@ export async function sendChatMessage(
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message, context }),
+            body: JSON.stringify({ message, context, systemPrompt }),
         });
 
         const data = await response.json();
@@ -50,7 +51,8 @@ export async function sendChatMessage(
 // Chú thích: Stream chat response (Server-Sent Events)
 export async function* streamChatMessage(
     message: string,
-    context?: string
+    context?: string,
+    systemPrompt?: string // Chú thích: Cho phép gửi systemPrompt tùy chỉnh
 ): AsyncGenerator<string> {
     try {
         const response = await fetch(`${API_URL}/api/chat/stream`, {
@@ -58,7 +60,7 @@ export async function* streamChatMessage(
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message, context }),
+            body: JSON.stringify({ message, context, systemPrompt }),
         });
 
         if (!response.ok) {

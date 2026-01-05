@@ -37,19 +37,27 @@ function getCredentials(env: Env): VertexAICredentials {
 }
 
 const SYSTEM_PROMPTS = {
-    chat: `Bạn là trợ lý AI thông minh, đa năng và thân thiện.
+    chat: `Bạn là trợ lý học tập AI chuyên về môn Công nghệ THPT Việt Nam (Lớp 10, 11, 12).
+
+**NGUYÊN TẮC BẮT BUỘC:**
+1. KHÔNG BỊA ĐẶT. Với câu hỏi học tập, câu trả lời PHẢI hoàn toàn dựa trên context tài liệu (SGK, Chuyên đề) được cung cấp.
+2. Nếu context không có thông tin về câu hỏi học tập, hãy trả lời: "Xin lỗi, tài liệu hiện tại không chứa thông tin này. Tôi sẽ dùng kiến thức tổng hợp để trả lời."
+3. Trả lời chính xác, súc tích, ngôn ngữ phù hợp học sinh phổ thông.
+4. Sử dụng format Markdown chuẩn (bold từ khoá quan trọng, dùng list có thứ tự).
+5. Công thức toán/lý: dùng LaTeX với cú pháp $...$ hoặc $$...$$
+6. Sơ đồ/mô hình: mô tả bằng text rõ ràng hoặc dùng Mermaid nếu phù hợp.
 
 **QUY TẮC TỰ NHẬN DIỆN:**
-- Nếu câu hỏi liên quan đến MÔN CÔNG NGHỆ THPT (mạng máy tính, TCP/IP, lập trình, điện tử, cơ khí, nông nghiệp công nghệ cao...) → Trả lời chuyên sâu theo chương trình SGK, có thể trích dẫn nguồn.
+- Nếu câu hỏi liên quan đến MÔN CÔNG NGHỆ THPT (mạng máy tính, TCP/IP, lập trình, điện tử, cơ khí, nông nghiệp công nghệ cao...) → Trả lời chuyên sâu theo chương trình SGK, TRÍCH DẪN NGUỒN (VD: [SGK Công nghệ 11 - Cánh Diều]).
 - Nếu câu hỏi về TIN TỨC, SỰ KIỆN, THÔNG TIN THỰC TẾ → Tìm kiếm và tổng hợp thông tin mới nhất từ internet.
 - Nếu câu hỏi TỔNG QUÁT (cuộc sống, sở thích, giải trí, lời khuyên...) → Trả lời tự do, sáng tạo, thoải mái như một người bạn.
 
 **PHONG CÁCH:**
 - Trả lời bằng tiếng Việt tự nhiên, thân thiện
 - Không giới hạn độ dài - trả lời đầy đủ nhất có thể
-- Với câu hỏi phức tạp: phân tích nhiều góc độ như một nhà nghiên cứu
+- Với câu hỏi phức tạp: phân tích nhiều góc độ
 - Với câu hỏi đơn giản: trả lời ngắn gọn, súc tích
-- Sẵn sàng thảo luận về mọi chủ đề
+- Giọng điệu: Thân thiện, khuyến khích, chuyên nghiệp
 
 Hãy bắt đầu bằng cách nhận diện loại câu hỏi và trả lời phù hợp!`,
 
@@ -85,6 +93,7 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
         const body = await request.json() as {
             message: string;
             context?: string;
+            systemPrompt?: string; // Chú thích: Cho phép frontend gửi systemPrompt tùy chỉnh
         };
 
         if (!body.message) {
@@ -93,8 +102,9 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
 
         const credentials = getCredentials(env);
 
+        // Chú thích: Dùng systemPrompt từ client nếu có, ngược lại dùng default
         const result = await callGemini(credentials, {
-            systemPrompt: SYSTEM_PROMPTS.chat,
+            systemPrompt: body.systemPrompt || SYSTEM_PROMPTS.chat,
             userMessage: body.message,
             context: body.context,
         });
@@ -174,6 +184,7 @@ async function handleChatStream(request: Request, env: Env): Promise<Response> {
         const body = await request.json() as {
             message: string;
             context?: string;
+            systemPrompt?: string; // Chú thích: Cho phép frontend gửi systemPrompt tùy chỉnh
         };
 
         if (!body.message) {
@@ -188,8 +199,9 @@ async function handleChatStream(request: Request, env: Env): Promise<Response> {
                 const encoder = new TextEncoder();
 
                 try {
+                    // Chú thích: Dùng systemPrompt từ client nếu có
                     const generator = streamGemini(credentials, {
-                        systemPrompt: SYSTEM_PROMPTS.chat,
+                        systemPrompt: body.systemPrompt || SYSTEM_PROMPTS.chat,
                         userMessage: body.message,
                         context: body.context,
                     });

@@ -82,7 +82,27 @@ export const useAuthStore = create<AuthState>()(
                         return false;
                     }
 
-                    set({ isLoading: false, error: null });
+                    // Chú thích: Sau khi đăng ký thành công, tự động login luôn
+                    const loginRes = await fetch(`${API_URL}/api/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password }),
+                    });
+
+                    const loginData = await loginRes.json();
+
+                    if (loginRes.ok) {
+                        // Chú thích: Set user và token để người dùng đã đăng nhập ngay
+                        set({
+                            user: loginData.user,
+                            token: loginData.token,
+                            isLoading: false,
+                            error: null
+                        });
+                    } else {
+                        // Chú thích: Nếu login thất bại, vẫn trả về true vì đăng ký đã thành công
+                        set({ isLoading: false, error: null });
+                    }
                     return true;
                 } catch (error) {
                     set({ error: 'Lỗi kết nối server', isLoading: false });

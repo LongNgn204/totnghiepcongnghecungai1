@@ -9,35 +9,114 @@ export interface RAGGeneratorResponse {
     sourceChunks: RetrievedChunk[];
 }
 
-// Chú thích: Generate response với RAG pipeline
+// Chú thích: Danh sách từ khóa để phân loại câu hỏi học tập
+const ACADEMIC_KEYWORDS = [
+    // Các pattern hỏi đáp học thuật
+    'là gì', 'là sao', 'như thế nào', 'giải thích', 'định nghĩa', 'khái niệm',
+    'công thức', 'tính toán', 'phương pháp', 'nguyên lý', 'cơ chế',
+    // Từ khóa môn Công nghệ
+    'mạng', 'tcp', 'ip', 'lan', 'wan', 'man', 'internet', 'router', 'switch',
+    'máy tính', 'computer', 'lập trình', 'code', 'thuật toán', 'algorithm',
+    'cơ sở dữ liệu', 'database', 'phần mềm', 'software', 'phần cứng', 'hardware',
+    'công nghệ', 'điện tử', 'cơ khí', 'nông nghiệp', 'công nghiệp',
+    'ô tô', 'động cơ', 'điện', 'mạch',
+    // Từ khóa giáo dục
+    'sgk', 'sách giáo khoa', 'bài tập', 'ví dụ', 'bài học',
+    'lớp 10', 'lớp 11', 'lớp 12', 'thpt', 'thi', 'kiểm tra',
+    'chương', 'bài', 'đề thi', 'trắc nghiệm',
+    // Toán và Khoa học
+    'tính', 'giải', 'chứng minh', 'vẽ', 'sơ đồ', 'biểu đồ'
+];
+
+// Chú thích: Từ khóa cho câu hỏi tự nhiên/chào hỏi
+const GENERAL_KEYWORDS = [
+    'xin chào', 'hello', 'hi', 'chào bạn', 'khỏe không', 'bạn tên gì',
+    'cảm ơn', 'thanks', 'tạm biệt', 'bye', 'haha', 'okay', 'ok',
+    'bạn là ai', 'bạn có thể làm gì', 'giúp tôi', 'help'
+];
+
+// Chú thích: Phân loại câu hỏi - học tập (dùng RAG) vs tự nhiên (không cần RAG)
+function classifyQuery(query: string): 'academic' | 'general' {
+    const queryLower = query.toLowerCase().trim();
+
+    // Chú thích: Kiểm tra xem có phải câu chào/tự nhiên không
+    if (GENERAL_KEYWORDS.some(kw => queryLower.includes(kw))) {
+        // Nếu câu ngắn và chỉ là chào hỏi -> general
+        if (queryLower.length < 50) {
+            console.info('[rag-classify] general (greeting)', { query: queryLower.slice(0, 30) });
+            return 'general';
+        }
+    }
+
+    // Chú thích: Kiểm tra từ khóa học thuật
+    const hasAcademicKeyword = ACADEMIC_KEYWORDS.some(kw => queryLower.includes(kw));
+    if (hasAcademicKeyword) {
+        console.info('[rag-classify] academic (keyword match)', { query: queryLower.slice(0, 30) });
+        return 'academic';
+    }
+
+    // Chú thích: Mặc định nếu câu hỏi dài (>30 từ) thì coi như academic
+    const wordCount = queryLower.split(/\s+/).length;
+    if (wordCount > 15) {
+        console.info('[rag-classify] academic (long query)', { wordCount });
+        return 'academic';
+    }
+
+    // Chú thích: Còn lại là general
+    console.info('[rag-classify] general (default)', { query: queryLower.slice(0, 30) });
+    return 'general';
+}
+
+// Chú thích: Generate response với RAG pipeline (có smart classification)
 export async function generateWithRAG(params: {
     query: string;
     systemPrompt: string;
+    chatHistory?: string; // Lịch sử chat để AI nhớ context
     customPrompt?: string;
     filters?: RetrieveFilters;
 }): Promise<RAGGeneratorResponse> {
-    const { query, systemPrompt, customPrompt, filters } = params;
+    const { query, systemPrompt, chatHistory, customPrompt, filters } = params;
 
-    // Chú thích: Step 1 - Retrieve relevant context
-    const { context, chunks } = await getRAGContext(query, filters);
+    // Chú thích: Step 1 - Phân loại câu hỏi
+    const queryType = classifyQuery(query);
 
-    if (chunks.length === 0) {
-        console.warn('[rag-gen] No context found, generating without RAG');
+    let context = '';
+    let chunks: RetrievedChunk[] = [];
+
+    // Chú thích: Step 2 - Chỉ retrieve context nếu là câu hỏi học tập
+    if (queryType === 'academic') {
+        const ragResult = await getRAGContext(query, filters);
+        context = ragResult.context;
+        chunks = ragResult.chunks;
+
+        if (chunks.length === 0) {
+            console.warn('[rag-gen] No context found for academic query, will use general knowledge');
+        }
+    } else {
+        console.info('[rag-gen] Skipping RAG for general query');
     }
 
-    // Chú thích: Step 2 - Generate với Gemini + context
+    // Chú thích: Step 3 - Build full context với chat history
+    let fullContext = '';
+    if (chatHistory) {
+        fullContext += `=== LỊCH SỬ HỘI THOẠI ===\n${chatHistory}\n\n`;
+    }
+    if (context) {
+        fullContext += `=== TÀI LIỆU THAM KHẢO ===\n${context}`;
+    }
+
+    // Chú thích: Step 4 - Generate với Gemini
     const response = await callGemini({
         systemPrompt,
         userMessage: query,
-        context: context || undefined,
+        context: fullContext || undefined,
         customPrompt,
     });
 
-    // Chú thích: Chỉ trả về sourceChunks khi thực sự có context và có chunks
-    // Tránh hiển thị nguồn không liên quan cho các câu hỏi general
+    // Chú thích: Chỉ trả về sourceChunks khi là academic query và có context
     return {
         text: response.text,
-        sourceChunks: context && chunks.length > 0 ? chunks : [],
+        sourceChunks: queryType === 'academic' && chunks.length > 0 ? chunks : [],
     };
 }
 

@@ -24,7 +24,8 @@ export default function RegisterPage() {
         const result = await register(name, email, password);
         if (result) {
             setSuccess(true);
-            setTimeout(() => navigate('/login'), 2000);
+            // Chú thích: Redirect về home vì đã tự động login sau khi đăng ký
+            setTimeout(() => navigate('/'), 1500);
         }
     };
 
@@ -39,7 +40,7 @@ export default function RegisterPage() {
                         <Check className="text-green-600" size={32} />
                     </div>
                     <h2 className="text-xl font-bold text-slate-900 mb-2">Đăng ký thành công!</h2>
-                    <p className="text-slate-500 text-sm">Đang chuyển đến trang đăng nhập...</p>
+                    <p className="text-slate-500 text-sm">Đang chuyển đến trang chủ...</p>
                 </div>
             </div>
         );

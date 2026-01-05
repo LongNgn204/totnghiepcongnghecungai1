@@ -2,8 +2,8 @@
 // Sử dụng Gemini 3 Pro với Google Search Grounding cho dữ liệu real-time
 import { getAccessToken, VertexAICredentials } from './gcp-auth';
 
-// Chú thích: Model configuration - Gemini 2.0 Flash (stable, working)
-const GEMINI_MODEL = 'gemini-2.0-flash';
+// Chú thích: Model configuration - Gemini 3 Pro Preview (upgraded)
+const GEMINI_MODEL = 'gemini-3-pro-preview';
 
 // Chú thích: Interface cho response từ Gemini
 export interface GeminiResponse {

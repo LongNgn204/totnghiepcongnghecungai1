@@ -1,10 +1,86 @@
-// Chú thích: Message Bubble Component - Hiển thị một tin nhắn
+// Chú thích: Message Bubble Component - Hiển thị tin nhắn với Markdown + LaTeX
 import { User, Sparkles, BookOpen, ExternalLink } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import type { ChatMessage } from '../../types';
+import 'katex/dist/katex.min.css';
 
 interface MessageBubbleProps {
     message: ChatMessage;
 }
+
+// Chú thích: Custom code block với style đẹp hơn
+function CodeBlock({ inline, className, children, ...props }: any) {
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match ? match[1] : '';
+
+    if (inline) {
+        return (
+            <code
+                className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-pink-600 dark:text-pink-400 text-sm font-mono"
+                {...props}
+            >
+                {children}
+            </code>
+        );
+    }
+
+    return (
+        <div className="my-2 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+            {language && (
+                <div className="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-xs text-slate-500 dark:text-slate-400 font-mono">
+                    {language}
+                </div>
+            )}
+            <pre className="p-3 bg-slate-50 dark:bg-slate-800 overflow-x-auto">
+                <code className="text-sm font-mono text-slate-800 dark:text-slate-200" {...props}>
+                    {children}
+                </code>
+            </pre>
+        </div>
+    );
+}
+
+// Chú thích: Custom components cho markdown elements
+const markdownComponents = {
+    code: CodeBlock,
+    // Chú thích: Style cho các heading
+    h1: ({ children }: any) => <h1 className="text-xl font-bold mt-4 mb-2">{children}</h1>,
+    h2: ({ children }: any) => <h2 className="text-lg font-bold mt-3 mb-2">{children}</h2>,
+    h3: ({ children }: any) => <h3 className="text-base font-semibold mt-2 mb-1">{children}</h3>,
+    // Chú thích: Style cho list
+    ul: ({ children }: any) => <ul className="list-disc list-inside my-2 space-y-1">{children}</ul>,
+    ol: ({ children }: any) => <ol className="list-decimal list-inside my-2 space-y-1">{children}</ol>,
+    li: ({ children }: any) => <li className="ml-2">{children}</li>,
+    // Chú thích: Style cho blockquote
+    blockquote: ({ children }: any) => (
+        <blockquote className="border-l-4 border-primary-500 pl-3 my-2 italic text-slate-600 dark:text-slate-400">
+            {children}
+        </blockquote>
+    ),
+    // Chú thích: Style cho links
+    a: ({ href, children }: any) => (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-600 dark:text-primary-400 hover:underline">
+            {children}
+        </a>
+    ),
+    // Chú thích: Style cho table
+    table: ({ children }: any) => (
+        <div className="overflow-x-auto my-2">
+            <table className="min-w-full border border-slate-200 dark:border-slate-700 rounded">
+                {children}
+            </table>
+        </div>
+    ),
+    th: ({ children }: any) => <th className="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-left font-semibold border-b">{children}</th>,
+    td: ({ children }: any) => <td className="px-3 py-2 border-b border-slate-100 dark:border-slate-700">{children}</td>,
+    // Chú thích: Style cho strong/bold
+    strong: ({ children }: any) => <strong className="font-semibold text-slate-900 dark:text-white">{children}</strong>,
+    // Chú thích: Style cho paragraph - giảm spacing
+    p: ({ children }: any) => <p className="my-1.5">{children}</p>,
+};
 
 export default function MessageBubble({ message }: MessageBubbleProps) {
     const isUser = message.role === 'user';
@@ -25,10 +101,22 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                     ? 'bg-primary-500 text-white rounded-tr-sm'
                     : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-tl-sm shadow-sm'
                     }`}>
-                    {/* Message text with markdown-like formatting */}
-                    <div className="whitespace-pre-wrap text-[15px] leading-relaxed">
-                        {message.content}
-                    </div>
+                    {/* Chú thích: Render với Markdown + LaTeX, user message thì giữ đơn giản */}
+                    {isUser ? (
+                        <div className="whitespace-pre-wrap text-[15px] leading-relaxed">
+                            {message.content}
+                        </div>
+                    ) : (
+                        <div className="prose prose-sm dark:prose-invert max-w-none text-[15px] leading-relaxed">
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm, remarkMath]}
+                                rehypePlugins={[rehypeKatex]}
+                                components={markdownComponents}
+                            >
+                                {message.content}
+                            </ReactMarkdown>
+                        </div>
+                    )}
 
                     {/* Attached files (if any) */}
                     {message.attachments && message.attachments.length > 0 && (

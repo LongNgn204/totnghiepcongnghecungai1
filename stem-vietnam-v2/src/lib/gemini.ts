@@ -15,20 +15,16 @@ export async function callGemini(params: {
     context?: string;
     customPrompt?: string;
 }): Promise<GeminiResponse> {
-    const { systemPrompt: _systemPrompt, userMessage, context, customPrompt } = params;
+    const { systemPrompt, userMessage, context, customPrompt } = params;
 
-    // Chú thích: Combine prompts vì backend API chỉ nhận message & context
-    // System prompt đã được hardcode ở backend cho nhất quán, 
-    // nhưng nếu cần custom thì có thể sửa backend để nhận thêm param.
-    // Hiện tại ta sẽ gộp customPrompt vào userMessage để gửi đi.
-
+    // Chú thích: Gộp customPrompt vào userMessage nếu có
     let finalMessage = userMessage;
     if (customPrompt) {
         finalMessage += `\n\n${customPrompt}`;
     }
 
-    // Chú thích: Gọi backend
-    const result = await sendChatMessage(finalMessage, context);
+    // Chú thích: Gọi backend với systemPrompt từ frontend
+    const result = await sendChatMessage(finalMessage, context, systemPrompt);
 
     if (!result.success || !result.response) {
         throw new Error(result.error || 'Failed to get response from AI backend');
