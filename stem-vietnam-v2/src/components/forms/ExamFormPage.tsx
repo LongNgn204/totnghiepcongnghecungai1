@@ -1,16 +1,41 @@
 // Chú thích: Form tạo đề thi THPT Quốc gia (28 câu)
-// Thêm: Mức độ khó (dễ/trung bình/khó) + bắt buộc RAG
+// Format: 24 trắc nghiệm + 4 Đúng/Sai (theo cấu trúc 2025-2026)
+// Lưu ý: Đề THPT tập trung vào lớp 12, nhưng hiện chưa có SGK lớp 12
 import { useState } from 'react';
-import { ClipboardList, Sparkles, Download, Printer, BookOpen } from 'lucide-react';
+import { ClipboardList, Sparkles, Download, Printer, BookOpen, AlertTriangle, Info } from 'lucide-react';
 import { generateExamWithRAG } from '../../lib/rag/generator';
 import { EXAM_GENERATOR_PROMPT } from '../../lib/prompts';
 import { BOOK_PUBLISHERS } from '../../data/library/defaultBooks';
 
-// Chú thích: Các mức độ khó cho đề thi
+// Chú thích: Các loại đề thi THPT
+const EXAM_PURPOSES = {
+    practice: {
+        label: '📖 Ôn tập cơ bản',
+        description: 'Ôn kiến thức, không quá khó',
+        sgkRatio: 95,
+        note: 'Tập trung SGK, ít Chuyên đề',
+    },
+    mock: {
+        label: '📝 Thi thử THPT',
+        description: 'Theo cấu trúc đề minh họa Bộ GD&ĐT 2026',
+        sgkRatio: 80,
+        note: 'SGK là trọng tâm, Chuyên đề cho câu VDC',
+    },
+    advanced: {
+        label: '🏆 Đề phân loại / HSG',
+        description: 'Nhiều câu Vận dụng cao từ Chuyên đề',
+        sgkRatio: 60,
+        note: '40% câu hỏi từ Chuyên đề để phân loại',
+    },
+} as const;
+
+type ExamPurpose = keyof typeof EXAM_PURPOSES;
+
+// Chú thích: Mức độ khó
 const DIFFICULTY_LEVELS = {
-    easy: { label: '🟢 Dễ', description: 'Nhiều câu Nhớ/Hiểu, ít Vận dụng cao' },
-    medium: { label: '🟡 Trung bình', description: 'Cân đối theo chuẩn Bộ GD&ĐT' },
-    hard: { label: '🔴 Khó', description: 'Nhiều câu Vận dụng, VD cao' },
+    easy: { label: '🟢 Dễ', distribution: '10 Nhớ, 10 Hiểu, 6 VD, 2 VDC' },
+    medium: { label: '🟡 Chuẩn', distribution: '8 Nhớ, 8 Hiểu, 8 VD, 4 VDC' },
+    hard: { label: '🔴 Khó', distribution: '6 Nhớ, 6 Hiểu, 10 VD, 6 VDC' },
 } as const;
 
 type DifficultyLevel = keyof typeof DIFFICULTY_LEVELS;
@@ -18,6 +43,7 @@ type DifficultyLevel = keyof typeof DIFFICULTY_LEVELS;
 export default function ExamFormPage() {
     const [formData, setFormData] = useState({
         subject: 'cong_nghiep' as 'cong_nghiep' | 'nong_nghiep',
+        examPurpose: 'mock' as ExamPurpose,
         difficulty: 'medium' as DifficultyLevel,
         bookPublisher: 'all' as 'all' | string,
         customPrompt: '',
@@ -30,17 +56,36 @@ export default function ExamFormPage() {
         setResult('');
 
         try {
-            // Chú thích: Build prompt với mức độ khó
-            let difficultyPrompt = '';
-            if (formData.difficulty === 'easy') {
-                difficultyPrompt = 'Tạo đề dễ hơn: 10 câu Nhớ, 10 câu Hiểu, 6 câu VD, 2 câu VDC.';
-            } else if (formData.difficulty === 'hard') {
-                difficultyPrompt = 'Tạo đề khó hơn: 6 câu Nhớ, 6 câu Hiểu, 10 câu VD, 6 câu VDC.';
-            }
+            const purposeInfo = EXAM_PURPOSES[formData.examPurpose];
+            const difficultyInfo = DIFFICULTY_LEVELS[formData.difficulty];
+
+            // Chú thích: Build prompt với logic SGK + Chuyên đề
+            const structurePrompt = `
+Cấu trúc đề THPT Quốc gia 2026:
+- Phần I: 24 câu trắc nghiệm nhiều lựa chọn (4 phương án, 1 đúng)
+- Phần II: 4 câu Đúng/Sai (mỗi câu có 4 ý a,b,c,d)
+- Phân bố mức độ: ${difficultyInfo.distribution}
+
+QUAN TRỌNG - Phân bổ nguồn kiến thức:
+- ${purposeInfo.sgkRatio}% câu hỏi từ SGK (nội dung cốt lõi Công nghệ ${formData.subject === 'cong_nghiep' ? 'Công nghiệp' : 'Nông nghiệp'})
+- ${100 - purposeInfo.sgkRatio}% câu hỏi từ Chuyên đề học tập
+${formData.examPurpose === 'mock'
+                    ? '- Các câu Đúng/Sai và VDC có thể lồng ghép kiến thức từ cả SGK và Chuyên đề để phân loại học sinh'
+                    : ''}
+${formData.examPurpose === 'advanced'
+                    ? '- Câu VDC BẮT BUỘC lấy từ Chuyên đề (dự án, vi điều khiển, công nghệ cao...)'
+                    : ''}
+
+PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
+`;
+
+            const bookPrompt = formData.bookPublisher !== 'all'
+                ? `Ưu tiên nội dung từ bộ sách ${formData.bookPublisher}`
+                : '';
 
             const fullCustomPrompt = [
-                difficultyPrompt,
-                formData.bookPublisher !== 'all' ? `Ưu tiên nội dung từ bộ sách ${formData.bookPublisher}` : '',
+                structurePrompt,
+                bookPrompt,
                 formData.customPrompt,
             ].filter(Boolean).join('\n');
 
@@ -65,10 +110,18 @@ export default function ExamFormPage() {
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                     <ClipboardList className="text-primary-500" />
-                    Tạo Đề Thi THPT Quốc Gia
+                    Tạo Đề Thi THPT Quốc Gia 2026
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 mt-1">
-                    Tạo đề 28 câu chuẩn format Bộ GD&ĐT (24 trắc nghiệm + 4 Đúng/Sai)
+                    28 câu hỏi (24 trắc nghiệm + 4 Đúng/Sai) • Theo cấu trúc mới nhất
+                </p>
+            </div>
+
+            {/* Warning - Chưa có SGK lớp 12 */}
+            <div className="glass-card p-3 mb-4 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+                <p className="text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                    <AlertTriangle size={16} />
+                    <span><strong>Lưu ý:</strong> Đề THPT tập trung lớp 12, nhưng hiện chỉ có SGK lớp 10-11. AI sẽ tạo dựa trên kiến thức hiện có.</span>
                 </p>
             </div>
 
@@ -76,7 +129,7 @@ export default function ExamFormPage() {
             <div className="glass-card p-3 mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
                 <p className="text-sm text-green-700 dark:text-green-300 flex items-center gap-2">
                     <BookOpen size={16} />
-                    <span><strong>RAG Enabled:</strong> AI sẽ tạo đề dựa trên nội dung SGK trong Thư viện</span>
+                    <span><strong>RAG:</strong> AI sử dụng SGK + Chuyên đề trong Thư viện</span>
                 </p>
             </div>
 
@@ -86,7 +139,7 @@ export default function ExamFormPage() {
                     {/* Chọn môn */}
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                            Phân môn
+                            Định hướng
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                             <button
@@ -97,6 +150,7 @@ export default function ExamFormPage() {
                                     }`}
                             >
                                 <p className="font-semibold text-sm">🏭 Công nghiệp</p>
+                                <p className="text-xs text-slate-500">Cơ khí, Điện, Ô tô...</p>
                             </button>
                             <button
                                 onClick={() => setFormData(prev => ({ ...prev, subject: 'nong_nghiep' }))}
@@ -106,41 +160,65 @@ export default function ExamFormPage() {
                                     }`}
                             >
                                 <p className="font-semibold text-sm">🌾 Nông nghiệp</p>
+                                <p className="text-xs text-slate-500">Trồng trọt, Chăn nuôi...</p>
                             </button>
                         </div>
                     </div>
 
-                    {/* Mức độ khó - MỚI */}
+                    {/* Loại đề - MỚI */}
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                            Mục đích sử dụng
+                        </label>
+                        <div className="space-y-2">
+                            {(Object.keys(EXAM_PURPOSES) as ExamPurpose[]).map((purpose) => {
+                                const info = EXAM_PURPOSES[purpose];
+                                return (
+                                    <button
+                                        key={purpose}
+                                        onClick={() => setFormData(prev => ({ ...prev, examPurpose: purpose }))}
+                                        className={`w-full p-3 rounded-xl text-left transition-all border-2 ${formData.examPurpose === purpose
+                                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                                            }`}
+                                    >
+                                        <p className="font-semibold text-sm text-slate-900 dark:text-white">
+                                            {info.label}
+                                        </p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                            {info.description}
+                                        </p>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Mức độ khó */}
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                             Mức độ khó
                         </label>
-                        <div className="space-y-2">
+                        <div className="flex gap-2">
                             {(Object.keys(DIFFICULTY_LEVELS) as DifficultyLevel[]).map((level) => (
                                 <button
                                     key={level}
                                     onClick={() => setFormData(prev => ({ ...prev, difficulty: level }))}
-                                    className={`w-full p-3 rounded-xl text-left transition-all border-2 ${formData.difficulty === level
-                                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                                    className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${formData.difficulty === level
+                                            ? 'bg-primary-600 text-white'
+                                            : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                                         }`}
                                 >
-                                    <p className="font-semibold text-sm text-slate-900 dark:text-white">
-                                        {DIFFICULTY_LEVELS[level].label}
-                                    </p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                                        {DIFFICULTY_LEVELS[level].description}
-                                    </p>
+                                    {DIFFICULTY_LEVELS[level].label}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* Bộ sách - MỚI */}
+                    {/* Bộ sách */}
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                             Ưu tiên bộ sách
-                            <span className="text-slate-400 font-normal ml-2">(Tuỳ chọn)</span>
                         </label>
                         <select
                             value={formData.bookPublisher}
@@ -154,26 +232,25 @@ export default function ExamFormPage() {
                         </select>
                     </div>
 
-                    {/* Cấu trúc đề */}
-                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Cấu trúc đề:</p>
-                        <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
-                            <li>• 24 câu trắc nghiệm (A, B, C, D)</li>
-                            <li>• 4 câu Đúng/Sai (mỗi câu 4 ý)</li>
-                            <li>• Có đáp án đầy đủ</li>
-                        </ul>
+                    {/* Info box */}
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                        <p className="text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                            <Info size={14} className="mt-0.5 shrink-0" />
+                            <span>
+                                <strong>Tỷ lệ SGK/Chuyên đề:</strong> {EXAM_PURPOSES[formData.examPurpose].note}
+                            </span>
+                        </p>
                     </div>
 
                     {/* Custom Prompt */}
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                             Tuỳ chỉnh thêm
-                            <span className="text-slate-400 font-normal ml-2">(Có thể bỏ qua)</span>
                         </label>
                         <textarea
                             value={formData.customPrompt}
                             onChange={(e) => setFormData(prev => ({ ...prev, customPrompt: e.target.value }))}
-                            placeholder="VD: Tập trung vào chương mạng máy tính..."
+                            placeholder="VD: Tập trung vào chương mạng điện gia đình..."
                             rows={2}
                             className="input-field resize-none"
                         />
@@ -203,13 +280,13 @@ export default function ExamFormPage() {
                 <div className="lg:col-span-2 glass-panel p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="font-semibold text-slate-900 dark:text-white">
-                            Đề Thi
+                            Đề Thi THPT - {formData.subject === 'cong_nghiep' ? 'Công nghiệp' : 'Nông nghiệp'}
                         </h3>
                         {result && (
                             <div className="flex gap-2">
                                 <button className="btn-secondary py-2 px-4 flex items-center gap-2 text-sm">
                                     <Download size={16} />
-                                    Tải PDF
+                                    PDF
                                 </button>
                                 <button className="btn-secondary py-2 px-4 flex items-center gap-2 text-sm">
                                     <Printer size={16} />
@@ -220,16 +297,14 @@ export default function ExamFormPage() {
                     </div>
 
                     {result ? (
-                        <div className="prose prose-slate dark:prose-invert max-w-none">
-                            <pre className="whitespace-pre-wrap text-sm bg-slate-50 dark:bg-slate-900 p-4 rounded-xl overflow-auto max-h-[600px]">
-                                {result}
-                            </pre>
-                        </div>
+                        <pre className="whitespace-pre-wrap text-sm bg-slate-50 dark:bg-slate-900 p-4 rounded-xl overflow-auto max-h-[600px]">
+                            {result}
+                        </pre>
                     ) : (
                         <div className="h-96 flex flex-col items-center justify-center text-slate-400">
                             <ClipboardList size={48} className="mb-4 opacity-50" />
                             <p>Đề thi sẽ hiển thị ở đây</p>
-                            <p className="text-sm mt-2">Chọn phân môn, mức độ và nhấn "Tạo Đề Thi"</p>
+                            <p className="text-sm mt-2">24 câu TN + 4 câu Đ/S + đáp án</p>
                         </div>
                     )}
                 </div>

@@ -1,5 +1,5 @@
-// Chú thích: Danh sách tài liệu mặc định cho Thư viện
-// Bao gồm: SGK (3 bộ × 3 lớp) + Chuyên đề + Đề thi mẫu
+// Chú thích: Danh sách tài liệu THỰC TẾ đã có trong public/books
+// Cập nhật dựa trên file đã upload - ưu tiên Cánh Diều
 
 import type { Document } from '../../types';
 
@@ -8,299 +8,114 @@ export const BOOK_PUBLISHERS = {
     CANH_DIEU: 'Cánh Diều',
     KET_NOI: 'Kết nối tri thức & cuộc sống',
     CHAN_TROI: 'Chân trời sáng tạo',
+    BO_GDDT: 'Bộ GD&ĐT',
 } as const;
 
 export type BookPublisher = typeof BOOK_PUBLISHERS[keyof typeof BOOK_PUBLISHERS];
 
-// Chú thích: Loại tài liệu
-export const DOCUMENT_TYPES = {
-    SGK: 'Sách giáo khoa',
-    CHUYEN_DE: 'Chuyên đề học tập',
-    DE_THI_THPT: 'Đề thi THPT Quốc gia',
-    DE_THI_GK: 'Đề thi giữa kỳ mẫu',
-    DE_THI_CK: 'Đề thi cuối kỳ mẫu',
-} as const;
-
-// ==================== SÁCH GIÁO KHOA ====================
-const SGK_DOCUMENTS: Document[] = [
-    // === LỚP 10 ===
+// ==================== VĂN BẢN PHÁP QUY (QUAN TRỌNG NHẤT) ====================
+const POLICY_DOCUMENTS: Document[] = [
     {
-        id: 'sgk-cn10-canh-dieu',
-        title: 'SGK Công nghệ 10 - Cánh Diều',
-        grade: '10',
-        topic: 'Công nghiệp',
-        source: BOOK_PUBLISHERS.CANH_DIEU,
-        fileUrl: '/books/sgk/cong-nghe-10-canh-dieu.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'sgk-cn10-ket-noi',
-        title: 'SGK Công nghệ 10 - Kết nối tri thức',
-        grade: '10',
-        topic: 'Công nghiệp',
-        source: BOOK_PUBLISHERS.KET_NOI,
-        fileUrl: '/books/sgk/cong-nghe-10-ket-noi-tri-thuc.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'sgk-cn10-chan-troi',
-        title: 'SGK Công nghệ 10 - Chân trời sáng tạo',
-        grade: '10',
-        topic: 'Công nghiệp',
-        source: BOOK_PUBLISHERS.CHAN_TROI,
-        fileUrl: '/books/sgk/cong-nghe-10-chan-troi-sang-tao.pdf',
-        createdAt: Date.now(),
-    },
-    // === LỚP 11 ===
-    {
-        id: 'sgk-cn11-canh-dieu',
-        title: 'SGK Công nghệ 11 - Cánh Diều',
-        grade: '11',
-        topic: 'Công nghiệp',
-        source: BOOK_PUBLISHERS.CANH_DIEU,
-        fileUrl: '/books/sgk/cong-nghe-11-canh-dieu.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'sgk-cn11-ket-noi',
-        title: 'SGK Công nghệ 11 - Kết nối tri thức',
-        grade: '11',
-        topic: 'Công nghiệp',
-        source: BOOK_PUBLISHERS.KET_NOI,
-        fileUrl: '/books/sgk/cong-nghe-11-ket-noi-tri-thuc.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'sgk-cn11-chan-troi',
-        title: 'SGK Công nghệ 11 - Chân trời sáng tạo',
-        grade: '11',
-        topic: 'Công nghiệp',
-        source: BOOK_PUBLISHERS.CHAN_TROI,
-        fileUrl: '/books/sgk/cong-nghe-11-chan-troi-sang-tao.pdf',
-        createdAt: Date.now(),
-    },
-    // === LỚP 12 ===
-    {
-        id: 'sgk-cn12-canh-dieu',
-        title: 'SGK Công nghệ 12 - Cánh Diều',
-        grade: '12',
-        topic: 'Công nghiệp',
-        source: BOOK_PUBLISHERS.CANH_DIEU,
-        fileUrl: '/books/sgk/cong-nghe-12-canh-dieu.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'sgk-cn12-ket-noi',
-        title: 'SGK Công nghệ 12 - Kết nối tri thức',
-        grade: '12',
-        topic: 'Công nghiệp',
-        source: BOOK_PUBLISHERS.KET_NOI,
-        fileUrl: '/books/sgk/cong-nghe-12-ket-noi-tri-thuc.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'sgk-cn12-chan-troi',
-        title: 'SGK Công nghệ 12 - Chân trời sáng tạo',
-        grade: '12',
-        topic: 'Công nghiệp',
-        source: BOOK_PUBLISHERS.CHAN_TROI,
-        fileUrl: '/books/sgk/cong-nghe-12-chan-troi-sang-tao.pdf',
+        id: 'policy-ct-cong-nghe-2018',
+        title: 'Chương trình GDPT môn Công nghệ (Thông tư 32/2018)',
+        grade: '12', // Áp dụng cho tất cả các lớp
+        topic: 'Chương trình',
+        source: BOOK_PUBLISHERS.BO_GDDT,
+        fileUrl: '/books/15-CT-Cong-nghe-pdf.pdf',
         createdAt: Date.now(),
     },
 ];
 
-// ==================== CHUYÊN ĐỀ HỌC TẬP ====================
-const CHUYEN_DE_DOCUMENTS: Document[] = [
-    // === LỚP 10 ===
+// ==================== SÁCH GIÁO KHOA - CÁNH DIỀU ====================
+const SGK_CANH_DIEU: Document[] = [
+    // LỚP 10
     {
-        id: 'cd-cn10-canh-dieu',
-        title: 'Chuyên đề Công nghệ 10 - Cánh Diều',
+        id: 'sgk-cn10-thiet-ke-cd',
+        title: 'SGK Công nghệ 10 - Thiết kế và Công nghệ (Cánh Diều)',
         grade: '10',
-        topic: 'Chuyên đề',
+        topic: 'Thiết kế và Công nghệ',
         source: BOOK_PUBLISHERS.CANH_DIEU,
-        fileUrl: '/books/chuyen-de/chuyen-de-cn-10-canh-dieu.pdf',
+        fileUrl: '/books/Công nghệ 10- Thiết kế và công nghệ Cánh diều.pdf',
         createdAt: Date.now(),
     },
+    // LỚP 11
     {
-        id: 'cd-cn10-ket-noi',
-        title: 'Chuyên đề Công nghệ 10 - Kết nối tri thức',
-        grade: '10',
-        topic: 'Chuyên đề',
-        source: BOOK_PUBLISHERS.KET_NOI,
-        fileUrl: '/books/chuyen-de/chuyen-de-cn-10-ket-noi-tri-thuc.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'cd-cn10-chan-troi',
-        title: 'Chuyên đề Công nghệ 10 - Chân trời sáng tạo',
-        grade: '10',
-        topic: 'Chuyên đề',
-        source: BOOK_PUBLISHERS.CHAN_TROI,
-        fileUrl: '/books/chuyen-de/chuyen-de-cn-10-chan-troi-sang-tao.pdf',
-        createdAt: Date.now(),
-    },
-    // === LỚP 11 ===
-    {
-        id: 'cd-cn11-canh-dieu',
-        title: 'Chuyên đề Công nghệ 11 - Cánh Diều',
+        id: 'sgk-cn11-co-khi-cd',
+        title: 'SGK Công nghệ 11 - Công nghệ cơ khí (Cánh Diều)',
         grade: '11',
-        topic: 'Chuyên đề',
+        topic: 'Công nghệ cơ khí',
         source: BOOK_PUBLISHERS.CANH_DIEU,
-        fileUrl: '/books/chuyen-de/chuyen-de-cn-11-canh-dieu.pdf',
+        fileUrl: '/books/Sách giáo khoa Công nghệ 11 – Công nghệ cơ khí (Cánh Diều).pdf',
         createdAt: Date.now(),
     },
     {
-        id: 'cd-cn11-ket-noi',
-        title: 'Chuyên đề Công nghệ 11 - Kết nối tri thức',
+        id: 'sgk-cn11-chan-nuoi-cd',
+        title: 'SGK Công nghệ 11 - Công nghệ chăn nuôi (Cánh Diều)',
         grade: '11',
-        topic: 'Chuyên đề',
-        source: BOOK_PUBLISHERS.KET_NOI,
-        fileUrl: '/books/chuyen-de/chuyen-de-cn-11-ket-noi-tri-thuc.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'cd-cn11-chan-troi',
-        title: 'Chuyên đề Công nghệ 11 - Chân trời sáng tạo',
-        grade: '11',
-        topic: 'Chuyên đề',
-        source: BOOK_PUBLISHERS.CHAN_TROI,
-        fileUrl: '/books/chuyen-de/chuyen-de-cn-11-chan-troi-sang-tao.pdf',
-        createdAt: Date.now(),
-    },
-    // === LỚP 12 ===
-    {
-        id: 'cd-cn12-canh-dieu',
-        title: 'Chuyên đề Công nghệ 12 - Cánh Diều',
-        grade: '12',
-        topic: 'Chuyên đề',
+        topic: 'Công nghệ chăn nuôi',
         source: BOOK_PUBLISHERS.CANH_DIEU,
-        fileUrl: '/books/chuyen-de/chuyen-de-cn-12-canh-dieu.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'cd-cn12-ket-noi',
-        title: 'Chuyên đề Công nghệ 12 - Kết nối tri thức',
-        grade: '12',
-        topic: 'Chuyên đề',
-        source: BOOK_PUBLISHERS.KET_NOI,
-        fileUrl: '/books/chuyen-de/chuyen-de-cn-12-ket-noi-tri-thuc.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'cd-cn12-chan-troi',
-        title: 'Chuyên đề Công nghệ 12 - Chân trời sáng tạo',
-        grade: '12',
-        topic: 'Chuyên đề',
-        source: BOOK_PUBLISHERS.CHAN_TROI,
-        fileUrl: '/books/chuyen-de/chuyen-de-cn-12-chan-troi-sang-tao.pdf',
+        fileUrl: '/books/Sách giáo khoa Công nghệ 11 – Công nghệ chăn nuôi (Cánh Diều).pdf',
         createdAt: Date.now(),
     },
 ];
 
-// ==================== ĐỀ THI MẪU ====================
-const DE_THI_DOCUMENTS: Document[] = [
-    // === ĐỀ THI THPT QUỐC GIA ===
+// ==================== CHUYÊN ĐỀ - CÁNH DIỀU ====================
+const CHUYEN_DE_CANH_DIEU: Document[] = [
+    // LỚP 10
     {
-        id: 'de-thpt-2024-cong-nghiep',
-        title: 'Đề thi THPT QG 2024 - Công nghệ Công nghiệp',
-        grade: '12',
-        topic: 'Đề thi THPT',
-        source: 'Bộ GD&ĐT',
-        fileUrl: '/books/de-thi/thpt-2024-cong-nghiep.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'de-thpt-2024-nong-nghiep',
-        title: 'Đề thi THPT QG 2024 - Công nghệ Nông nghiệp',
-        grade: '12',
-        topic: 'Đề thi THPT',
-        source: 'Bộ GD&ĐT',
-        fileUrl: '/books/de-thi/thpt-2024-nong-nghiep.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'de-thpt-2023-cong-nghiep',
-        title: 'Đề thi THPT QG 2023 - Công nghệ Công nghiệp',
-        grade: '12',
-        topic: 'Đề thi THPT',
-        source: 'Bộ GD&ĐT',
-        fileUrl: '/books/de-thi/thpt-2023-cong-nghiep.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'de-thpt-2023-nong-nghiep',
-        title: 'Đề thi THPT QG 2023 - Công nghệ Nông nghiệp',
-        grade: '12',
-        topic: 'Đề thi THPT',
-        source: 'Bộ GD&ĐT',
-        fileUrl: '/books/de-thi/thpt-2023-nong-nghiep.pdf',
-        createdAt: Date.now(),
-    },
-
-    // === ĐỀ THI GIỮA KỲ MẪU ===
-    {
-        id: 'de-gk-lop10-mau',
-        title: 'Đề giữa kỳ Công nghệ 10 - Mẫu chuẩn',
+        id: 'cd-cn10-thiet-ke-cd',
+        title: 'Chuyên đề Thiết kế và Công nghệ 10 (Cánh Diều)',
         grade: '10',
-        topic: 'Đề giữa kỳ mẫu',
-        source: 'Mẫu chuẩn',
-        fileUrl: '/books/de-thi/giua-ky-lop10-mau.pdf',
+        topic: 'Chuyên đề Thiết kế',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/Chuyên đề học tập Thiết kế và Công nghệ 10 - Cánh diều.pdf',
         createdAt: Date.now(),
     },
     {
-        id: 'de-gk-lop11-mau',
-        title: 'Đề giữa kỳ Công nghệ 11 - Mẫu chuẩn',
-        grade: '11',
-        topic: 'Đề giữa kỳ mẫu',
-        source: 'Mẫu chuẩn',
-        fileUrl: '/books/de-thi/giua-ky-lop11-mau.pdf',
-        createdAt: Date.now(),
-    },
-    {
-        id: 'de-gk-lop12-mau',
-        title: 'Đề giữa kỳ Công nghệ 12 - Mẫu chuẩn',
-        grade: '12',
-        topic: 'Đề giữa kỳ mẫu',
-        source: 'Mẫu chuẩn',
-        fileUrl: '/books/de-thi/giua-ky-lop12-mau.pdf',
-        createdAt: Date.now(),
-    },
-
-    // === ĐỀ THI CUỐI KỲ MẪU ===
-    {
-        id: 'de-ck-lop10-mau',
-        title: 'Đề cuối kỳ Công nghệ 10 - Mẫu chuẩn',
+        id: 'cd-cn10-trong-trot-cd',
+        title: 'Chuyên đề Công nghệ trồng trọt 10 (Cánh Diều)',
         grade: '10',
-        topic: 'Đề cuối kỳ mẫu',
-        source: 'Mẫu chuẩn',
-        fileUrl: '/books/de-thi/cuoi-ky-lop10-mau.pdf',
+        topic: 'Chuyên đề Trồng trọt',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/Chuyên đề học tập Công nghệ trồng trọt 10 - Cánh diều.pdf',
         createdAt: Date.now(),
     },
     {
-        id: 'de-ck-lop11-mau',
-        title: 'Đề cuối kỳ Công nghệ 11 - Mẫu chuẩn',
+        id: 'cd-cn10-trong-trot-2-cd',
+        title: 'Chuyên đề học Công nghệ trồng trọt 10 (Cánh Diều) - Bản 2',
+        grade: '10',
+        topic: 'Chuyên đề Trồng trọt',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/Chuyên đề học Công nghệ trồng trọt 10 – Cánh diều.pdf',
+        createdAt: Date.now(),
+    },
+    // LỚP 11
+    {
+        id: 'cd-cn11-co-khi-cd',
+        title: 'Chuyên đề Công nghệ cơ khí 11 (Cánh Diều)',
         grade: '11',
-        topic: 'Đề cuối kỳ mẫu',
-        source: 'Mẫu chuẩn',
-        fileUrl: '/books/de-thi/cuoi-ky-lop11-mau.pdf',
+        topic: 'Chuyên đề Cơ khí',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/Chuyên đề học tập Công nghệ 11 – Công nghệ cơ khí (Cánh Diều).pdf',
         createdAt: Date.now(),
     },
     {
-        id: 'de-ck-lop12-mau',
-        title: 'Đề cuối kỳ Công nghệ 12 - Mẫu chuẩn',
-        grade: '12',
-        topic: 'Đề cuối kỳ mẫu',
-        source: 'Mẫu chuẩn',
-        fileUrl: '/books/de-thi/cuoi-ky-lop12-mau.pdf',
+        id: 'cd-cn11-chan-nuoi-cd',
+        title: 'Chuyên đề Công nghệ chăn nuôi 11 (Cánh Diều)',
+        grade: '11',
+        topic: 'Chuyên đề Chăn nuôi',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/Chuyên đề học tập Công nghệ 11 – Công nghệ chăn nuôi (Cánh Diều).pdf',
         createdAt: Date.now(),
     },
 ];
 
 // ==================== TỔNG HỢP ====================
+// Chú thích: Ưu tiên theo thứ tự: Văn bản pháp quy > SGK > Chuyên đề
 export const DEFAULT_LIBRARY: Document[] = [
-    ...SGK_DOCUMENTS,
-    ...CHUYEN_DE_DOCUMENTS,
-    ...DE_THI_DOCUMENTS,
+    ...POLICY_DOCUMENTS,
+    ...SGK_CANH_DIEU,
+    ...CHUYEN_DE_CANH_DIEU,
 ];
 
 // Chú thích: Helper để lấy tài liệu theo lớp
@@ -314,10 +129,10 @@ export function getDocumentsByPublisher(publisher: BookPublisher): Document[] {
 }
 
 // Chú thích: Helper để lấy theo loại
-export function getDocumentsByType(type: 'sgk' | 'chuyen_de' | 'de_thi'): Document[] {
-    if (type === 'sgk') return SGK_DOCUMENTS;
-    if (type === 'chuyen_de') return CHUYEN_DE_DOCUMENTS;
-    return DE_THI_DOCUMENTS;
+export function getDocumentsByType(type: 'policy' | 'sgk' | 'chuyen_de'): Document[] {
+    if (type === 'policy') return POLICY_DOCUMENTS;
+    if (type === 'sgk') return SGK_CANH_DIEU;
+    return CHUYEN_DE_CANH_DIEU;
 }
 
 // Chú thích: Kiểm tra file PDF có tồn tại không (dùng cho UI)
@@ -332,8 +147,8 @@ export async function checkDocumentExists(fileUrl: string): Promise<boolean> {
 
 // Chú thích: Thống kê thư viện
 export const LIBRARY_STATS = {
-    totalSGK: SGK_DOCUMENTS.length,
-    totalChuyenDe: CHUYEN_DE_DOCUMENTS.length,
-    totalDeThi: DE_THI_DOCUMENTS.length,
+    totalPolicy: POLICY_DOCUMENTS.length,
+    totalSGK: SGK_CANH_DIEU.length,
+    totalChuyenDe: CHUYEN_DE_CANH_DIEU.length,
     total: DEFAULT_LIBRARY.length,
 };

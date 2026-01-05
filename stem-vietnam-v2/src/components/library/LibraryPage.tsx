@@ -11,19 +11,18 @@ import {
     CheckCircle2,
     AlertCircle,
     Download,
-    Filter,
     Book,
     FileSpreadsheet
 } from 'lucide-react';
 import type { Document } from '../../types';
 import { DEFAULT_LIBRARY, BOOK_PUBLISHERS, checkDocumentExists } from '../../data/library/defaultBooks';
 
-// Chú thích: Categories tabs
+// Chú thích: Categories tabs - theo loại tài liệu thực tế
 const TABS = [
-    { id: 'sgk', label: 'Sách giáo khoa', icon: Book },
-    { id: 'chuyen_de', label: 'Chuyên đề học tập', icon: BookOpen },
-    { id: 'de_thi', label: 'Đề thi mẫu', icon: FileSpreadsheet },
-    { id: 'user', label: 'Tài liệu của bạn', icon: Upload },
+    { id: 'policy', label: 'Văn bản pháp quy', icon: FileSpreadsheet, prefix: 'policy-' },
+    { id: 'sgk', label: 'Sách giáo khoa', icon: Book, prefix: 'sgk-' },
+    { id: 'chuyen_de', label: 'Chuyên đề học tập', icon: BookOpen, prefix: 'cd-' },
+    { id: 'user', label: 'Tài liệu của bạn', icon: Upload, prefix: 'user-' },
 ] as const;
 
 export default function LibraryPage() {
@@ -59,14 +58,14 @@ export default function LibraryPage() {
         let docs: Document[] = [];
 
         switch (activeTab) {
+            case 'policy':
+                docs = documents.filter(d => d.id.startsWith('policy-'));
+                break;
             case 'sgk':
                 docs = documents.filter(d => d.id.startsWith('sgk-'));
                 break;
             case 'chuyen_de':
                 docs = documents.filter(d => d.id.startsWith('cd-'));
-                break;
-            case 'de_thi':
-                docs = documents.filter(d => d.id.startsWith('de-'));
                 break;
             case 'user':
                 docs = userDocuments;
@@ -84,9 +83,6 @@ export default function LibraryPage() {
 
     const filteredDocuments = getTabDocuments();
 
-    // Chú thích: Stats
-    const totalBooks = documents.length + userDocuments.length;
-    const availableBooks = Object.values(documentStatus).filter(Boolean).length;
 
     const handleUpload = () => {
         const newDoc: Document = {
@@ -144,8 +140,8 @@ export default function LibraryPage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all whitespace-nowrap ${isActive
-                                    ? 'bg-primary-500 text-white shadow-md'
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                ? 'bg-primary-500 text-white shadow-md'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
                                 }`}
                         >
                             <Icon size={18} />
@@ -181,8 +177,8 @@ export default function LibraryPage() {
                                 key={grade}
                                 onClick={() => setFilterGrade(grade)}
                                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${filterGrade === grade
-                                        ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                                        : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                                    : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                                     }`}
                             >
                                 {grade === 'all' ? 'Tất cả' : grade}
@@ -244,8 +240,8 @@ export default function LibraryPage() {
 
                                 <div className="flex items-start gap-3 mb-3">
                                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isDefault
-                                            ? 'bg-primary-100 dark:bg-primary-900/30'
-                                            : 'bg-slate-100 dark:bg-slate-700'
+                                        ? 'bg-primary-100 dark:bg-primary-900/30'
+                                        : 'bg-slate-100 dark:bg-slate-700'
                                         }`}>
                                         {doc.id.startsWith('sgk-') && <Book className="text-primary-600" size={20} />}
                                         {doc.id.startsWith('cd-') && <BookOpen className="text-indigo-600" size={20} />}
@@ -324,8 +320,8 @@ export default function LibraryPage() {
                                             type="button"
                                             onClick={() => setUploadForm(prev => ({ ...prev, grade }))}
                                             className={`flex-1 py-2 rounded-lg transition-all ${uploadForm.grade === grade
-                                                    ? 'bg-primary-600 text-white'
-                                                    : 'bg-slate-100 dark:bg-slate-700'
+                                                ? 'bg-primary-600 text-white'
+                                                : 'bg-slate-100 dark:bg-slate-700'
                                                 }`}
                                         >
                                             {grade}
