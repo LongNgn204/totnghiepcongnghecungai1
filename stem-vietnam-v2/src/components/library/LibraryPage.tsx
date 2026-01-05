@@ -12,7 +12,8 @@ import {
     AlertCircle,
     Download,
     Book,
-    FileSpreadsheet
+    FileSpreadsheet,
+    Link as LinkIcon
 } from 'lucide-react';
 import type { Document } from '../../types';
 import { DEFAULT_LIBRARY, BOOK_PUBLISHERS, checkDocumentExists } from '../../data/library/defaultBooks';
@@ -39,6 +40,8 @@ export default function LibraryPage() {
         grade: '12' as '10' | '11' | '12',
         topic: '',
         source: '',
+        inputType: 'file' as 'file' | 'url',
+        fileUrl: '',
     });
 
     // Chú thích: Kiểm tra file PDF có tồn tại không khi mount
@@ -91,13 +94,20 @@ export default function LibraryPage() {
             grade: uploadForm.grade,
             topic: uploadForm.topic,
             source: uploadForm.source,
-            fileUrl: '',
+            fileUrl: uploadForm.inputType === 'url' ? uploadForm.fileUrl : '', // Handle real file upload later
             createdAt: Date.now(),
         };
         setUserDocuments(prev => [newDoc, ...prev]);
         setShowUpload(false);
         setActiveTab('user'); // Switch to user tab
-        setUploadForm({ title: '', grade: '12', topic: '', source: '' });
+        setUploadForm({
+            title: '',
+            grade: '12',
+            topic: '',
+            source: '',
+            inputType: 'file',
+            fileUrl: ''
+        });
     };
 
     const handleDelete = (id: string) => {
@@ -286,16 +296,40 @@ export default function LibraryPage() {
                 </div>
             )}
 
-            {/* Upload Modal */}
+            {/* Upload/Add Modal */}
             {showUpload && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="glass-panel w-full max-w-md p-6 animate-slide-up">
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                            <Upload size={24} />
-                            Thêm Tài Liệu Bổ Sung
+                            {uploadForm.inputType === 'file' ? <Upload size={24} /> : <LinkIcon size={24} />}
+                            {uploadForm.inputType === 'file' ? 'Tải Tệp Lên' : 'Thêm từ Google Drive'}
                         </h2>
 
                         <div className="space-y-4">
+                            {/* Input Type Switcher */}
+                            <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
+                                <button
+                                    onClick={() => setUploadForm(prev => ({ ...prev, inputType: 'file' }))}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-sm font-medium rounded-md transition-all ${uploadForm.inputType === 'file'
+                                        ? 'bg-white dark:bg-slate-600 shadow text-primary-600 dark:text-white'
+                                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                                        }`}
+                                >
+                                    <Upload size={14} />
+                                    Tải tệp
+                                </button>
+                                <button
+                                    onClick={() => setUploadForm(prev => ({ ...prev, inputType: 'url' }))}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-sm font-medium rounded-md transition-all ${uploadForm.inputType === 'url'
+                                        ? 'bg-white dark:bg-slate-600 shadow text-primary-600 dark:text-white'
+                                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                                        }`}
+                                >
+                                    <LinkIcon size={14} />
+                                    Google Drive
+                                </button>
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                                     Tên tài liệu *
@@ -343,13 +377,39 @@ export default function LibraryPage() {
                                 />
                             </div>
 
-                            {/* File upload area */}
-                            <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-6 text-center">
-                                <Upload className="mx-auto text-slate-400 mb-2" size={32} />
-                                <p className="text-sm text-slate-500">
-                                    Kéo thả file PDF vào đây
-                                </p>
-                            </div>
+                            {/* Dynamic Input Area */}
+                            {uploadForm.inputType === 'file' ? (
+                                <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-6 text-center hover:border-primary-500 transition-colors cursor-pointer">
+                                    <Upload className="mx-auto text-slate-400 mb-2" size={32} />
+                                    <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                        Kéo thả file PDF vào đây
+                                    </p>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        hoặc click để chọn file
+                                    </p>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                        Link Google Drive / Dropbox *
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <LinkIcon size={16} className="text-slate-400" />
+                                        </div>
+                                        <input
+                                            type="url"
+                                            value={uploadForm.fileUrl}
+                                            onChange={(e) => setUploadForm(prev => ({ ...prev, fileUrl: e.target.value }))}
+                                            placeholder="https://drive.google.com/..."
+                                            className="input-field pl-10"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        * Đảm bảo link đã được chia sẻ công khai (Anyone with the link)
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex gap-3 mt-6">
@@ -361,10 +421,10 @@ export default function LibraryPage() {
                             </button>
                             <button
                                 onClick={handleUpload}
-                                disabled={!uploadForm.title.trim()}
+                                disabled={!uploadForm.title.trim() || (uploadForm.inputType === 'url' && !uploadForm.fileUrl.trim())}
                                 className="btn-primary flex-1"
                             >
-                                Thêm
+                                {uploadForm.inputType === 'file' ? 'Tải lên' : 'Thêm Link'}
                             </button>
                         </div>
                     </div>
