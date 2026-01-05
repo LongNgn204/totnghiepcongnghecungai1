@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 // Chú thích: API base URL
-const API_URL = import.meta.env.VITE_API_URL || 'https://stem-vietnam-api.stu725114073.workers.dev';
+const API_URL = (import.meta.env.VITE_API_URL || 'https://stem-vietnam-api.stu725114073.workers.dev').replace(/\/$/, '');
 
 // Chú thích: User type
 export interface User {

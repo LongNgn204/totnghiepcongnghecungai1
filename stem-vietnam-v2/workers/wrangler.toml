@@ -18,7 +18,7 @@ vars = { CORS_ORIGIN = "http://localhost:5173" }
 
 # Chú thích: Môi trường production
 [env.production]
-vars = { CORS_ORIGIN = "https://stem-vietnam.pages.dev" }
+vars = { CORS_ORIGIN = "https://hoccongnghe.pages.dev/" }
 
 # ============================================
 # Secrets (set via wrangler secret put)

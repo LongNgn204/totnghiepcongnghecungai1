@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Users, MessageSquare, Trash2, Edit2, Search, RefreshCw, BarChart3, X, Save } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://stem-vietnam-api.stu725114073.workers.dev';
+const API_URL = (import.meta.env.VITE_API_URL || 'https://stem-vietnam-api.stu725114073.workers.dev').replace(/\/$/, '');
 
 interface User {
     id: string;
