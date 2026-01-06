@@ -2,7 +2,8 @@
 // Format: 24 trắc nghiệm + 4 Đúng/Sai (theo cấu trúc 2025-2026)
 // Lưu ý: Đề THPT tập trung vào lớp 12, nhưng hiện chưa có SGK lớp 12
 import { useState } from 'react';
-import { ClipboardList, Sparkles, Printer, BookOpen, AlertTriangle, Info, FileText, FileDown, Edit3, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ClipboardList, Sparkles, Printer, BookOpen, AlertTriangle, Info, FileText, FileDown, Edit3, Eye, MessageSquare } from 'lucide-react';
 import { generateExamWithRAG } from '../../lib/rag/generator';
 import { EXAM_GENERATOR_PROMPT } from '../../lib/prompts';
 import { BOOK_PUBLISHERS } from '../../data/library/defaultBooks';
@@ -43,6 +44,7 @@ const DIFFICULTY_LEVELS = {
 type DifficultyLevel = keyof typeof DIFFICULTY_LEVELS;
 
 export default function ExamFormPage() {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         subject: 'cong_nghiep' as 'cong_nghiep' | 'nong_nghiep',
         examPurpose: 'mock' as ExamPurpose,
@@ -318,6 +320,13 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                                 >
                                     <Printer size={16} />
                                     In
+                                </button>
+                                <button
+                                    onClick={() => navigate('/chat', { state: { initialContext: editedContent || result } })}
+                                    className="btn-secondary py-2 px-4 flex items-center gap-2 text-sm text-violet-600 dark:text-violet-400"
+                                >
+                                    <MessageSquare size={16} />
+                                    Hỏi AI về đề này
                                 </button>
                             </div>
                         )}

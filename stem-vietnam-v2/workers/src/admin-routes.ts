@@ -182,3 +182,113 @@ export async function getStats(env: AdminEnv): Promise<Response> {
         return jsonResponse({ error: 'Lỗi server' }, 500, env.CORS_ORIGIN);
     }
 }
+
+// ================== CONVERSATIONS ADMIN ==================
+
+// Chú thích: Types cho Conversations
+interface Conversation {
+    id: string;
+    user_id: string;
+    title: string;
+    created_at: number;
+    updated_at: number;
+}
+
+interface Message {
+    id: string;
+    conversation_id: string;
+    role: string;
+    content: string;
+    attachments: string | null;
+    created_at: number;
+}
+
+// Chú thích: Lấy tất cả conversations (paginated)
+export async function getAdminConversations(
+    env: AdminEnv,
+    page: number = 1,
+    limit: number = 20
+): Promise<Response> {
+    try {
+        const offset = (page - 1) * limit;
+
+        // Chú thích: Join với users để lấy thông tin user
+        const result = await env.DB.prepare(`
+            SELECT c.id, c.user_id, c.title, c.created_at, c.updated_at,
+                   u.name as user_name, u.email as user_email
+            FROM conversations c
+            LEFT JOIN users u ON c.user_id = u.id
+            ORDER BY c.updated_at DESC
+            LIMIT ? OFFSET ?
+        `).bind(limit, offset).all<Conversation & { user_name: string; user_email: string }>();
+
+        // Chú thích: Đếm tổng để pagination
+        const countResult = await env.DB.prepare(
+            'SELECT COUNT(*) as total FROM conversations'
+        ).first<{ total: number }>();
+
+        return jsonResponse({
+            conversations: result.results || [],
+            pagination: {
+                page,
+                limit,
+                total: countResult?.total || 0,
+                totalPages: Math.ceil((countResult?.total || 0) / limit)
+            }
+        }, 200, env.CORS_ORIGIN);
+    } catch (error) {
+        console.error('[admin] get conversations error:', error);
+        return jsonResponse({ error: 'Lỗi server' }, 500, env.CORS_ORIGIN);
+    }
+}
+
+// Chú thích: Lấy chi tiết 1 conversation với messages
+export async function getAdminConversation(id: string, env: AdminEnv): Promise<Response> {
+    try {
+        const convo = await env.DB.prepare(`
+            SELECT c.id, c.user_id, c.title, c.created_at, c.updated_at,
+                   u.name as user_name, u.email as user_email
+            FROM conversations c
+            LEFT JOIN users u ON c.user_id = u.id
+            WHERE c.id = ?
+        `).bind(id).first<Conversation & { user_name: string; user_email: string }>();
+
+        if (!convo) {
+            return jsonResponse({ error: 'Conversation không tồn tại' }, 404, env.CORS_ORIGIN);
+        }
+
+        // Chú thích: Lấy messages
+        const messagesResult = await env.DB.prepare(
+            'SELECT id, role, content, attachments, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at ASC'
+        ).bind(id).all<Message>();
+
+        return jsonResponse({
+            conversation: convo,
+            messages: (messagesResult.results || []).map(m => ({
+                ...m,
+                attachments: m.attachments ? JSON.parse(m.attachments) : null
+            }))
+        }, 200, env.CORS_ORIGIN);
+    } catch (error) {
+        console.error('[admin] get conversation error:', error);
+        return jsonResponse({ error: 'Lỗi server' }, 500, env.CORS_ORIGIN);
+    }
+}
+
+// Chú thích: Xóa conversation (admin không cần check ownership)
+export async function deleteAdminConversation(id: string, env: AdminEnv): Promise<Response> {
+    try {
+        const convo = await env.DB.prepare('SELECT id FROM conversations WHERE id = ?').bind(id).first();
+        if (!convo) {
+            return jsonResponse({ error: 'Conversation không tồn tại' }, 404, env.CORS_ORIGIN);
+        }
+
+        // Chú thích: Delete (messages will cascade do foreign key)
+        await env.DB.prepare('DELETE FROM conversations WHERE id = ?').bind(id).run();
+
+        return jsonResponse({ success: true, message: 'Đã xóa conversation' }, 200, env.CORS_ORIGIN);
+    } catch (error) {
+        console.error('[admin] delete conversation error:', error);
+        return jsonResponse({ error: 'Lỗi server' }, 500, env.CORS_ORIGIN);
+    }
+}

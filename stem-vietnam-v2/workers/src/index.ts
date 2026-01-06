@@ -2,8 +2,8 @@
 import { callGemini, streamGemini, CHAT_MODEL, EXAM_MODEL } from './gemini';
 import { VertexAICredentials } from './gcp-auth';
 import { handleRegister, handleLogin, handleMe, getUserFromToken, AuthEnv } from './auth-routes';
-import { getConversations, getConversation, createConversation, deleteConversation, addMessage, ConvoEnv } from './conversation-routes';
-import { getUsers, getUser, deleteUser, updateUser, getStats, AdminEnv } from './admin-routes';
+import { getConversations, getConversation, createConversation, deleteConversation, addMessage, addMessageFromRequest, ConvoEnv } from './conversation-routes';
+import { getUsers, getUser, deleteUser, updateUser, getStats, getAdminConversations, getAdminConversation, deleteAdminConversation, AdminEnv } from './admin-routes';
 import { searchVectors, buildContextFromResults } from './vectorize';
 import { listPDFsInFolder, listAllPDFsRecursive } from './google-drive';
 import { processDocument, processLocalFile, getRAGContext, parseMetadataFromFilename, type RAGPipelineConfig, type BookMetadata } from './rag-pipeline';
@@ -50,84 +50,89 @@ function getCredentials(env: Env): VertexAICredentials {
 
 const SYSTEM_PROMPTS = {
     // Chú thích: Chat AI - Chuyên gia đa năng với LaTeX support
-    chat: `Bạn là **STEM AI** - trợ lý học tập thông minh hàng đầu Việt Nam.
+    chat: `Bạn là **StemBot** - trợ lý học tập thông minh hàng đầu Việt Nam.
 
 ## VỀ BẠN:
-Bạn là chuyên gia giáo dục với hơn 15 năm kinh nghiệm giảng dạy các môn STEM (Khoa học, Công nghệ, Kỹ thuật, Toán học). Bạn có khả năng:
-- Giải thích kiến thức phức tạp một cách đơn giản, dễ hiểu
-- Đưa ra ví dụ thực tế gắn liền với đời sống Việt Nam
-- Hướng dẫn từng bước (step-by-step) khi giải bài tập
-- Khuyến khích tư duy phản biện và sáng tạo
+Bạn là chuyên gia giáo dục toàn diện, am hiểu sâu rộng về STEM (Khoa học, Công nghệ, Kỹ thuật, Toán học) và đời sống xã hội. Bạn có khả năng:
+- Giải thích mọi vấn đề từ đơn giản đến phức tạp một cách súc tích, dễ hiểu.
+- Kết hợp kiến thức học thuật với ví dụ thực tế tại Việt Nam.
+- Khơi gợi tư duy sáng tạo và phản biện.
+
+## QUY TẮC CỐT LÕI (MẠNH MẼ & HIỆU QUẢ):
+1. **Trả lời trọn vẹn & Súc tích**: Tránh dài dòng lan man. Đi thẳng vào trọng tâm. Đảm bảo câu trả lời KHÔNG bao giờ bị ngắt quãng giữa chừng.
+2. **Luôn có dẫn chứng**: Khi đưa ra thông tin, hãy kèm theo ví dụ hoặc nguồn (nếu có context).
+3. **Định dạng thông minh**: Sử dụng tối đa bullet points, bảng, và in đậm để làm nổi bật ý chính.
+4. **Không giới hạn chủ đề**: Bạn sẵn sàng trả lời MỌI câu hỏi, từ bài tập sách giáo khoa đến tin tức thời sự, thể thao, giải trí.
+
+## ĐẠO ĐỨC & ỨNG XỬ (QUAN TRỌNG):
+Bạn là một người hướng dẫn (Mentor) có tâm, tuân thủ nghiêm ngặt các nguyên tắc sau:
+1. **Sư phạm tích cực (Education First)**:
+   - **Không làm bài tập hộ ngay lập tức**: Nếu học sinh yêu cầu giải bài tập, hãy HƯỚNG DẪN phương pháp, gợi ý công thức, hoặc giải một bài mẫu tương tự trước. Chỉ đưa đáp án cuối cùng sau khi học sinh đã hiểu cách làm.
+   - **Luôn động viên**: Tuyệt đối KHÔNG chê bai (VD: "Sai rồi", "Dốt thế"). Hãy dùng "Gần đúng rồi", "Thử nghĩ theo hướng này xem...", "Một ý tưởng thú vị, nhưng...".
+   - **Kiên nhẫn**: Sẵn sàng giải thích lại nhiều lần bằng nhiều cách khác nhau.
+
+2. **An toàn & Lành mạnh (Safety)**:
+   - Từ chối hỗ trợ các hành vi gian lận thi cử, hack, hoặc gây hại.
+   - Từ chối tạo nội dung bạo lực, khiêu dâm, thù ghét.
+   - Nếu phát hiện học sinh có dấu hiệu tiêu cực/stress nặng, hãy khuyên nhủ nhẹ nhàng và đề xuất tìm sự giúp đỡ từ người thân/thầy cô.
+
+3. **Trung thực & Bảo mật**:
+   - Nếu không biết, hãy nói "Mình chưa chắc chắn về điều này, để mình tìm hiểu thêm nhé" (và dùng Google Search).
+   - KHÔNG hỏi thông tin cá nhân (SĐT, địa chỉ, mật khẩu) của người dùng.
 
 ## NHẬN DIỆN Ý ĐỊNH NGƯỜI DÙNG:
-- **Tin tức, Sự kiện, Thời tiết** → Sử dụng Google Search và trả lời trực tiếp
-- **Môn Công nghệ THPT** (lập trình, mạng, điện tử, cơ khí, nông nghiệp...) → Trả lời chi tiết theo SGK, có ví dụ
-- **Toán, Lý, Hóa, Sinh** → Giải thích công thức, hướng dẫn giải bài
-- **Câu hỏi tổng quát** (giải trí, lời khuyên, cuộc sống...) → Trả lời thân thiện
-- **Chào hỏi bình thường** → Đáp lại tự nhiên, vui vẻ
+- **Học tập (Toán/Lý/Hóa/Công nghệ)** → Giải thích công thức, hướng dẫn giải step-by-step, dùng LaTeX chuẩn.
+- **Tra cứu tin tức/Sự kiện** → Dùng Google Search để cung cấp thông tin mới nhất.
+- **Coding/Lập trình** → Cung cấp code snippet chuẩn, giải thích logic.
+- **Trò chuyện/Tư vấn** → Thân thiện, hài hước, như một người bạn (Buddy).
 
-## LÀM TOÁN VỚI LATEX:
-Khi có công thức toán học, LUÔN sử dụng LaTeX:
-- Inline: \`$công thức$\` — VD: $v = \\frac{s}{t}$, $a^2 + b^2 = c^2$
-- Block: \`$$công thức$$\` — VD:
-$$E = mc^2$$
-$$\\Delta = b^2 - 4ac$$
-$$x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$$
-
-**Ví dụ LaTeX đúng:**
-- Phân số: $\\frac{a}{b}$
-- Căn bậc 2: $\\sqrt{x}$, căn bậc n: $\\sqrt[n]{x}$
-- Lũy thừa: $x^2$, $e^{-x}$
-- Chỉ số: $a_1$, $x_{n+1}$
-- Tổng: $\\sum_{i=1}^{n} x_i$
-- Tích phân: $\\int_{0}^{\\infty} f(x) dx$
-- Giới hạn: $\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1$
-- Vector: $\\vec{v}$, ma trận: $\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}$
-
-## TUYỆT ĐỐI KHÔNG:
-- KHÔNG nói "tài liệu không đề cập" — bạn CÓ Google Search!
-- KHÔNG từ chối hỗ trợ vì "không liên quan đến Công nghệ"
-- KHÔNG trả lời qua loa, thiếu chi tiết
-- KHÔNG sai công thức LaTeX syntax
+## LÀM TOÁN VỚI LATEX (BẮT BUỘC):
+- Inline: \`$công thức$\` — VD: $E=mc^2$
+- Block: \`$$công thức$$\` — VD: $$\\sum_{i=1}^{n} x_i$$
+- TUYỆT ĐỐI KHÔNG sai syntax LaTeX.
 
 ## PHONG CÁCH TRẢ LỜI:
-- **Markdown**: **bold**, *italic*, danh sách, bảng, code blocks
-- **LaTeX**: Inline $...$ và block $$...$$
-- **Mermaid**: Sơ đồ luồng, mindmap khi phù hợp
-- **Giọng văn**: Chuyên nghiệp nhưng gần gũi, dễ hiểu
+- **Chuyên gia**: Kiến thức chính xác, sâu rộng.
+- **Súc tích**: Trả lời ngắn gọn, đủ ý để tránh timeout hệ thống.
+- **Gần gũi**: Dùng ngôn ngữ tự nhiên, phù hợp với học sinh/sinh viên Việt Nam.
 
-Bạn sẵn sàng giúp đỡ với BẤT KỲ câu hỏi nào!`,
+Hãy luôn là một người bạn đồng hành thông thái (Mentor & Buddy)!`,
+
 
 
     // Chú thích: Tạo đề thi - dùng RAG context từ thư viện
-    generate: `Bạn là **Chuyên gia Biên soạn Đề thi** môn Công nghệ THPT với hơn 20 năm kinh nghiệm.
+    // Chú thích: Tạo đề thi - dùng RAG context từ thư viện + Google Search Grounding
+    generate: `Bạn là **Kiểm định viên & Chuyên gia Biên soạn Đề thi** môn Công nghệ THPT.
 
-## NGUYÊN TẮC TẠO ĐỀ:
-1. **Dựa trên Context** - Câu hỏi PHẢI hoàn toàn dựa trên tài liệu được cung cấp
-2. **Chính xác tuyệt đối** - KHÔNG bịa đặt thông tin
-3. **Phân loại mức độ** - Nhớ (30%), Hiểu (30%), Vận dụng (25%), Vận dụng cao (15%)
-4. **LaTeX cho công thức** - Sử dụng $...$ và $$...$$ khi cần
+## NHIỆM VỤ:
+Soạn thảo đề thi trắc nghiệm dựa trên 2 nguồn dữ liệu:
+1. **Context SGK** (được cung cấp): Kiến thức nền tảng chuẩn.
+2. **Google Search** (Grounding): Thông tin thực tế, ví dụ cập nhật, đề thi mẫu mới nhất.
 
-## FORMAT CÂU HỎI:
-**Câu X:** [Nội dung câu hỏi]
-A. [Đáp án A]
-B. [Đáp án B]
-C. [Đáp án C]
-D. [Đáp án D]
+## QUY TẮC BẮT BUỘC (ANTI-HALLUCINATION):
+- **Dựa hoàn toàn vào nguồn tin**: Chỉ đặt câu hỏi nếu thông tin có trong Context hoặc Search Result.
+- **Không bịa đặt**: Nếu thông tin không tìm thấy trong cả 2 nguồn -> TRẢ LỜI "NULL" (hoặc báo lỗi cụ thể).
+- **Phân loại**: Nhớ (30%), Hiểu (30%), Vận dụng (25%), Vận dụng cao (15%).
+- **Trích dẫn minh bạch**: Với mỗi câu hỏi, hãy tự đánh giá xem nó dựa trên SGK hay Search thực tế.
 
-## FORMAT ĐÁP ÁN:
-| Câu | Đáp án |
-|-----|--------|
-| 1   | A      |
-| ... | ...    |
+## FORMAT CÂU HỎI (JSON):
+Trả về JSON array thuần túy, không markdown:
+[
+  {
+    "question": "Nội dung câu hỏi...",
+    "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+    "correct": 0, // Index của đáp án đúng (0-3)
+    "explanation": "Giải thích chi tiết và TRÍCH DẪN NGUỒN CỤ THỂ (VD: 'Theo SGK Công Nghệ 10, Bài 3' hoặc 'Theo tin tức từ...')...",
+    "source_type": "SGK" | "Search" // Nguồn thông tin
+  }
+]
 
-## LƯU Ý:
-- Nếu context thiếu thông tin: "Tài liệu hiện tại chưa đủ để tạo câu hỏi về chủ đề này."
-- Câu hỏi phải RÕ RÀNG, KHÔNG mơ hồ
-- Đáp án sai phải HỢP LÝ (không quá dễ loại)
-- Mỗi câu hỏi tập trung 1 ý chính`
+## LƯU Ý QUAN TRỌNG:
+- Trích dẫn nguồn (Citation) trong 'explanation' là BẮT BUỘC để đảm bảo tính xác thực.
+- Nếu Context SGK quá ít thông tin liên quan đến chủ đề: Hãy ưu tiên tìm kiếm Google Searth để bổ sung.
+- Nếu cả 2 đều không đủ: Trả về JSON rỗng [] để hệ thống xử lý lỗi.
+- LaTeX ($...$) phải chuẩn xác.`,
 };
-
 
 // Chú thích: CORS headers
 function corsHeaders(origin: string): HeadersInit {
@@ -149,13 +154,125 @@ function jsonResponse(data: unknown, status: number, origin: string): Response {
     });
 }
 
+// Chú thích: Phân loại câu hỏi - học tập (academic) vs tổng quát (general)
+// Nếu là câu hỏi học tập → sẽ dùng RAG context từ thư viện sách
+function classifyQuery(query: string): 'academic' | 'general' {
+    const queryLower = query.toLowerCase();
+
+    // Chú thích: Keywords chỉ câu hỏi học tập / Công nghệ
+    const academicKeywords = [
+        // Môn Công nghệ
+        'công nghệ', 'sgk', 'sách giáo khoa', 'bài học', 'chương',
+        'mạng máy tính', 'lan', 'wan', 'tcp', 'ip', 'router', 'switch',
+        'cpu', 'ram', 'rom', 'phần cứng', 'phần mềm',
+        'thuật toán', 'lập trình', 'biến', 'hàm', 'mảng',
+        'điện tử', 'điện trở', 'tụ điện', 'transistor', 'mạch',
+        'cơ khí', 'gia công', 'máy tiện', 'máy phay',
+        'trồng trọt', 'chăn nuôi', 'nông nghiệp', 'lâm nghiệp', 'thuỷ sản',
+        // Keywords học tập
+        'giải thích', 'định nghĩa', 'là gì', 'thế nào', 'so sánh',
+        'công thức', 'tính toán', 'giải bài', 'bài tập',
+        'lớp 10', 'lớp 11', 'lớp 12', 'thpt',
+        'thi thử', 'đề thi', 'ôn tập',
+    ];
+
+    // Chú thích: Keywords chỉ câu hỏi tổng quát / tin tức
+    const generalKeywords = [
+        'hôm nay', 'thời tiết', 'tin tức', 'bóng đá', 'thể thao',
+        'giá', 'tỷ giá', 'chứng khoán',
+        'chào', 'xin chào', 'hello', 'hi',
+        'cảm ơn', 'tạm biệt',
+    ];
+
+    // Check general keywords trước
+    for (const kw of generalKeywords) {
+        if (queryLower.includes(kw)) {
+            return 'general';
+        }
+    }
+
+    // Check academic keywords
+    for (const kw of academicKeywords) {
+        if (queryLower.includes(kw)) {
+            return 'academic';
+        }
+    }
+
+    // Mặc định: câu hỏi ngắn thường là general, dài hơn có thể là academic
+    return query.length > 30 ? 'academic' : 'general';
+}
+
+// Chú thích: Tạo suggestions dựa trên câu hỏi và câu trả lời
+function generateSuggestions(
+    userMessage: string,
+    aiResponse: string,
+    queryType: 'academic' | 'general'
+): string[] {
+    const suggestions: string[] = [];
+    const msgLower = userMessage.toLowerCase();
+    const respLower = aiResponse.toLowerCase();
+
+    // Chú thích: Gợi ý dựa trên loại câu hỏi
+    if (queryType === 'academic') {
+        // Gợi ý học thuật
+        if (respLower.includes('mạng') || respLower.includes('lan') || respLower.includes('wan')) {
+            suggestions.push('So sánh LAN và WAN?');
+            suggestions.push('Router hoạt động thế nào?');
+            suggestions.push('Giao thức TCP/IP là gì?');
+        } else if (respLower.includes('cpu') || respLower.includes('ram') || respLower.includes('phần cứng')) {
+            suggestions.push('So sánh RAM và ROM?');
+            suggestions.push('Cách CPU xử lý dữ liệu?');
+            suggestions.push('Thế nào là bộ nhớ cache?');
+        } else if (respLower.includes('thuật toán') || respLower.includes('lập trình')) {
+            suggestions.push('Thuật toán sắp xếp nào nhanh nhất?');
+            suggestions.push('Phân biệt vòng lặp for và while?');
+            suggestions.push('Big O notation là gì?');
+        } else if (respLower.includes('điện') || respLower.includes('mạch')) {
+            suggestions.push('Định luật Ohm là gì?');
+            suggestions.push('Công thức tính điện trở?');
+            suggestions.push('Transistor hoạt động thế nào?');
+        } else if (respLower.includes('trồng trọt') || respLower.includes('nông nghiệp')) {
+            suggestions.push('Các loại phân bón phổ biến?');
+            suggestions.push('Kỹ thuật tưới tiêu hiện đại?');
+            suggestions.push('Làm thế nào để chống sâu bệnh?');
+        } else if (respLower.includes('chăn nuôi')) {
+            suggestions.push('Dinh dưỡng cho gia súc?');
+            suggestions.push('Phòng bệnh trong chăn nuôi?');
+            suggestions.push('Chuồng trại tiêu chuẩn?');
+        } else {
+            // Gợi ý chung cho academic
+            suggestions.push('Cho ví dụ cụ thể hơn?');
+            suggestions.push('Giải thích chi tiết hơn?');
+            suggestions.push('Có bài tập liên quan không?');
+        }
+    } else {
+        // Gợi ý cho câu hỏi tổng quát
+        if (msgLower.includes('tin tức') || msgLower.includes('hôm nay')) {
+            suggestions.push('Tin tức công nghệ mới nhất?');
+            suggestions.push('Sự kiện thể thao hôm nay?');
+            suggestions.push('Thời tiết ngày mai?');
+        } else if (msgLower.includes('chào') || msgLower.includes('hello')) {
+            suggestions.push('Bạn có thể giúp gì cho tôi?');
+            suggestions.push('Giới thiệu về STEM AI?');
+            suggestions.push('Hướng dẫn sử dụng?');
+        } else {
+            suggestions.push('Học gì tiếp theo?');
+            suggestions.push('Tin tức công nghệ?');
+            suggestions.push('Tạo đề thi thử?');
+        }
+    }
+
+    // Chú thích: Giới hạn 3 suggestions
+    return suggestions.slice(0, 3);
+}
+
 // Chú thích: Handle chat endpoint
 async function handleChat(request: Request, env: Env): Promise<Response> {
     try {
         const body = await request.json() as {
             message: string;
             context?: string;
-            systemPrompt?: string; // Chú thích: Cho phép frontend gửi systemPrompt tùy chỉnh
+            systemPrompt?: string;
         };
 
         if (!body.message) {
@@ -164,19 +281,58 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
 
         const credentials = getCredentials(env);
 
-        // Chú thích: Chat AI dùng CHAT_MODEL và Google Search grounding (KHÔNG dùng RAG)
+        // Chú thích: Phân loại câu hỏi để quyết định có dùng RAG không
+        const queryType = classifyQuery(body.message);
+        let ragContext = '';
+        let sources: unknown[] = [];
+
+        // Chú thích: Nếu là câu hỏi học tập → tìm RAG context từ thư viện sách
+        if (queryType === 'academic' && env.VECTORIZE) {
+            try {
+                console.info('[chat] Academic query detected, searching RAG...');
+                const ragResult = await getRAGContext(
+                    credentials,
+                    env.VECTORIZE,
+                    body.message,
+                    undefined // Không filter theo grade/subject
+                );
+                ragContext = ragResult.context;
+                sources = ragResult.sources;
+                console.info('[chat] RAG found', { sourcesCount: sources.length });
+            } catch (error) {
+                console.warn('[chat] RAG search failed, continuing without context:', error);
+            }
+        }
+
+        // Chú thích: Build context string nếu có RAG hoặc context từ frontend
+        let fullContext = '';
+        if (ragContext) {
+            fullContext += `=== TÀI LIỆU THAM KHẢO TỪ SGK ===\n${ragContext}\n\n`;
+        }
+        if (body.context) {
+            fullContext += body.context;
+        }
+
+        // Chú thích: Chat AI dùng CHAT_MODEL, Google Search grounding + RAG context
         const result = await callGemini(credentials, {
             systemPrompt: body.systemPrompt || SYSTEM_PROMPTS.chat,
             userMessage: body.message,
-            // KHÔNG gửi context - Chat chỉ dùng Google Search
+            context: fullContext || undefined,
             model: CHAT_MODEL,
-            useGrounding: true, // Bật Google Search để tìm kiếm thông tin mới nhất
+            useGrounding: true, // Bật Google Search cho tin tức, sự kiện mới
         });
+
+        // Chú thích: Tạo suggestions dựa trên nội dung trả lời
+        const suggestions = generateSuggestions(body.message, result.text, queryType);
 
         return jsonResponse({
             success: true,
             response: result.text,
+            sources: sources.length > 0 ? sources : undefined,
+            queryType,
+            suggestions, // Gợi ý câu hỏi tiếp theo
         }, 200, env.CORS_ORIGIN);
+
 
     } catch (error) {
         console.error('[chat] error:', error);
@@ -209,12 +365,66 @@ Trả về dưới dạng JSON array.`;
 
         const credentials = getCredentials(env);
 
+        // Chú thích: Hybrid RAG - Tìm context từ SGK trước
+        let ragContext = '';
+        let examStyleContext = ''; // Context về đề thi mẫu
+        let sourceChunks: unknown[] = [];
+        if (env.VECTORIZE) {
+            try {
+                console.info('[generate] Searching RAG for topic:', body.topic);
+
+                // 1. Tìm kiến thức SGK
+                const knowledgePromise = getRAGContext(
+                    credentials,
+                    env.VECTORIZE,
+                    body.topic,
+                    undefined
+                );
+
+                // 2. Tìm đề thi mẫu (Style Mimicking)
+                const examStylePromise = getRAGContext(
+                    credentials,
+                    env.VECTORIZE,
+                    `Đề thi kiểm tra trắc nghiệm ${body.topic}`,
+                    undefined
+                );
+
+                const [knowledgeResult, styleResult] = await Promise.all([knowledgePromise, examStylePromise]);
+
+                ragContext = knowledgeResult.context;
+                examStyleContext = styleResult.context;
+
+                // Merge sources (ưu tiên knowledge)
+                sourceChunks = [...knowledgeResult.sources, ...styleResult.sources];
+
+                // Pre-check: Cảnh báo nếu không tìm thấy gì
+                if (!ragContext) {
+                    console.warn('[generate] No RAG context found for topic');
+                }
+            } catch (error) {
+                console.warn('[generate] RAG search failed:', error);
+            }
+        }
+
+        // Build Full Message with Context
+        const systemInstructionWithContext = `
+${SYSTEM_PROMPTS.generate}
+
+=== TÀI LIỆU KIẾN THỨC (SGK) ===
+${ragContext || '(Dựa vào Google Search)'}
+
+=== ĐỀ THI MẪU THAM KHẢO (STYLE) ===
+${examStyleContext || '(Không tìm thấy đề mẫu, hãy dùng format chuẩn Bộ GD&ĐT)'}
+
+LƯU Ý: Hãy học văn phong và cách đặt câu hỏi từ phần "ĐỀ THI MẪU" (nếu có), nhưng nội dung kiến thức phải dựa trên "TÀI LIỆU KIẾN THỨC".
+`;
+
         // Chú thích: Tạo đề dùng EXAM_MODEL, Google Search grounding + RAG context
         const result = await callGemini(credentials, {
-            systemPrompt: SYSTEM_PROMPTS.generate,
+            systemPrompt: systemInstructionWithContext,
             userMessage,
             model: EXAM_MODEL,
-            useGrounding: true, // Bật Google Search để tìm thêm nội dung theo từ khoá
+            useGrounding: true, // Hybrid: Luôn bật Google Search để bổ trợ
         });
 
         // Chú thích: Parse JSON từ response
@@ -234,6 +444,7 @@ Trả về dưới dạng JSON array.`;
         return jsonResponse({
             success: true,
             questions,
+            sourceChunks: sourceChunks.length > 0 ? sourceChunks : undefined, // Trả về nguồn SGK để frontend hiển thị
         }, 200, env.CORS_ORIGIN);
 
     } catch (error) {
@@ -307,6 +518,80 @@ async function handleChatStream(request: Request, env: Env): Promise<Response> {
     }
 }
 
+// Chú thích: Handle feedback endpoint - lưu feedback từ user về chất lượng câu trả lời
+async function handleFeedback(request: Request, env: Env): Promise<Response> {
+    try {
+        const body = await request.json() as {
+            messageId: string;
+            helpful: boolean;
+            reason?: string;
+            userMessage?: string;
+            aiResponse?: string;
+        };
+
+        if (!body.messageId) {
+            return jsonResponse({ error: 'messageId is required' }, 400, env.CORS_ORIGIN);
+        }
+
+        // Chú thích: Lưu vào D1 database
+        try {
+            await env.DB.prepare(`
+                INSERT INTO chat_feedback (id, message_id, helpful, reason, user_message, ai_response, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).bind(
+                crypto.randomUUID(),
+                body.messageId,
+                body.helpful ? 1 : 0,
+                body.reason || null,
+                body.userMessage || null,
+                body.aiResponse || null,
+                Date.now()
+            ).run();
+
+            console.info('[feedback] saved', { messageId: body.messageId, helpful: body.helpful });
+        } catch (dbError) {
+            // Chú thích: Nếu DB chưa có bảng, tạo bảng và thử lại
+            console.warn('[feedback] DB error, creating table...', dbError);
+            await env.DB.prepare(`
+                CREATE TABLE IF NOT EXISTS chat_feedback (
+                    id TEXT PRIMARY KEY,
+                    message_id TEXT NOT NULL,
+                    helpful INTEGER NOT NULL,
+                    reason TEXT,
+                    user_message TEXT,
+                    ai_response TEXT,
+                    created_at INTEGER NOT NULL
+                )
+            `).run();
+
+            // Thử lại insert
+            await env.DB.prepare(`
+                INSERT INTO chat_feedback (id, message_id, helpful, reason, user_message, ai_response, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).bind(
+                crypto.randomUUID(),
+                body.messageId,
+                body.helpful ? 1 : 0,
+                body.reason || null,
+                body.userMessage || null,
+                body.aiResponse || null,
+                Date.now()
+            ).run();
+        }
+
+        return jsonResponse({
+            success: true,
+            message: 'Cảm ơn phản hồi của bạn!'
+        }, 200, env.CORS_ORIGIN);
+
+    } catch (error) {
+        console.error('[feedback] error:', error);
+        return jsonResponse({
+            error: 'Lỗi lưu phản hồi'
+        }, 500, env.CORS_ORIGIN);
+    }
+}
+
 // Chú thích: Main fetch handler
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
@@ -341,6 +626,9 @@ export default {
                     return handleChatStream(request, env);
                 case '/api/generate':
                     return handleGenerate(request, env);
+                // Feedback route
+                case '/api/feedback':
+                    return handleFeedback(request, env);
                 // Auth routes
                 case '/api/auth/register':
                     return handleRegister(request, env as unknown as AuthEnv);
@@ -352,6 +640,14 @@ export default {
                     if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
                     return createConversation(request, user, env as unknown as ConvoEnv);
                 }
+            }
+
+            // POST messages to conversation: /api/conversations/:id/messages
+            const msgMatch = path.match(/^\/api\/conversations\/([^/]+)\/messages$/);
+            if (msgMatch) {
+                const user = await getUserFromToken(request, env as unknown as AuthEnv);
+                if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
+                return addMessageFromRequest(msgMatch[1], request, user, env as unknown as ConvoEnv);
             }
         }
 
@@ -410,6 +706,27 @@ export default {
             const adminUserMatch = path.match(/^\/api\/admin\/users\/([^/]+)$/);
             if (adminUserMatch) {
                 return getUser(adminUserMatch[1], env as unknown as AdminEnv);
+            }
+
+            // Admin Conversations routes
+            if (path === '/api/admin/conversations') {
+                const pageParam = url.searchParams.get('page');
+                const limitParam = url.searchParams.get('limit');
+                const page = pageParam ? parseInt(pageParam, 10) : 1;
+                const limit = limitParam ? parseInt(limitParam, 10) : 20;
+                return getAdminConversations(env as unknown as AdminEnv, page, limit);
+            }
+            const adminConvoMatch = path.match(/^\/api\/admin\/conversations\/([^/]+)$/);
+            if (adminConvoMatch) {
+                return getAdminConversation(adminConvoMatch[1], env as unknown as AdminEnv);
+            }
+        }
+
+        // Admin DELETE conversation
+        if (request.method === 'DELETE') {
+            const adminConvoMatch = path.match(/^\/api\/admin\/conversations\/([^/]+)$/);
+            if (adminConvoMatch) {
+                return deleteAdminConversation(adminConvoMatch[1], env as unknown as AdminEnv);
             }
         }
 

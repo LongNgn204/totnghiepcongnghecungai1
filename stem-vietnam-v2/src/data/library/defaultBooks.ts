@@ -133,10 +133,43 @@ const MASTER_LIBRARY: Document[] = [
     }
 ];
 
+// ==================== ĐỀ THI MẪU (SAMPLES) ====================
+const SAMPLE_EXAMS: Document[] = [
+    {
+        id: 'exam-10-hk1-2023',
+        title: 'Đề cương ôn tập HK1 Công nghệ 10 (2023-2024)',
+        grade: '10',
+        topic: 'Đề thi mẫu',
+        source: BOOK_PUBLISHERS.BO_GDDT,
+        fileUrl: '/books/de_thi/Lớp 10/DE CUONG ON TAP HK I 20232024.docx',
+        createdAt: Date.now(),
+    },
+    {
+        id: 'exam-10-ma-de-001',
+        title: 'Mã đề 001 - Công nghệ 10',
+        grade: '10',
+        topic: 'Đề thi mẫu',
+        source: BOOK_PUBLISHERS.BO_GDDT,
+        fileUrl: '/books/de_thi/Lớp 10/Ma_de_001.docx',
+        createdAt: Date.now(),
+    },
+    {
+        id: 'exam-10-ma-de-002',
+        title: 'Mã đề 002 - Công nghệ 10',
+        grade: '10',
+        topic: 'Đề thi mẫu',
+        source: BOOK_PUBLISHERS.BO_GDDT,
+        fileUrl: '/books/de_thi/Lớp 10/Ma_de_002.docx',
+        createdAt: Date.now(),
+    },
+    // Chú thích: Thêm đại diện từ Lớp 11, 12 nếu cần
+];
+
 // ==================== TỔNG HỢP ====================
 export const DEFAULT_LIBRARY: Document[] = [
     ...SGK_BOOKS,
     ...CHUYEN_DE_BOOKS,
+    ...SAMPLE_EXAMS, // Add samples to library
     ...MASTER_LIBRARY
 ];
 

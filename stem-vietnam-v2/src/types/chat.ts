@@ -7,6 +7,7 @@ export interface Conversation {
     messages: ChatMessage[];
     createdAt: number;
     updatedAt: number;
+    context?: string; // Context (của đề thi, bài học...) để AI nhớ lâu dài
 }
 
 export interface ChatStore {

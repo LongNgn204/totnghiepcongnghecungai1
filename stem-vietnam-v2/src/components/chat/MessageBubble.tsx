@@ -1,6 +1,6 @@
 // Chú thích: Message Bubble Component - Hiển thị tin nhắn với Markdown + LaTeX + Mermaid
 import { useState, useEffect, useRef } from 'react';
-import { User, Sparkles, BookOpen, ExternalLink } from 'lucide-react';
+import { User, Sparkles, BookOpen, ExternalLink, ThumbsUp, ThumbsDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -140,6 +140,26 @@ const markdownComponents = {
 
 export default function MessageBubble({ message }: MessageBubbleProps) {
     const isUser = message.role === 'user';
+    const [feedbackSent, setFeedbackSent] = useState<'helpful' | 'not_helpful' | null>(null);
+
+    // Chú thích: Gửi feedback lên API
+    const sendFeedback = async (helpful: boolean) => {
+        try {
+            const apiUrl = (import.meta.env.VITE_API_URL || 'https://stem-vietnam-api.stu725114073.workers.dev').replace(/\/$/, '');
+            await fetch(`${apiUrl}/api/feedback`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messageId: message.id,
+                    helpful,
+                    aiResponse: message.content.slice(0, 500), // Lưu 500 ký tự đầu
+                }),
+            });
+            setFeedbackSent(helpful ? 'helpful' : 'not_helpful');
+        } catch (error) {
+            console.error('[feedback] error:', error);
+        }
+    };
 
     return (
         <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
@@ -213,13 +233,50 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                     </div>
                 )}
 
-                {/* Timestamp */}
-                <p className={`text-[10px] text-slate-400 mt-1 ${isUser ? 'text-right' : ''}`}>
-                    {new Date(message.timestamp).toLocaleTimeString('vi-VN', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}
-                </p>
+                {/* Feedback Buttons - Chỉ hiển thị cho assistant */}
+                {!isUser && (
+                    <div className="flex items-center gap-2 mt-2">
+                        {feedbackSent ? (
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                                {feedbackSent === 'helpful' ? '✅ Cảm ơn phản hồi!' : '📝 Đã ghi nhận'}
+                            </span>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={() => sendFeedback(true)}
+                                    className="p-1 rounded hover:bg-green-100 dark:hover:bg-green-900/30 text-slate-400 hover:text-green-600 transition-colors"
+                                    title="Hữu ích"
+                                >
+                                    <ThumbsUp size={14} />
+                                </button>
+                                <button
+                                    onClick={() => sendFeedback(false)}
+                                    className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-slate-400 hover:text-red-600 transition-colors"
+                                    title="Chưa hữu ích"
+                                >
+                                    <ThumbsDown size={14} />
+                                </button>
+                            </>
+                        )}
+                        {/* Timestamp */}
+                        <span className="text-[10px] text-slate-400 ml-auto">
+                            {new Date(message.timestamp).toLocaleTimeString('vi-VN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}
+                        </span>
+                    </div>
+                )}
+
+                {/* Timestamp for user messages */}
+                {isUser && (
+                    <p className="text-[10px] text-slate-400 mt-1 text-right">
+                        {new Date(message.timestamp).toLocaleTimeString('vi-VN', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
+                    </p>
+                )}
             </div>
         </div>
     );

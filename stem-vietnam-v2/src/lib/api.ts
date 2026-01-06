@@ -9,6 +9,7 @@ export interface ChatResponse {
     success: boolean;
     response?: string;
     error?: string;
+    suggestions?: string[]; // Chú thích: Gợi ý câu hỏi tiếp theo từ AI
 }
 
 export interface GenerateResponse {
@@ -18,6 +19,11 @@ export interface GenerateResponse {
         options: string[];
         correct: number;
         explanation: string;
+        source_type?: 'SGK' | 'Search'; // Nguồn: SGK hoặc Google Search
+    }>;
+    sourceChunks?: Array<{
+        content: string;
+        source: string;
     }>;
     error?: string;
 }

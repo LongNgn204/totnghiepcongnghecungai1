@@ -141,21 +141,68 @@ export async function generateQuestionsWithRAG(params: {
     });
 }
 
-// Chú thích: Generate đề thi với RAG
+// Chú thích: Generate đề thi với RAG thông qua API Workers mới
+import { generateQuestions } from '../api';
+
 export async function generateExamWithRAG(params: {
     subject: 'cong_nghiep' | 'nong_nghiep';
-    systemPrompt: string;
+    systemPrompt: string; // (Deprecated - worker dùng prompt riêng)
     customPrompt?: string;
 }): Promise<RAGGeneratorResponse> {
-    const { subject, systemPrompt, customPrompt } = params;
+    const { subject, customPrompt } = params;
 
     const subjectName = subject === 'cong_nghiep' ? 'Công nghiệp' : 'Nông nghiệp';
-    const query = `Tạo đề thi THPT Quốc gia môn Công nghệ ${subjectName} với 28 câu theo format chuẩn Bộ GD&ĐT`;
+    const topic = `Đề thi THPT Quốc gia môn Công nghệ ${subjectName}. ${customPrompt || ''}`;
 
-    return generateWithRAG({
-        query,
-        systemPrompt,
-        customPrompt,
-        filters: { topic: subjectName },
+    // Chú thích: Gọi API Worker thay vì local Gemini
+    const response = await generateQuestions(topic, 28, 'medium');
+
+    if (!response.success || !response.questions) {
+        throw new Error(response.error || 'Failed to generate exam');
+    }
+
+    // Chú thích: Format JSON questions thành text hiển thị
+    // Frontend hiện tại expect text để hiển thị và sửa
+    let formattedText = `**ĐỀ THI THỬ THPT QUỐC GIA MÔN CÔNG NGHỆ (${subjectName.toUpperCase()})**\n\n`;
+
+    response.questions.forEach((q, index) => {
+        const sourceTag = q.source_type ? ` *[Nguồn: ${q.source_type}]*` : '';
+        formattedText += `**Câu ${index + 1}:** ${q.question}${sourceTag}\n`;
+        q.options.forEach(opt => {
+            formattedText += `${opt}\n`;
+        });
+        formattedText += `\n`; // Spacer
     });
+
+    formattedText += `\n---\n**ĐÁP ÁN & GIẢI THÍCH CHI TIẾT**\n`;
+    response.questions.forEach((q, index) => {
+        const correctChar = String.fromCharCode(65 + q.correct); // 0->A, 1->B...
+        formattedText += `\n**Câu ${index + 1}: ${correctChar}**\n*Giải thích:* ${q.explanation}\n`;
+    });
+
+    // Chú thích: Map sourceChunks từ API
+    // Cần convert sang RetrievedChunk type giả định
+    const mappedSources = (response.sourceChunks || []).map((chunk, idx) => ({
+        chunk: {
+            id: `chunk-${idx}`,
+            documentId: 'doc-api',
+            content: chunk.content,
+            chunkIndex: idx,
+        },
+        score: 1, // Fake score
+        document: {
+            id: 'doc-api',
+            title: chunk.source,
+            grade: '12',
+            topic: subjectName,
+            source: chunk.source,
+            fileUrl: '',
+            createdAt: Date.now(),
+        }
+    })) as RetrievedChunk[];
+
+    return {
+        text: formattedText,
+        sourceChunks: mappedSources,
+    };
 }

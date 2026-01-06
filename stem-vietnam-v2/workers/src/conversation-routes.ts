@@ -198,3 +198,28 @@ export async function addMessage(
         return jsonResponse({ error: 'Lỗi server' }, 500, env.CORS_ORIGIN);
     }
 }
+
+// Chú thích: HTTP handler để thêm message (POST /api/conversations/:id/messages)
+export async function addMessageFromRequest(
+    conversationId: string,
+    request: Request,
+    user: JWTPayload,
+    env: ConvoEnv
+): Promise<Response> {
+    try {
+        const body = await request.json() as {
+            role: 'user' | 'assistant';
+            content: string;
+            attachments?: unknown[]
+        };
+
+        if (!body.role || !body.content) {
+            return jsonResponse({ error: 'role và content là bắt buộc' }, 400, env.CORS_ORIGIN);
+        }
+
+        return addMessage(conversationId, user, body, env);
+    } catch (error) {
+        console.error('[convo] addMessageFromRequest error:', error);
+        return jsonResponse({ error: 'Invalid JSON' }, 400, env.CORS_ORIGIN);
+    }
+}

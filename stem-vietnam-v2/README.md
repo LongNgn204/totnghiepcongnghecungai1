@@ -1,73 +1,136 @@
-# React + TypeScript + Vite
+# STEM Vietnam - Trợ Lý Học Tập Thông Minh
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+STEM Vietnam là nền tảng hỗ trợ học tập môn Công nghệ THPT tích hợp AI tiên tiến, giúp học sinh ôn tập, giải đáp thắc mắc và giáo viên tạo đề thi chất lượng cao dựa trên chương trình Giáo dục phổ thông mới (2018).
 
-Currently, two official plugins are available:
+![STEM AI Banner](https://placehold.co/1200x300/6d28d9/ffffff?text=STEM+Vietnam+AI)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🌟 Tính Năng Chính
 
-## React Compiler
+*   **🤖 STEMBot AI**: Trợ lý ảo thông minh trả lời câu hỏi, giải bài tập với kiến thức chuẩn xác từ SGK.
+*   **📝 Tạo Đề Thi Với AI (RAG)**:
+    *   Tự động tạo đề trắc nghiệm, đúng/sai theo cấu trúc thi THPT Quốc gia mới.
+    *   **Hybrid RAG**: Kết hợp kiến thức SGK (chính xác) + Google Search (thực tế) + Đề thi mẫu (Style Mimicking).
+    *   **Nguồn Minh Bạch**: Hiển thị rõ nguồn trích dẫn từ SGK hay Internet cho từng câu hỏi.
+*   **💬 Chat Với Đề Thi**: Hỏi đáp trực tiếp với AI về đề thi vừa tạo để hiểu sâu hơn.
+*   **📚 Thư Viện Tài Liệu**: Tích hợp sách giáo khoa, chuyên đề học tập (Cánh Diều, KNTT...) và đề thi mẫu.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🏗️ Kiến Trúc Hệ Thống
 
-## Expanding the ESLint configuration
+Hệ thống sử dụng kiến trúc **Serverless** hiện đại trên nền tảng Cloudflare và Google Cloud Vertex AI.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```mermaid
+flowchart TD
+    User([User: Học sinh / Giáo viên]) -->|Tương tác| Frontend[Frontend: React + Vite]
+    
+    subgraph "Frontend Layer (Vercel/Static)"
+        Frontend -->|Chat / Tạo đề| API_Client[API Client]
+    end
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+    subgraph "Backend Layer (Cloudflare Workers)"
+        API_Client -->|POST /api/generate| Worker[Main Worker]
+        
+        Worker -->|1. Knowledge Retrieval| RAG_SGK{RAG: SGK & Chuyên đề}
+        Worker -->|2. Style Retrieval| RAG_Exam{RAG: Đề thi mẫu}
+        
+        RAG_SGK -->|Query| VectorDB[Cloudflare Vectorize]
+        RAG_Exam -->|Query| VectorDB
+        
+        Worker -->|3. Generation| Gemini[Google Gemini 2.0 Flash]
+        Gemini -->|Grounding| GoogleSearch[Google Search Tool]
+    end
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+    subgraph "Data Layer"
+        VectorDB -- "Embeddings" --> D1[Cloudflare D1 (SQL)]
+        D1 -- "Metadata & Chat History" --> Worker
+    end
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+    Gemini -->|JSON Output| Worker
+    Worker -->|Response| Frontend
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠️ Tech Stack
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+*   **Frontend**: React, TypeScript, Vite, Tailwind CSS, Lucide Icons, React Router.
+*   **Backend**: Cloudflare Workers (Hono/Native), Cloudflare Vectorize (Vector DB), Cloudflare D1 (SQL Lite).
+*   **AI Model**: Google Gemini 2.0 Flash (via Vertex AI).
+*   **RAG**: Hybrid Search (Semantic Retrieval + Keyword Search), Google Search Grounding.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🚀 Cài Đặt & Chạy Dự Án
+
+### Yêu Cầu
+- Node.js 18+
+- Tài khoản Cloudflare (để chạy Backend/Wrangler)
+- Google Cloud Project (để lấy Vertex AI credentials)
+
+### 1. Clone & Cài Đặt Dependencies
+
+```bash
+git clone https://github.com/your-repo/stem-vietnam-v2.git
+cd stem-vietnam-v2
+
+# Cài đặt Frontend
+npm install
+
+# Cài đặt Backend (Workers)
+cd workers
+npm install
 ```
+
+### 2. Cấu Hình Môi Trường (.env)
+
+Tạo file `.env` ở root (Frontend) và `workers/.dev.vars` (Backend).
+
+**Frontend (.env):**
+```env
+VITE_API_URL=http://localhost:8787
+```
+
+**Backend (workers/.dev.vars):**
+```env
+VERTEX_PROJECT_ID=your-project-id
+VERTEX_LOCATION=us-central1
+# Các biến môi trường khác...
+```
+
+### 3. Chạy Local
+
+**Terminal 1 (Backend):**
+```bash
+cd workers
+npx wrangler dev
+```
+
+**Terminal 2 (Frontend):**
+```bash
+# Ở thư mục gốc
+npm run dev
+```
+
+Truy cập `http://localhost:5173` để trải nghiệm ứng dụng.
+
+## 📂 Cấu Trúc Dự Án
+
+```
+stem-vietnam-v2/
+├── public/              # Static assets (Books, Exams...)
+├── src/
+│   ├── components/      # React Components
+│   │   ├── chat/        # Chat Interface (ChatPage, Sidebar...)
+│   │   ├── forms/       # Exam Generation Forms
+│   │   └── ...
+│   ├── data/            # Static Data (Library index...)
+│   ├── lib/             # Shared Logic (API, RAG Generator...)
+│   └── types/           # TypeScript Definitions
+├── workers/             # Cloudflare Workers Code
+│   ├── src/
+│   │   └── index.ts     # Main Worker Logic (API Handlers)
+│   └── wrangler.toml    # Worker Configuration
+└── README.md            # Tài liệu dự án
+```
+
+## 🤝 Đóng Góp
+
+Dự án được phát triển bởi đội ngũ kỹ sư STEM Vietnam. Mọi đóng góp xin vui lòng tạo Pull Request hoặc Issue trên GitHub.
+
+---
+© 2026 STEM Vietnam. All rights reserved.
