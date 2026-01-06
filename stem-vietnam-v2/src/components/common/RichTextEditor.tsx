@@ -110,7 +110,11 @@ export default function RichTextEditor({ value, onChange, className = '' }: Rich
     const editor = useEditor({
         extensions: [
             StarterKit,
-            Markdown,
+            Markdown.configure({
+                html: true,
+                transformCopiedText: true,
+                transformPastedText: true,
+            }),
             Underline,
             TextAlign.configure({
                 types: ['heading', 'paragraph'],
@@ -123,14 +127,15 @@ export default function RichTextEditor({ value, onChange, className = '' }: Rich
             },
         },
         onUpdate: ({ editor }) => {
-            const markdown = editor.storage.markdown.getMarkdown();
-            onChange(markdown);
+            // Chú thích: Lấy HTML content (tiptap-markdown hỗ trợ parse/serialize markdown nhưng storage API khác)
+            const html = editor.getHTML();
+            onChange(html);
         },
     });
 
     // Update content if value changes externally (e.g. loading history)
     useEffect(() => {
-        if (editor && value !== editor.storage.markdown.getMarkdown()) {
+        if (editor && value !== editor.getHTML()) {
             editor.commands.setContent(value);
         }
     }, [value, editor]);

@@ -2,8 +2,8 @@
 // Format: 24 trắc nghiệm + 4 Đúng/Sai (theo cấu trúc 2025-2026)
 // Lưu ý: Đề THPT tập trung vào lớp 12, nhưng hiện chưa có SGK lớp 12
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ClipboardList, Sparkles, Printer, BookOpen, AlertTriangle, Info, FileText, FileDown, Edit3, Eye, MessageSquare, History, Archive } from 'lucide-react';
+// import { useNavigate } from 'react-router-dom'; // TODO: Uncomment khi cần redirect
+import { ClipboardList, Sparkles, BookOpen, AlertTriangle, Info, FileText, FileDown, History, Archive } from 'lucide-react';
 import { generateExamWithRAG } from '../../lib/rag/generator';
 import { createExam, getExams, getExam, type ExamHistoryItem } from '../../lib/examApi';
 import { useAuthStore } from '../../lib/auth';
@@ -47,7 +47,7 @@ const DIFFICULTY_LEVELS = {
 type DifficultyLevel = keyof typeof DIFFICULTY_LEVELS;
 
 export default function ExamFormPage() {
-    const navigate = useNavigate();
+    // const navigate = useNavigate(); // TODO: Dùng khi cần redirect
     const [formData, setFormData] = useState({
         subject: 'cong_nghiep' as 'cong_nghiep' | 'nong_nghiep',
         examPurpose: 'mock' as ExamPurpose,
@@ -57,10 +57,10 @@ export default function ExamFormPage() {
     });
     const { token } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [_error, setError] = useState<string | null>(null); // Prefix _ để suppress warning
     const [result, setResult] = useState<string>(''); // This will hold the generated exam text
     const [editedContent, setEditedContent] = useState<string>('');
-    const [isEditing, setIsEditing] = useState(false);
+    // const [isEditing, setIsEditing] = useState(false); // TODO: Dùng khi implement edit mode
     const [sources, setSources] = useState<RetrievedChunk[]>([]);
 
     // History State
