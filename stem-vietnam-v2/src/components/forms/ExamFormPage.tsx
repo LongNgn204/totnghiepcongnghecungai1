@@ -55,7 +55,7 @@ export default function ExamFormPage() {
         bookPublisher: 'all' as 'all' | string,
         customPrompt: '',
     });
-    const { user, token } = useAuthStore();
+    const { token } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [result, setResult] = useState<string>(''); // This will hold the generated exam text
@@ -142,10 +142,7 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
         }
     };
 
-    const handleExport = () => {
-        if (!editedContent) return;
-        exportExamToWord(editedContent, formData.subject, `Thi thử ${EXAM_PURPOSES[formData.examPurpose].label}`);
-    };
+
 
     const loadHistory = async () => {
         if (!token) return;
