@@ -1,8 +1,9 @@
 // Chú thích: Chat Page - Gemini-style UI với Sidebar và File Upload
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Sparkles, Menu, X, BrainCircuit, Clock, ArrowDown, Cloud, CloudOff } from 'lucide-react';
+import { Sparkles, BrainCircuit, Clock, ArrowDown, Cloud, CloudOff, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import ChatSidebar from './ChatSidebar';
+import { addMessage } from '../../lib/conversationApi';
 import ChatInput from './ChatInput';
 import MessageBubble from './MessageBubble';
 import { sendChatMessage } from '../../lib/api';
@@ -266,6 +267,15 @@ export default function ChatPage() {
                     messagesToAdd.unshift(welcomeMessage); // Thêm vào đầu danh sách
                 }
 
+                // Chú thích: Sync user message to backend
+                if (token && currentId && !hiddenContext) {
+                    addMessage(currentId, {
+                        role: 'user',
+                        content: message,
+                        attachments: files.length > 0 ? files.map(f => ({ name: f.file.name, type: f.type })) : undefined
+                    }, token).catch(e => console.error('Failed to sync user msg', e));
+                }
+
                 return {
                     ...c,
                     title: isFirstMessage ? generateTitle(message) : c.title,
@@ -324,6 +334,14 @@ export default function ChatPage() {
                 content: response.response,
                 timestamp: Date.now(),
             };
+
+            // Chú thích: Sync assistant message to backend
+            if (token && currentId) {
+                addMessage(currentId, {
+                    role: 'assistant',
+                    content: response.response,
+                }, token).catch(e => console.error('Failed to sync AI msg', e));
+            }
 
             // Chú thích: Lưu suggestions từ API
             if (response.suggestions && response.suggestions.length > 0) {
@@ -395,7 +413,7 @@ export default function ChatPage() {
     return (
         <div className="h-[calc(100vh-4rem)] flex bg-slate-100 dark:bg-slate-900 -m-6 -mt-4">
             {/* Sidebar */}
-            <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-72' : 'w-0 overflow-hidden'}`}>
+            <div className={`transition-all duration-300 relative ${isSidebarOpen ? 'w-72' : 'w-0 overflow-hidden'}`}>
                 <ChatSidebar
                     conversations={conversations}
                     activeId={activeId}
@@ -403,6 +421,13 @@ export default function ChatPage() {
                     onNew={handleNewConversation}
                     onDelete={handleDeleteConversation}
                 />
+                <button
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="absolute top-4 right-2 p-1.5 rounded-lg bg-white/80 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 border border-slate-200 dark:border-slate-700 shadow-sm"
+                    title="Đóng Sidebar"
+                >
+                    <PanelLeftClose size={16} />
+                </button>
             </div>
 
             {/* Main Chat Area */}
@@ -412,8 +437,9 @@ export default function ChatPage() {
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                         className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        title={isSidebarOpen ? "Đóng Sidebar" : "Mở Sidebar"}
                     >
-                        {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+                        {isSidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
                     </button>
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">

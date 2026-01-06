@@ -3,12 +3,15 @@
 // Lưu ý: Đề THPT tập trung vào lớp 12, nhưng hiện chưa có SGK lớp 12
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardList, Sparkles, Printer, BookOpen, AlertTriangle, Info, FileText, FileDown, Edit3, Eye, MessageSquare } from 'lucide-react';
+import { ClipboardList, Sparkles, Printer, BookOpen, AlertTriangle, Info, FileText, FileDown, Edit3, Eye, MessageSquare, History, Archive } from 'lucide-react';
 import { generateExamWithRAG } from '../../lib/rag/generator';
+import { createExam, getExams, getExam, type ExamHistoryItem } from '../../lib/examApi';
+import { useAuthStore } from '../../lib/auth';
 import { EXAM_GENERATOR_PROMPT } from '../../lib/prompts';
 import { BOOK_PUBLISHERS } from '../../data/library/defaultBooks';
 import { exportExamToWord } from '../../lib/exam-export';
 import type { RetrievedChunk } from '../../types';
+import RichTextEditor from '../common/RichTextEditor';
 
 // Chú thích: Các loại đề thi THPT
 const EXAM_PURPOSES = {
@@ -52,11 +55,18 @@ export default function ExamFormPage() {
         bookPublisher: 'all' as 'all' | string,
         customPrompt: '',
     });
+    const { user, token } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
-    const [result, setResult] = useState<string>('');
+    const [error, setError] = useState<string | null>(null);
+    const [result, setResult] = useState<string>(''); // This will hold the generated exam text
     const [editedContent, setEditedContent] = useState<string>('');
     const [isEditing, setIsEditing] = useState(false);
     const [sources, setSources] = useState<RetrievedChunk[]>([]);
+
+    // History State
+    const [showHistory, setShowHistory] = useState(false);
+    const [historyList, setHistoryList] = useState<ExamHistoryItem[]>([]);
+    // const [sidebarOpen, setSidebarOpen] = useState(false); // For mobile history? No, modal.
 
     // Chú thích: Khi có kết quả mới, sync với editedContent
     const handleResultChange = (newResult: string) => {
@@ -67,6 +77,8 @@ export default function ExamFormPage() {
     const handleGenerate = async () => {
         setIsLoading(true);
         setResult('');
+        setError(null);
+        setEditedContent(''); // Clear edited content on new generation
 
         try {
             const purposeInfo = EXAM_PURPOSES[formData.examPurpose];
@@ -75,25 +87,27 @@ export default function ExamFormPage() {
             // Chú thích: Build prompt với logic SGK + Chuyên đề
             const structurePrompt = `
 Cấu trúc đề THPT Quốc gia 2026:
-- Phần I: 24 câu trắc nghiệm nhiều lựa chọn (4 phương án, 1 đúng)
-- Phần II: 4 câu Đúng/Sai (mỗi câu có 4 ý a,b,c,d)
-- Phân bố mức độ: ${difficultyInfo.distribution}
+- Phần I: 24 câu trắc nghiệm nhiều lựa chọn(4 phương án, 1 đúng)
+    - Phần II: 4 câu Đúng / Sai(mỗi câu có 4 ý a, b, c, d)
+        - Phân bố mức độ: ${difficultyInfo.distribution}
 
 QUAN TRỌNG - Phân bổ nguồn kiến thức:
-- ${purposeInfo.sgkRatio}% câu hỏi từ SGK (nội dung cốt lõi Công nghệ ${formData.subject === 'cong_nghiep' ? 'Công nghiệp' : 'Nông nghiệp'})
-- ${100 - purposeInfo.sgkRatio}% câu hỏi từ Chuyên đề học tập
+- ${purposeInfo.sgkRatio}% câu hỏi từ SGK(nội dung cốt lõi Công nghệ ${formData.subject === 'cong_nghiep' ? 'Công nghiệp' : 'Nông nghiệp'})
+    - ${100 - purposeInfo.sgkRatio}% câu hỏi từ Chuyên đề học tập
 ${formData.examPurpose === 'mock'
                     ? '- Các câu Đúng/Sai và VDC có thể lồng ghép kiến thức từ cả SGK và Chuyên đề để phân loại học sinh'
-                    : ''}
+                    : ''
+                }
 ${formData.examPurpose === 'advanced'
                     ? '- Câu VDC BẮT BUỘC lấy từ Chuyên đề (dự án, vi điều khiển, công nghệ cao...)'
-                    : ''}
+                    : ''
+                }
 
 PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
 `;
 
             const bookPrompt = formData.bookPublisher !== 'all'
-                ? `Ưu tiên nội dung từ bộ sách ${formData.bookPublisher}`
+                ? `Ưu tiên nội dung từ bộ sách ${formData.bookPublisher} `
                 : '';
 
             const fullCustomPrompt = [
@@ -110,10 +124,58 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
 
             handleResultChange(response.text);
             setSources(response.sourceChunks || []);
-        } catch (error) {
-            console.error('[exam-form] error:', error);
-            handleResultChange('Đã có lỗi xảy ra. Vui lòng thử lại.');
-            setSources([]);
+
+            // Chú thích: Save to history if logged in
+            if (token && response.text) {
+                createExam(token, {
+                    topic: `Đề thi ${formData.subject === 'cong_nghiep' ? 'Công nghiệp' : 'Nông nghiệp'} - ${EXAM_PURPOSES[formData.examPurpose].label}`,
+                    config: formData,
+                    content: response.text,
+                }).catch(e => console.error('Failed to save exam history', e));
+            }
+        } catch (err) {
+            console.error('[exam-form] generate error:', err);
+            setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi tạo đề. Vui lòng thử lại.');
+            // Keep previous content if failed
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleExport = () => {
+        if (!editedContent) return;
+        exportExamToWord(editedContent, formData.subject, `Thi thử ${EXAM_PURPOSES[formData.examPurpose].label}`);
+    };
+
+    const loadHistory = async () => {
+        if (!token) return;
+        setIsLoading(true);
+        try {
+            const list = await getExams(token);
+            setHistoryList(list);
+            setShowHistory(true);
+        } catch (e) {
+            console.error('Failed to load exam history', e);
+            setError('Không thể tải lịch sử đề thi.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSelectHistory = async (id: string) => {
+        if (!token) return;
+        setIsLoading(true);
+        try {
+            const detail = await getExam(id, token);
+            if (detail) {
+                handleResultChange(detail.content);
+                setSources([]); // History doesn't save sources yet, clear for now.
+                setFormData(detail.config || formData);
+                setShowHistory(false);
+            }
+        } catch (e) {
+            console.error('Failed to load exam from history', e);
+            setError('Không thể tải đề thi từ lịch sử.');
         } finally {
             setIsLoading(false);
         }
@@ -121,15 +183,70 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
 
     return (
         <div className="max-w-5xl mx-auto">
+            {/* History Modal */}
+            {showHistory && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl">
+                        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                            <h3 className="font-bold text-lg flex items-center gap-2">
+                                <History className="text-primary-500" />
+                                Lịch sử đề thi
+                            </h3>
+                            <button onClick={() => setShowHistory(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full">
+                                <Archive size={20} />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                            {historyList.length === 0 ? (
+                                <p className="text-center text-slate-500 p-4">Chưa có đề thi nào được lưu.</p>
+                            ) : (
+                                historyList.map(item => (
+                                    <div key={item.id}
+                                        onClick={() => handleSelectHistory(item.id)}
+                                        className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors"
+                                    >
+                                        <div className="font-medium truncate">{item.topic}</div>
+                                        <div className="text-xs text-slate-500 flex justify-between mt-1">
+                                            <span>{new Date(item.created_at).toLocaleDateString('vi-VN')}</span>
+                                            {item.config?.difficulty && (
+                                                <span className={`px - 1.5 py - 0.5 rounded text - [10px] ${item.config.difficulty === 'hard' ? 'bg-red-100 text-red-600' :
+                                                    item.config.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-600' :
+                                                        'bg-green-100 text-green-600'
+                                                    } `}>
+                                                    {item.config.difficulty === 'hard' ? 'Khó' : item.config.difficulty === 'medium' ? 'Vừa' : 'Dễ'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+            <div className="mb-8 flex items-center justify-between">
+                <div className="flex items-center gap-3">
                     <ClipboardList className="text-primary-500" />
-                    Tạo Đề Thi THPT Quốc Gia 2026
-                </h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-1">
-                    28 câu hỏi (24 trắc nghiệm + 4 Đúng/Sai) • Theo cấu trúc mới nhất
-                </p>
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                            Tạo Đề Thi THPT Quốc Gia 2026
+                        </h1>
+                        <p className="text-slate-500 dark:text-slate-400 mt-1">
+                            28 câu hỏi (24 trắc nghiệm + 4 Đúng/Sai) • Theo cấu trúc mới nhất
+                        </p>
+                    </div>
+                </div>
+                {token && (
+                    <button
+                        onClick={loadHistory}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+                    >
+                        <History size={16} />
+                        Lịch sử
+                    </button>
+                )}
             </div>
 
             {/* Warning - Chưa có SGK lớp 12 */}
@@ -159,20 +276,20 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => setFormData(prev => ({ ...prev, subject: 'cong_nghiep' }))}
-                                className={`p-3 rounded-xl text-center transition-all border-2 ${formData.subject === 'cong_nghiep'
+                                className={`p - 3 rounded - xl text - center transition - all border - 2 ${formData.subject === 'cong_nghiep'
                                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                                     : 'border-slate-200 dark:border-slate-700'
-                                    }`}
+                                    } `}
                             >
                                 <p className="font-semibold text-sm">🏭 Công nghiệp</p>
                                 <p className="text-xs text-slate-500">Cơ khí, Điện, Ô tô...</p>
                             </button>
                             <button
                                 onClick={() => setFormData(prev => ({ ...prev, subject: 'nong_nghiep' }))}
-                                className={`p-3 rounded-xl text-center transition-all border-2 ${formData.subject === 'nong_nghiep'
+                                className={`p - 3 rounded - xl text - center transition - all border - 2 ${formData.subject === 'nong_nghiep'
                                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                                     : 'border-slate-200 dark:border-slate-700'
-                                    }`}
+                                    } `}
                             >
                                 <p className="font-semibold text-sm">🌾 Nông nghiệp</p>
                                 <p className="text-xs text-slate-500">Trồng trọt, Chăn nuôi...</p>
@@ -192,10 +309,10 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                                     <button
                                         key={purpose}
                                         onClick={() => setFormData(prev => ({ ...prev, examPurpose: purpose }))}
-                                        className={`w-full p-3 rounded-xl text-left transition-all border-2 ${formData.examPurpose === purpose
+                                        className={`w - full p - 3 rounded - xl text - left transition - all border - 2 ${formData.examPurpose === purpose
                                             ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                                             : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
-                                            }`}
+                                            } `}
                                     >
                                         <p className="font-semibold text-sm text-slate-900 dark:text-white">
                                             {info.label}
@@ -219,10 +336,10 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                                 <button
                                     key={level}
                                     onClick={() => setFormData(prev => ({ ...prev, difficulty: level }))}
-                                    className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${formData.difficulty === level
+                                    className={`flex - 1 py - 2.5 px - 3 rounded - xl text - sm font - medium transition - all ${formData.difficulty === level
                                         ? 'bg-primary-600 text-white'
                                         : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-                                        }`}
+                                        } `}
                                 >
                                     {DIFFICULTY_LEVELS[level].label}
                                 </button>
@@ -298,53 +415,64 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                             Đề Thi THPT - {formData.subject === 'cong_nghiep' ? 'Công nghiệp' : 'Nông nghiệp'}
                         </h3>
                         {result && (
-                            <div className="flex gap-2">
-                                {/* Toggle Edit/Preview */}
-                                <button
-                                    onClick={() => setIsEditing(!isEditing)}
-                                    className="btn-secondary py-2 px-4 flex items-center gap-2 text-sm"
-                                >
-                                    {isEditing ? <Eye size={16} /> : <Edit3 size={16} />}
-                                    {isEditing ? 'Xem' : 'Chỉnh sửa'}
-                                </button>
-                                <button
-                                    onClick={() => exportExamToWord(editedContent || result, formData.subject)}
-                                    className="btn-primary py-2 px-4 flex items-center gap-2 text-sm"
-                                >
-                                    <FileDown size={16} />
-                                    Xuất Word
-                                </button>
-                                <button
-                                    onClick={() => window.print()}
-                                    className="btn-secondary py-2 px-4 flex items-center gap-2 text-sm"
-                                >
-                                    <Printer size={16} />
-                                    In
-                                </button>
-                                <button
-                                    onClick={() => navigate('/chat', { state: { initialContext: editedContent || result } })}
-                                    className="btn-secondary py-2 px-4 flex items-center gap-2 text-sm text-violet-600 dark:text-violet-400"
-                                >
-                                    <MessageSquare size={16} />
-                                    Hỏi AI về đề này
-                                </button>
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-full">
+                                <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                                    <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                                        <FileText className="text-blue-500" />
+                                        Nội dung đề thi
+                                    </h3>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => exportExamToWord(editedContent, formData.subject)}
+                                            disabled={!editedContent}
+                                            className="btn btn-primary text-sm py-1.5 px-3 flex items-center gap-2"
+                                            title="Xuất file Word"
+                                        >
+                                            <FileDown size={16} />
+                                            Xuất Word
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 p-0 bg-white dark:bg-slate-900 overflow-hidden flex flex-col">
+                                    <RichTextEditor
+                                        value={editedContent}
+                                        onChange={setEditedContent}
+                                        className="border-0 shadow-none rounded-none h-full"
+                                    />
+                                </div>
                             </div>
                         )}
                     </div>
 
                     {result ? (
-                        isEditing ? (
-                            <textarea
-                                value={editedContent}
-                                onChange={(e) => setEditedContent(e.target.value)}
-                                className="w-full h-[600px] p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-mono resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                placeholder="Chỉnh sửa nội dung đề thi tại đây..."
-                            />
-                        ) : (
-                            <pre className="whitespace-pre-wrap text-sm bg-slate-50 dark:bg-slate-900 p-4 rounded-xl overflow-auto max-h-[600px]">
-                                {editedContent || result}
-                            </pre>
-                        )
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-full">
+                            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                                <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                                    <FileText className="text-blue-500" />
+                                    Nội dung đề thi
+                                </h3>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => exportExamToWord(editedContent, formData.subject)}
+                                        disabled={!editedContent}
+                                        className="btn btn-primary text-sm py-1.5 px-3 flex items-center gap-2"
+                                        title="Xuất file Word"
+                                    >
+                                        <FileDown size={16} />
+                                        Xuất Word
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 p-0 bg-white dark:bg-slate-900 overflow-hidden flex flex-col">
+                                <RichTextEditor
+                                    value={editedContent}
+                                    onChange={setEditedContent}
+                                    className="border-0 shadow-none rounded-none h-full"
+                                />
+                            </div>
+                        </div>
                     ) : (
                         <div className="h-96 flex flex-col items-center justify-center text-slate-400">
                             <ClipboardList size={48} className="mb-4 opacity-50" />

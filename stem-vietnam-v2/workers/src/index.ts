@@ -3,6 +3,12 @@ import { callGemini, streamGemini, CHAT_MODEL, EXAM_MODEL } from './gemini';
 import { VertexAICredentials } from './gcp-auth';
 import { handleRegister, handleLogin, handleMe, getUserFromToken, AuthEnv } from './auth-routes';
 import { getConversations, getConversation, createConversation, deleteConversation, addMessage, addMessageFromRequest, ConvoEnv } from './conversation-routes';
+import {
+    getExams,
+    getExam,
+    createExam,
+    deleteExam
+} from './exam-routes';
 import { getUsers, getUser, deleteUser, updateUser, getStats, getAdminConversations, getAdminConversation, deleteAdminConversation, AdminEnv } from './admin-routes';
 import { searchVectors, buildContextFromResults } from './vectorize';
 import { listPDFsInFolder, listAllPDFsRecursive } from './google-drive';
@@ -640,6 +646,12 @@ export default {
                     if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
                     return createConversation(request, user, env as unknown as ConvoEnv);
                 }
+                // Exam routes
+                case '/api/exams': {
+                    const user = await getUserFromToken(request, env as unknown as AuthEnv);
+                    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
+                    return createExam(request, user, env as unknown as ConvoEnv);
+                }
             }
 
             // POST messages to conversation: /api/conversations/:id/messages
@@ -663,12 +675,25 @@ export default {
                 if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
                 return getConversations(user, env as unknown as ConvoEnv);
             }
+            // Get all exams
+            if (path === '/api/exams') {
+                const user = await getUserFromToken(request, env as unknown as AuthEnv);
+                if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
+                return getExams(user, env as unknown as ConvoEnv);
+            }
             // Get single conversation
             const convoMatch = path.match(/^\/api\/conversations\/([^/]+)$/);
             if (convoMatch) {
                 const user = await getUserFromToken(request, env as unknown as AuthEnv);
                 if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
                 return getConversation(convoMatch[1], user, env as unknown as ConvoEnv);
+            }
+            // Get single exam
+            const examMatch = path.match(/^\/api\/exams\/([^/]+)$/);
+            if (examMatch) {
+                const user = await getUserFromToken(request, env as unknown as AuthEnv);
+                if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
+                return getExam(examMatch[1], user, env as unknown as ConvoEnv);
             }
         }
 
@@ -679,6 +704,13 @@ export default {
                 const user = await getUserFromToken(request, env as unknown as AuthEnv);
                 if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
                 return deleteConversation(convoMatch[1], user, env as unknown as ConvoEnv);
+            }
+            // Delete exam
+            const examMatch = path.match(/^\/api\/exams\/([^/]+)$/);
+            if (examMatch) {
+                const user = await getUserFromToken(request, env as unknown as AuthEnv);
+                if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
+                return deleteExam(examMatch[1], user, env as unknown as ConvoEnv);
             }
             // Admin: Delete user
             const adminUserMatch = path.match(/^\/api\/admin\/users\/([^/]+)$/);
