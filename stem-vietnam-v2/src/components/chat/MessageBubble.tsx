@@ -1,9 +1,11 @@
-// Chú thích: Message Bubble Component - Hiển thị tin nhắn với Markdown + LaTeX
+// Chú thích: Message Bubble Component - Hiển thị tin nhắn với Markdown + LaTeX + Mermaid
+import { useState, useEffect, useRef } from 'react';
 import { User, Sparkles, BookOpen, ExternalLink } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import mermaid from 'mermaid';
 import type { ChatMessage } from '../../types';
 import 'katex/dist/katex.min.css';
 
@@ -11,10 +13,64 @@ interface MessageBubbleProps {
     message: ChatMessage;
 }
 
-// Chú thích: Custom code block với style đẹp hơn
+// Chú thích: Init mermaid với theme phù hợp
+mermaid.initialize({
+    startOnLoad: false,
+    theme: 'neutral',
+    securityLevel: 'loose',
+    fontFamily: 'inherit',
+});
+
+// Chú thích: Component để render Mermaid diagram
+function MermaidDiagram({ code }: { code: string }) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [svg, setSvg] = useState<string>('');
+    const [error, setError] = useState<string>('');
+
+    useEffect(() => {
+        const renderDiagram = async () => {
+            try {
+                // Chú thích: Render mermaid syntax thành SVG
+                const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                const { svg } = await mermaid.render(id, code.trim());
+                setSvg(svg);
+                setError('');
+            } catch (err) {
+                console.error('[mermaid] render error:', err);
+                setError('Không thể render sơ đồ');
+            }
+        };
+        renderDiagram();
+    }, [code]);
+
+    if (error) {
+        return (
+            <div className="my-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                <pre className="mt-2 text-xs text-slate-600 dark:text-slate-400 overflow-x-auto">{code}</pre>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            ref={containerRef}
+            className="my-3 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto flex justify-center"
+            dangerouslySetInnerHTML={{ __html: svg }}
+        />
+    );
+}
+
+// Chú thích: Custom code block với style đẹp hơn + Mermaid support
 function CodeBlock({ inline, className, children, ...props }: any) {
     const match = /language-(\w+)/.exec(className || '');
     const language = match ? match[1] : '';
+    const codeString = String(children).replace(/\n$/, '');
+
+    // Chú thích: Nếu là mermaid, render diagram
+    if (language === 'mermaid') {
+        return <MermaidDiagram code={codeString} />;
+    }
 
     if (inline) {
         return (

@@ -1,12 +1,10 @@
 // Chú thích: Chat Page - Gemini-style UI với Sidebar và File Upload
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Sparkles, Menu, X, BrainCircuit, Clock } from 'lucide-react';
-import { useAppStore } from '../../stores/appStore';
 import ChatSidebar from './ChatSidebar';
 import ChatInput from './ChatInput';
 import MessageBubble from './MessageBubble';
-import { generateWithRAG } from '../../lib/rag/generator';
-import { CHAT_PROMPT } from '../../lib/prompts';
+import { sendChatMessage } from '../../lib/api'; // Chú thích: Gọi trực tiếp API, KHÔNG dùng RAG
 import type { ChatMessage } from '../../types';
 import type { Conversation, FileAttachment } from '../../types/chat';
 import { useAuthStore } from '../../lib/auth';
@@ -42,12 +40,12 @@ function generateTitle(message: string): string {
 
 export default function ChatPage() {
     const { user } = useAuthStore();
-    const { useDefaultLibrary } = useAppStore();
+    // Chú thích: Đã bỏ useDefaultLibrary - Chat AI không dùng RAG nữa
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [thinkingStep, setThinkingStep] = useState<string>('Phân tích câu hỏi...');
+    const [thinkingStep, setThinkingStep] = useState<string>('Đang suy nghĩ...');
     const [elapsedTime, setElapsedTime] = useState(0);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -158,7 +156,7 @@ export default function ChatPage() {
         }, 100);
 
         // Simulation of thinking steps
-        setTimeout(() => setThinkingStep(useDefaultLibrary ? 'Tra cứu Thư viện chuẩn...' : 'Tìm kiếm thông tin...'), 800);
+        setTimeout(() => setThinkingStep('Tìm kiếm thông tin...'), 800);
         setTimeout(() => setThinkingStep('Tổng hợp câu trả lời...'), 2000);
 
         try {
@@ -168,25 +166,24 @@ export default function ChatPage() {
                 `${m.role === 'user' ? 'User' : 'AI'}: ${m.content.slice(0, 500)}`
             ).join('\n');
 
-            // Chú thích: Gọi AI với chat history
-            const response = await generateWithRAG({
-                query: message,
-                chatHistory, // Gửi kèm lịch sử để AI nhớ context
-                systemPrompt: CHAT_PROMPT + (useDefaultLibrary
-                    ? '\n\nIMPORTANT: You have access to the National Standard Library (Google Drive). Prioritize information from standard textbooks and the provided context.'
-                    : '\n\nIMPORTANT: Do NOT use the National Standard Library context. Only answer based on user-provided context or general knowledge.'),
-                filters: {}, // TODO: pass filters from UI if needed
-            });
+            // Chú thích: Gọi trực tiếp API - KHÔNG dùng RAG, chỉ dùng Google Search
+            // Gửi chat history trong message để AI nhớ ngữ cảnh
+            const fullMessage = chatHistory
+                ? `[Lịch sử hội thoại gần nhất]\n${chatHistory}\n\n[Câu hỏi mới]\n${message}`
+                : message;
 
-            clearInterval(timerInterval);
+            const response = await sendChatMessage(fullMessage);
 
+            if (!response.success || !response.response) {
+                throw new Error(response.error || 'Failed to get response');
+            }
 
             const assistantMessage: ChatMessage = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: response.text,
+                content: response.response,
                 timestamp: Date.now(),
-                sourceChunks: response.sourceChunks,
+                // KHÔNG có sourceChunks vì không dùng RAG
             };
 
             setConversations(prev => prev.map(c => {
@@ -303,12 +300,8 @@ export default function ChatPage() {
                                                 </p>
                                                 <p className="text-xs text-slate-400 flex items-center gap-1">
                                                     <span>{elapsedTime.toFixed(1)}s</span>
-                                                    {useDefaultLibrary && (
-                                                        <>
-                                                            <span>•</span>
-                                                            <span className="text-primary-500">Dùng thư viện chuẩn</span>
-                                                        </>
-                                                    )}
+                                                    <span>•</span>
+                                                    <span className="text-primary-500">Google Search</span>
                                                 </p>
                                             </div>
                                         </div>

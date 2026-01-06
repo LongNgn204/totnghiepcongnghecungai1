@@ -1,9 +1,13 @@
-// Chú thích: Entry point cho Cloudflare Workers API (Vertex AI + Auth + Conversations + Admin)
-import { callGemini, streamGemini } from './gemini';
+// Chú thích: Entry point cho Cloudflare Workers API (Vertex AI + Auth + Conversations + Admin + RAG)
+import { callGemini, streamGemini, CHAT_MODEL, EXAM_MODEL } from './gemini';
 import { VertexAICredentials } from './gcp-auth';
 import { handleRegister, handleLogin, handleMe, getUserFromToken, AuthEnv } from './auth-routes';
 import { getConversations, getConversation, createConversation, deleteConversation, addMessage, ConvoEnv } from './conversation-routes';
 import { getUsers, getUser, deleteUser, updateUser, getStats, AdminEnv } from './admin-routes';
+import { searchVectors, buildContextFromResults } from './vectorize';
+import { listPDFsInFolder, listAllPDFsRecursive } from './google-drive';
+import { processDocument, processLocalFile, getRAGContext, parseMetadataFromFilename, type RAGPipelineConfig, type BookMetadata } from './rag-pipeline';
+import { parseFileWithOCR, isFileTypeSupported, isFileSizeValid, MAX_FILE_SIZE, getSupportedExtensions } from './file-parser';
 
 // Chú thích: Environment interface
 interface Env {
@@ -21,6 +25,14 @@ interface Env {
     // D1 Database
     DB: D1Database;
 
+    // Vectorize (RAG Pipeline)
+    VECTORIZE: VectorizeIndex;
+
+    // Document AI Config (cần set qua wrangler secret hoặc vars)
+    DOCUMENT_AI_PROCESSOR_ID?: string;
+    DOCUMENT_AI_LOCATION?: string;
+    DRIVE_FOLDER_ID?: string;
+
     // CORS
     CORS_ORIGIN: string;
 }
@@ -37,34 +49,31 @@ function getCredentials(env: Env): VertexAICredentials {
 }
 
 const SYSTEM_PROMPTS = {
+    // Chú thích: Chat AI - không dùng RAG, dùng Google Search để tìm kiếm thông tin mới nhất
     chat: `Bạn là trợ lý học tập AI chuyên về môn Công nghệ THPT Việt Nam (Lớp 10, 11, 12).
 
-**NGUYÊN TẮC BẮT BUỘC:**
-1. KHÔNG BỊA ĐẶT. Với câu hỏi học tập, câu trả lời PHẢI hoàn toàn dựa trên context tài liệu (SGK, Chuyên đề) được cung cấp.
-2. Nếu context không có thông tin về câu hỏi học tập, hãy trả lời: "Xin lỗi, tài liệu hiện tại không chứa thông tin này. Tôi sẽ dùng kiến thức tổng hợp để trả lời."
-3. Trả lời chính xác, súc tích, ngôn ngữ phù hợp học sinh phổ thông.
-4. Sử dụng format Markdown chuẩn (bold từ khoá quan trọng, dùng list có thứ tự).
-5. Công thức toán/lý: dùng LaTeX với cú pháp $...$ hoặc $$...$$
-6. Sơ đồ/mô hình: mô tả bằng text rõ ràng hoặc dùng Mermaid nếu phù hợp.
-
-**QUY TẮC TỰ NHẬN DIỆN:**
-- Nếu câu hỏi liên quan đến MÔN CÔNG NGHỆ THPT (mạng máy tính, TCP/IP, lập trình, điện tử, cơ khí, nông nghiệp công nghệ cao...) → Trả lời chuyên sâu theo chương trình SGK, TRÍCH DẪN NGUỒN (VD: [SGK Công nghệ 11 - Cánh Diều]).
-- Nếu câu hỏi về TIN TỨC, SỰ KIỆN, THÔNG TIN THỰC TẾ → Tìm kiếm và tổng hợp thông tin mới nhất từ internet.
-- Nếu câu hỏi TỔNG QUÁT (cuộc sống, sở thích, giải trí, lời khuyên...) → Trả lời tự do, sáng tạo, thoải mái như một người bạn.
+**NGUYÊN TẮC:**
+1. Với câu hỏi về MÔN CÔNG NGHỆ THPT (mạng máy tính, TCP/IP, lập trình, điện tử, cơ khí, nông nghiệp công nghệ cao...) → Trả lời chuyên sâu theo chương trình SGK.
+2. Với câu hỏi về TIN TỨC, SỰ KIỆN, THÔNG TIN THỰC TẾ → Tìm kiếm và tổng hợp thông tin mới nhất từ internet (Google Search).
+3. Với câu hỏi TỔNG QUÁT (cuộc sống, sở thích, giải trí, lời khuyên...) → Trả lời tự do, sáng tạo, thoải mái như một người bạn.
 
 **PHONG CÁCH:**
 - Trả lời bằng tiếng Việt tự nhiên, thân thiện
-- Không giới hạn độ dài - trả lời đầy đủ nhất có thể
-- Với câu hỏi phức tạp: phân tích nhiều góc độ
-- Với câu hỏi đơn giản: trả lời ngắn gọn, súc tích
+- Sử dụng format Markdown chuẩn (bold từ khoá, list)
+- Công thức toán/lý: dùng LaTeX với cú pháp $...$ hoặc $$...$$
 - Giọng điệu: Thân thiện, khuyến khích, chuyên nghiệp
 
-Hãy bắt đầu bằng cách nhận diện loại câu hỏi và trả lời phù hợp!`,
+Hãy nhận diện loại câu hỏi và trả lời phù hợp!`,
 
+    // Chú thích: Tạo đề thi - dùng RAG context từ thư viện
     generate: `Bạn là chuyên gia tạo đề thi môn Công nghệ THPT.
-Tạo câu hỏi trắc nghiệm chất lượng cao với 4 đáp án (A, B, C, D).
-Đánh dấu đáp án đúng và giải thích ngắn gọn.
-Format JSON: { "question": "...", "options": ["A...", "B...", "C...", "D..."], "correct": 0, "explanation": "..." }`
+
+**NGUYÊN TẮC BẮT BUỘC:**
+1. KHÔNG BỊ8A ĐẶT. Câu hỏi PHẢI hoàn toàn dựa trên Context tài liệu được cung cấp.
+2. Nếu context không có thông tin, hãy trả lời: "Xin lỗi, tài liệu hiện tại không chứa thông tin này."
+3. Tạo câu hỏi trắc nghiệm chất lượng cao với 4 đáp án (A, B, C, D).
+4. Đánh dấu đáp án đúng và giải thích ngắn gọn.
+5. Format JSON: { "question": "...", "options": ["A...", "B...", "C...", "D..."], "correct": 0, "explanation": "..." }`
 };
 
 // Chú thích: CORS headers
@@ -102,11 +111,13 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
 
         const credentials = getCredentials(env);
 
-        // Chú thích: Dùng systemPrompt từ client nếu có, ngược lại dùng default
+        // Chú thích: Chat AI dùng CHAT_MODEL và Google Search grounding (KHÔNG dùng RAG)
         const result = await callGemini(credentials, {
             systemPrompt: body.systemPrompt || SYSTEM_PROMPTS.chat,
             userMessage: body.message,
-            context: body.context,
+            // KHÔNG gửi context - Chat chỉ dùng Google Search
+            model: CHAT_MODEL,
+            useGrounding: true, // Bật Google Search để tìm kiếm thông tin mới nhất
         });
 
         return jsonResponse({
@@ -145,9 +156,12 @@ Trả về dưới dạng JSON array.`;
 
         const credentials = getCredentials(env);
 
+        // Chú thích: Tạo đề dùng EXAM_MODEL, Google Search grounding + RAG context
         const result = await callGemini(credentials, {
             systemPrompt: SYSTEM_PROMPTS.generate,
             userMessage,
+            model: EXAM_MODEL,
+            useGrounding: true, // Bật Google Search để tìm thêm nội dung theo từ khoá
         });
 
         // Chú thích: Parse JSON từ response
@@ -199,11 +213,13 @@ async function handleChatStream(request: Request, env: Env): Promise<Response> {
                 const encoder = new TextEncoder();
 
                 try {
-                    // Chú thích: Dùng systemPrompt từ client nếu có
+                    // Chú thích: Stream Chat dùng CHAT_MODEL và Google Search (KHÔNG dùng RAG)
                     const generator = streamGemini(credentials, {
                         systemPrompt: body.systemPrompt || SYSTEM_PROMPTS.chat,
                         userMessage: body.message,
-                        context: body.context,
+                        // KHÔNG gửi context - Chat chỉ dùng Google Search
+                        model: CHAT_MODEL,
+                        useGrounding: true,
                     });
 
                     for await (const chunk of generator) {
@@ -341,6 +357,176 @@ export default {
             const adminUserMatch = path.match(/^\/api\/admin\/users\/([^/]+)$/);
             if (adminUserMatch) {
                 return getUser(adminUserMatch[1], env as unknown as AdminEnv);
+            }
+        }
+
+        // Admin RAG routes
+        if (request.method === 'GET' && path === '/api/admin/rag/list') {
+            // List PDFs từ Google Drive folder
+            const folderId = env.DRIVE_FOLDER_ID;
+            if (!folderId) {
+                return jsonResponse({ error: 'DRIVE_FOLDER_ID not configured' }, 400, env.CORS_ORIGIN);
+            }
+            try {
+                const files = await listPDFsInFolder(getCredentials(env), folderId);
+                return jsonResponse({ success: true, files }, 200, env.CORS_ORIGIN);
+            } catch (error) {
+                return jsonResponse({
+                    error: 'Failed to list files',
+                    details: error instanceof Error ? error.message : 'Unknown error'
+                }, 500, env.CORS_ORIGIN);
+            }
+        }
+
+        if (request.method === 'POST' && path === '/api/admin/rag/process') {
+            // Process một file PDF
+            const body = await request.json() as { fileId: string; metadata?: BookMetadata };
+            if (!body.fileId) {
+                return jsonResponse({ error: 'fileId is required' }, 400, env.CORS_ORIGIN);
+            }
+            if (!env.DOCUMENT_AI_PROCESSOR_ID || !env.DOCUMENT_AI_LOCATION) {
+                return jsonResponse({ error: 'Document AI not configured' }, 400, env.CORS_ORIGIN);
+            }
+
+            const config: RAGPipelineConfig = {
+                documentAI: {
+                    processorId: env.DOCUMENT_AI_PROCESSOR_ID,
+                    location: env.DOCUMENT_AI_LOCATION,
+                },
+                driveFolderId: env.DRIVE_FOLDER_ID || '',
+            };
+
+            // Sử dụng metadata từ request hoặc parse từ filename
+            const metadata = body.metadata || parseMetadataFromFilename(body.fileId, 'unknown.pdf');
+            if (!metadata) {
+                return jsonResponse({ error: 'Could not determine metadata' }, 400, env.CORS_ORIGIN);
+            }
+
+            try {
+                const result = await processDocument(
+                    getCredentials(env),
+                    env.VECTORIZE,
+                    config,
+                    body.fileId,
+                    metadata
+                );
+                return jsonResponse({ success: true, result }, 200, env.CORS_ORIGIN);
+            } catch (error) {
+                return jsonResponse({
+                    error: 'Processing failed',
+                    details: error instanceof Error ? error.message : 'Unknown error'
+                }, 500, env.CORS_ORIGIN);
+            }
+        }
+
+        if (request.method === 'POST' && path === '/api/admin/rag/search') {
+            // Test RAG search
+            const body = await request.json() as { query: string; filters?: { grade?: string; subject?: string } };
+            if (!body.query) {
+                return jsonResponse({ error: 'query is required' }, 400, env.CORS_ORIGIN);
+            }
+
+            try {
+                const { context, sources } = await getRAGContext(
+                    getCredentials(env),
+                    env.VECTORIZE,
+                    body.query,
+                    body.filters
+                );
+                return jsonResponse({ success: true, context, sources }, 200, env.CORS_ORIGIN);
+            } catch (error) {
+                return jsonResponse({
+                    error: 'Search failed',
+                    details: error instanceof Error ? error.message : 'Unknown error'
+                }, 500, env.CORS_ORIGIN);
+            }
+        }
+
+        // Chú thích: Upload file và xử lý với Document AI OCR
+        if (request.method === 'POST' && path === '/api/admin/rag/upload') {
+            // Kiểm tra Document AI config
+            if (!env.DOCUMENT_AI_PROCESSOR_ID || !env.DOCUMENT_AI_LOCATION) {
+                return jsonResponse({ error: 'Document AI not configured' }, 400, env.CORS_ORIGIN);
+            }
+
+            try {
+                // Parse multipart form data
+                const formData = await request.formData();
+                const file = formData.get('file') as File | null;
+                const metadataStr = formData.get('metadata') as string | null;
+
+                if (!file) {
+                    return jsonResponse({ error: 'No file provided' }, 400, env.CORS_ORIGIN);
+                }
+
+                // Kiểm tra file type
+                if (!isFileTypeSupported(file.name)) {
+                    return jsonResponse({
+                        error: `Unsupported file type. Supported: ${getSupportedExtensions().join(', ')}`
+                    }, 400, env.CORS_ORIGIN);
+                }
+
+                // Kiểm tra file size
+                if (!isFileSizeValid(file.size)) {
+                    return jsonResponse({
+                        error: `File too large. Max size: ${MAX_FILE_SIZE / 1024 / 1024}MB`
+                    }, 400, env.CORS_ORIGIN);
+                }
+
+                // Parse metadata
+                let metadata: BookMetadata;
+                if (metadataStr) {
+                    metadata = JSON.parse(metadataStr);
+                } else {
+                    // Auto-generate metadata từ filename
+                    const parsed = parseMetadataFromFilename(`upload-${Date.now()}`, file.name);
+                    if (!parsed) {
+                        return jsonResponse({ error: 'Could not parse metadata. Please provide metadata.' }, 400, env.CORS_ORIGIN);
+                    }
+                    metadata = parsed;
+                }
+
+                // Read file buffer
+                const fileBuffer = await file.arrayBuffer();
+
+                // Parse file với Document AI OCR (cho PDF)
+                const credentials = getCredentials(env);
+                const ocrOptions = {
+                    credentials,
+                    documentAIConfig: {
+                        processorId: env.DOCUMENT_AI_PROCESSOR_ID,
+                        location: env.DOCUMENT_AI_LOCATION,
+                    },
+                };
+
+                // Parse file
+                const parsed = await parseFileWithOCR(fileBuffer, file.name, file.type, ocrOptions);
+
+                // Process và index vào Vectorize
+                const result = await processLocalFile(
+                    credentials,
+                    env.VECTORIZE,
+                    fileBuffer,
+                    file.name,
+                    metadata
+                );
+
+                return jsonResponse({
+                    success: true,
+                    result,
+                    parsed: {
+                        fileName: parsed.metadata.fileName,
+                        fileType: parsed.metadata.fileType,
+                        extractedLength: parsed.metadata.extractedLength,
+                    }
+                }, 200, env.CORS_ORIGIN);
+
+            } catch (error) {
+                console.error('[rag-upload] error:', error);
+                return jsonResponse({
+                    error: 'Upload failed',
+                    details: error instanceof Error ? error.message : 'Unknown error'
+                }, 500, env.CORS_ORIGIN);
             }
         }
 

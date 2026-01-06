@@ -8,7 +8,7 @@ MAX_TOKEN_BUDGET = "50000"
 
 # Vertex AI Configuration
 VERTEX_PROJECT_ID = "voltaic-syntax-482104-b7"
-VERTEX_LOCATION = "asia-southeast1"
+VERTEX_LOCATION = "global"
 # Fallback region
 VERTEX_LOCATION_FALLBACK = "us-central1"
 
@@ -46,3 +46,9 @@ binding = "DB"
 database_name = "stem-vietnam-db"
 database_id = "976ec8f9-bf7a-411a-a3d8-856b05e71a20"
 
+# ============================================
+# Vectorize (RAG Pipeline)
+# ============================================
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "stem-vietnam-rag"

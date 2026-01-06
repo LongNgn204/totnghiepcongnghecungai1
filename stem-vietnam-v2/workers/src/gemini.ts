@@ -1,9 +1,12 @@
 // Chú thích: Vertex AI Gemini client cho Cloudflare Workers
-// Sử dụng Gemini 3 Pro với Google Search Grounding cho dữ liệu real-time
+// Hỗ trợ 2 model: Flash (chat nhanh) và Pro (tạo đề chất lượng)
 import { getAccessToken, VertexAICredentials } from './gcp-auth';
 
-// Chú thích: Model configuration - Gemini 2.0 Flash (GA, stable, fast)
-const GEMINI_MODEL = 'gemini-2.0-flash';
+// Chú thích: Model configuration - tách riêng cho từng use case
+// Chat AI: gemini-3-flash-preview (nhanh, tìm kiếm thông tin)
+// Tạo đề thi: gemini-3-pro-preview (chất lượng cao, RAG)
+export const CHAT_MODEL = 'gemini-3-flash-preview';
+export const EXAM_MODEL = 'gemini-3-pro-preview';
 
 // Chú thích: Interface cho response từ Gemini
 export interface GeminiResponse {
@@ -16,13 +19,21 @@ export interface GeminiResponse {
     };
 }
 
-// Chú thích: Vertex AI endpoint URL
+// Chú thích: Vertex AI endpoint URL - hỗ trợ cả regional và global
 function getVertexAIEndpoint(projectId: string, location: string, model: string): string {
-    return `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
+    // Chú thích: Global endpoint không có prefix location
+    const host = location === 'global'
+        ? 'aiplatform.googleapis.com'
+        : `${location}-aiplatform.googleapis.com`;
+    return `https://${host}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
 }
 
 function getVertexAIStreamEndpoint(projectId: string, location: string, model: string): string {
-    return `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:streamGenerateContent?alt=sse`;
+    // Chú thích: Global endpoint không có prefix location
+    const host = location === 'global'
+        ? 'aiplatform.googleapis.com'
+        : `${location}-aiplatform.googleapis.com`;
+    return `https://${host}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:streamGenerateContent?alt=sse`;
 }
 
 // Chú thích: Gọi Vertex AI với prompt và Google Search Grounding
@@ -34,9 +45,10 @@ export async function callGemini(
         context?: string;
         customPrompt?: string;
         useGrounding?: boolean; // Bật Google Search grounding
+        model?: string; // Chú thích: Cho phép chọn model (default: CHAT_MODEL)
     }
 ): Promise<GeminiResponse> {
-    const { systemPrompt, userMessage, context, customPrompt, useGrounding = true } = params;
+    const { systemPrompt, userMessage, context, customPrompt, useGrounding = true, model = CHAT_MODEL } = params;
 
     // Chú thích: Lấy access token
     const accessToken = await getAccessToken(credentials);
@@ -69,6 +81,7 @@ export async function callGemini(
     };
 
     // Chú thích: Thêm Google Search grounding tool để lấy thông tin mới nhất
+    // Syntax cho Vertex AI Gemini 2.0: google_search
     if (useGrounding) {
         requestBody.tools = [
             {
@@ -80,7 +93,7 @@ export async function callGemini(
     const endpoint = getVertexAIEndpoint(
         credentials.projectId,
         credentials.location,
-        GEMINI_MODEL
+        model
     );
 
     const t0 = Date.now();
@@ -134,7 +147,7 @@ export async function callGemini(
             textLen: text.length,
             hasContext: !!context,
             hasGrounding: !!groundingMetadata,
-            model: GEMINI_MODEL,
+            model: model,
             searchQueries: groundingMetadata?.webSearchQueries,
         });
 
@@ -160,9 +173,10 @@ export async function* streamGemini(
         userMessage: string;
         context?: string;
         useGrounding?: boolean;
+        model?: string; // Chú thích: Cho phép chọn model (default: CHAT_MODEL)
     }
 ): AsyncGenerator<string> {
-    const { systemPrompt, userMessage, context, useGrounding = true } = params;
+    const { systemPrompt, userMessage, context, useGrounding = true, model = CHAT_MODEL } = params;
 
     const accessToken = await getAccessToken(credentials);
 
@@ -186,6 +200,7 @@ export async function* streamGemini(
     };
 
     // Chú thích: Thêm Google Search grounding
+    // Syntax cho Vertex AI Gemini 2.0: google_search
     if (useGrounding) {
         requestBody.tools = [
             {
@@ -197,7 +212,7 @@ export async function* streamGemini(
     const endpoint = getVertexAIStreamEndpoint(
         credentials.projectId,
         credentials.location,
-        GEMINI_MODEL
+        model
     );
 
     const response = await fetch(endpoint, {
