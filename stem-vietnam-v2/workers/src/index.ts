@@ -280,6 +280,15 @@ function generateSuggestions(
 // Chú thích: Handle chat endpoint
 async function handleChat(request: Request, env: Env): Promise<Response> {
     try {
+        // Chú thích: Validate API key trước
+        if (!env.OPENROUTER_API_KEY) {
+            console.error('[chat] OPENROUTER_API_KEY not configured!');
+            return jsonResponse({
+                error: 'AI service not configured',
+                details: 'OPENROUTER_API_KEY is missing. Run: wrangler secret put OPENROUTER_API_KEY'
+            }, 500, env.CORS_ORIGIN);
+        }
+
         const body = await request.json() as {
             message: string;
             context?: string;
