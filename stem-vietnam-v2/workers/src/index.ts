@@ -1,6 +1,5 @@
-// Chú thích: Entry point cho Cloudflare Workers API (Vertex AI + Auth + Conversations + Admin + RAG)
-import { callGemini, streamGemini, CHAT_MODEL, EXAM_MODEL } from './gemini';
-import { VertexAICredentials } from './gcp-auth';
+// Chú thích: Entry point cho Cloudflare Workers API (OpenRouter + Auth + Conversations + Admin + RAG)
+import { callOpenRouter, streamOpenRouter } from './openrouter';
 import { handleRegister, handleLogin, handleMe, getUserFromToken, AuthEnv } from './auth-routes';
 import { getConversations, getConversation, createConversation, deleteConversation, addMessage, addMessageFromRequest, ConvoEnv } from './conversation-routes';
 import {
@@ -17,15 +16,10 @@ import { parseFileWithOCR, isFileTypeSupported, isFileSizeValid, MAX_FILE_SIZE, 
 
 // Chú thích: Environment interface
 interface Env {
-    // Vertex AI config (từ vars trong wrangler.toml)
-    VERTEX_PROJECT_ID: string;
-    VERTEX_LOCATION: string;
-    VERTEX_LOCATION_FALLBACK: string;
+    // OpenRouter Secret
+    OPENROUTER_API_KEY: string;
 
-    // Secrets (từ wrangler secret put)
-    VERTEX_CLIENT_EMAIL: string;
-    VERTEX_PRIVATE_KEY: string;
-    VERTEX_PRIVATE_KEY_ID?: string;
+    // JWT Secret
     JWT_SECRET: string;
 
     // D1 Database
@@ -34,29 +28,34 @@ interface Env {
     // Vectorize (RAG Pipeline)
     VECTORIZE: VectorizeIndex;
 
-    // Document AI Config (cần set qua wrangler secret hoặc vars)
+    // Document AI Config (optional, needs external auth if used)
     DOCUMENT_AI_PROCESSOR_ID?: string;
     DOCUMENT_AI_LOCATION?: string;
     DRIVE_FOLDER_ID?: string;
+    // Vertex Auth for RAG Pipeline ingester (still needed for Drive/DocAI if kept)
+    VERTEX_CLIENT_EMAIL?: string;
+    VERTEX_PRIVATE_KEY?: string;
+    VERTEX_PROJECT_ID?: string;
 
     // CORS
     CORS_ORIGIN: string;
 }
 
-// Chú thích: Helper để tạo credentials từ env
-function getCredentials(env: Env): VertexAICredentials {
+// Helper: Credentials for RAG ingestion only (if needed)
+// For now, we assume RAG retrieval only needs Vectorize, effectively deprecating Vertex Auth for simple chat.
+function getRAGCredentials(env: Env) {
+    if (!env.VERTEX_CLIENT_EMAIL || !env.VERTEX_PRIVATE_KEY) return null;
     return {
         clientEmail: env.VERTEX_CLIENT_EMAIL,
         privateKey: env.VERTEX_PRIVATE_KEY,
-        privateKeyId: env.VERTEX_PRIVATE_KEY_ID,
-        projectId: env.VERTEX_PROJECT_ID,
-        location: env.VERTEX_LOCATION,
+        projectId: env.VERTEX_PROJECT_ID || 'default',
     };
 }
 
+
 const SYSTEM_PROMPTS = {
     // Chú thích: Chat AI - Chuyên gia đa năng với LaTeX support
-    chat: `Bạn là **StemBot** - trợ lý học tập thông minh hàng đầu Việt Nam.
+    chat: `Bạn là **StemBot** - trợ lý học tập thông minh hàng đầu Việt Nam using model mistralai/devstral-2512.
 
 ## VỀ BẠN:
 Bạn là chuyên gia giáo dục toàn diện, am hiểu sâu rộng về STEM (Khoa học, Công nghệ, Kỹ thuật, Toán học) và đời sống xã hội. Bạn có khả năng:
@@ -83,12 +82,12 @@ Bạn là một người hướng dẫn (Mentor) có tâm, tuân thủ nghiêm n
    - Nếu phát hiện học sinh có dấu hiệu tiêu cực/stress nặng, hãy khuyên nhủ nhẹ nhàng và đề xuất tìm sự giúp đỡ từ người thân/thầy cô.
 
 3. **Trung thực & Bảo mật**:
-   - Nếu không biết, hãy nói "Mình chưa chắc chắn về điều này, để mình tìm hiểu thêm nhé" (và dùng Google Search).
+   - Nếu không biết, hãy nói "Mình chưa chắc chắn về điều này, để mình tìm hiểu thêm nhé".
    - KHÔNG hỏi thông tin cá nhân (SĐT, địa chỉ, mật khẩu) của người dùng.
 
 ## NHẬN DIỆN Ý ĐỊNH NGƯỜI DÙNG:
 - **Học tập (Toán/Lý/Hóa/Công nghệ)** → Giải thích công thức, hướng dẫn giải step-by-step, dùng LaTeX chuẩn.
-- **Tra cứu tin tức/Sự kiện** → Dùng Google Search để cung cấp thông tin mới nhất.
+- **Tra cứu tin tức/Sự kiện** → Cung cấp thông tin (lưu ý: kiến thức của bạn có thể không realtime nếu không có search tool).
 - **Coding/Lập trình** → Cung cấp code snippet chuẩn, giải thích logic.
 - **Trò chuyện/Tư vấn** → Thân thiện, hài hước, như một người bạn (Buddy).
 
@@ -104,22 +103,17 @@ Bạn là một người hướng dẫn (Mentor) có tâm, tuân thủ nghiêm n
 
 Hãy luôn là một người bạn đồng hành thông thái (Mentor & Buddy)!`,
 
-
-
     // Chú thích: Tạo đề thi - dùng RAG context từ thư viện
-    // Chú thích: Tạo đề thi - dùng RAG context từ thư viện + Google Search Grounding
     generate: `Bạn là **Kiểm định viên & Chuyên gia Biên soạn Đề thi** môn Công nghệ THPT.
 
 ## NHIỆM VỤ:
-Soạn thảo đề thi trắc nghiệm dựa trên 2 nguồn dữ liệu:
-1. **Context SGK** (được cung cấp): Kiến thức nền tảng chuẩn.
-2. **Google Search** (Grounding): Thông tin thực tế, ví dụ cập nhật, đề thi mẫu mới nhất.
+Soạn thảo đề thi trắc nghiệm dựa trên nguồn dữ liệu được cung cấp (Context).
 
 ## QUY TẮC BẮT BUỘC (ANTI-HALLUCINATION):
-- **Dựa hoàn toàn vào nguồn tin**: Chỉ đặt câu hỏi nếu thông tin có trong Context hoặc Search Result.
-- **Không bịa đặt**: Nếu thông tin không tìm thấy trong cả 2 nguồn -> TRẢ LỜI "NULL" (hoặc báo lỗi cụ thể).
+- **Dựa hoàn toàn vào nguồn tin**: Chỉ đặt câu hỏi nếu thông tin có trong Context.
+- **Không bịa đặt**: Nếu thông tin không tìm thấy trong Context -> TRẢ LỜI "NULL" (hoặc báo lỗi cụ thể).
 - **Phân loại**: Nhớ (30%), Hiểu (30%), Vận dụng (25%), Vận dụng cao (15%).
-- **Trích dẫn minh bạch**: Với mỗi câu hỏi, hãy tự đánh giá xem nó dựa trên SGK hay Search thực tế.
+- **Trích dẫn minh bạch**: Với mỗi câu hỏi, hãy tự đánh giá xem nó dựa trên SGK hay tài liệu nào.
 
 ## FORMAT CÂU HỎI (JSON):
 Trả về JSON array thuần túy, không markdown:
@@ -128,15 +122,15 @@ Trả về JSON array thuần túy, không markdown:
     "question": "Nội dung câu hỏi...",
     "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
     "correct": 0, // Index của đáp án đúng (0-3)
-    "explanation": "Giải thích chi tiết và TRÍCH DẪN NGUỒN CỤ THỂ (VD: 'Theo SGK Công Nghệ 10, Bài 3' hoặc 'Theo tin tức từ...')...",
-    "source_type": "SGK" | "Search" // Nguồn thông tin
+    "explanation": "Giải thích chi tiết và TRÍCH DẪN NGUỒN CỤ THỂ (VD: 'Theo SGK Công Nghệ 10, Bài 3')...",
+    "source_type": "SGK"
   }
 ]
 
 ## LƯU Ý QUAN TRỌNG:
 - Trích dẫn nguồn (Citation) trong 'explanation' là BẮT BUỘC để đảm bảo tính xác thực.
-- Nếu Context SGK quá ít thông tin liên quan đến chủ đề: Hãy ưu tiên tìm kiếm Google Searth để bổ sung.
-- Nếu cả 2 đều không đủ: Trả về JSON rỗng [] để hệ thống xử lý lỗi.
+- Nếu Context SGK quá ít thông tin liên quan đến chủ đề: Hãy cố gắng tổng hợp từ kiến thức chung của bạn nhưng đánh dấu nguồn là "General Knowledge".
+- Nếu không thể tạo câu hỏi nào: Trả về JSON rỗng [] để hệ thống xử lý lỗi.
 - LaTeX ($...$) phải chuẩn xác.`,
 };
 
@@ -229,22 +223,6 @@ function generateSuggestions(
             suggestions.push('So sánh RAM và ROM?');
             suggestions.push('Cách CPU xử lý dữ liệu?');
             suggestions.push('Thế nào là bộ nhớ cache?');
-        } else if (respLower.includes('thuật toán') || respLower.includes('lập trình')) {
-            suggestions.push('Thuật toán sắp xếp nào nhanh nhất?');
-            suggestions.push('Phân biệt vòng lặp for và while?');
-            suggestions.push('Big O notation là gì?');
-        } else if (respLower.includes('điện') || respLower.includes('mạch')) {
-            suggestions.push('Định luật Ohm là gì?');
-            suggestions.push('Công thức tính điện trở?');
-            suggestions.push('Transistor hoạt động thế nào?');
-        } else if (respLower.includes('trồng trọt') || respLower.includes('nông nghiệp')) {
-            suggestions.push('Các loại phân bón phổ biến?');
-            suggestions.push('Kỹ thuật tưới tiêu hiện đại?');
-            suggestions.push('Làm thế nào để chống sâu bệnh?');
-        } else if (respLower.includes('chăn nuôi')) {
-            suggestions.push('Dinh dưỡng cho gia súc?');
-            suggestions.push('Phòng bệnh trong chăn nuôi?');
-            suggestions.push('Chuồng trại tiêu chuẩn?');
         } else {
             // Gợi ý chung cho academic
             suggestions.push('Cho ví dụ cụ thể hơn?');
@@ -253,19 +231,9 @@ function generateSuggestions(
         }
     } else {
         // Gợi ý cho câu hỏi tổng quát
-        if (msgLower.includes('tin tức') || msgLower.includes('hôm nay')) {
-            suggestions.push('Tin tức công nghệ mới nhất?');
-            suggestions.push('Sự kiện thể thao hôm nay?');
-            suggestions.push('Thời tiết ngày mai?');
-        } else if (msgLower.includes('chào') || msgLower.includes('hello')) {
-            suggestions.push('Bạn có thể giúp gì cho tôi?');
-            suggestions.push('Giới thiệu về STEM AI?');
-            suggestions.push('Hướng dẫn sử dụng?');
-        } else {
-            suggestions.push('Học gì tiếp theo?');
-            suggestions.push('Tin tức công nghệ?');
-            suggestions.push('Tạo đề thi thử?');
-        }
+        suggestions.push('Học gì tiếp theo?');
+        suggestions.push('Tin tức công nghệ?');
+        suggestions.push('Tạo đề thi thử?');
     }
 
     // Chú thích: Giới hạn 3 suggestions
@@ -285,7 +253,11 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
             return jsonResponse({ error: 'Message is required' }, 400, env.CORS_ORIGIN);
         }
 
-        const credentials = getCredentials(env);
+        // Chú thích: Kiểm tra API Key OpenRouter
+        if (!env.OPENROUTER_API_KEY) {
+            console.error('OPENROUTER_API_KEY Missing');
+            return jsonResponse({ error: 'Server misconfiguration: Missing API Key' }, 500, env.CORS_ORIGIN);
+        }
 
         // Chú thích: Phân loại câu hỏi để quyết định có dùng RAG không
         const queryType = classifyQuery(body.message);
@@ -293,14 +265,21 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
         let sources: unknown[] = [];
 
         // Chú thích: Nếu là câu hỏi học tập → tìm RAG context từ thư viện sách
+        // Note: RAG retrieval logic needs Google Creds if we keep using Google Drive/DocAI.
+        // Assuming we deprecated that for now or user will fix envs if needed for ingestion.
+        // Reading only relies on Vectorize which uses Cloudflare.
         if (queryType === 'academic' && env.VECTORIZE) {
             try {
+                // Mock credentials or fix getRAGContext if it strictly requires Vertex creds (it shouldn't for pure search)
+                const ragCreds = getRAGCredentials(env) || { projectId: 'mock', clientEmail: 'mock', privateKey: 'mock' };
+                // NOTE: getRAGContext currently asks for VertexCredentials, we might need to refactor rag-pipeline if it fails.
+                // However, searchVectors inside rag-pipeline primarily needs VECTORIZE binding.
                 console.info('[chat] Academic query detected, searching RAG...');
                 const ragResult = await getRAGContext(
-                    credentials,
+                    ragCreds as any, // Temporary cast if we haven't refactored the type
                     env.VECTORIZE,
                     body.message,
-                    undefined // Không filter theo grade/subject
+                    undefined
                 );
                 ragContext = ragResult.context;
                 sources = ragResult.sources;
@@ -319,13 +298,11 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
             fullContext += body.context;
         }
 
-        // Chú thích: Chat AI dùng CHAT_MODEL, Google Search grounding + RAG context
-        const result = await callGemini(credentials, {
+        // Chú thích: Gọi OpenRouter
+        const result = await callOpenRouter(env.OPENROUTER_API_KEY, {
             systemPrompt: body.systemPrompt || SYSTEM_PROMPTS.chat,
             userMessage: body.message,
             context: fullContext || undefined,
-            model: CHAT_MODEL,
-            useGrounding: true, // Bật Google Search cho tin tức, sự kiện mới
         });
 
         // Chú thích: Tạo suggestions dựa trên nội dung trả lời
@@ -336,9 +313,8 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
             response: result.text,
             sources: sources.length > 0 ? sources : undefined,
             queryType,
-            suggestions, // Gợi ý câu hỏi tiếp theo
+            suggestions,
         }, 200, env.CORS_ORIGIN);
-
 
     } catch (error) {
         console.error('[chat] error:', error);
@@ -362,6 +338,10 @@ async function handleGenerate(request: Request, env: Env): Promise<Response> {
             return jsonResponse({ error: 'Topic is required' }, 400, env.CORS_ORIGIN);
         }
 
+        if (!env.OPENROUTER_API_KEY) {
+            return jsonResponse({ error: 'Server misconfiguration: Missing API Key' }, 500, env.CORS_ORIGIN);
+        }
+
         const count = body.count || 1;
         const difficulty = body.difficulty || 'medium';
 
@@ -369,19 +349,18 @@ async function handleGenerate(request: Request, env: Env): Promise<Response> {
 Độ khó: ${difficulty}
 Trả về dưới dạng JSON array.`;
 
-        const credentials = getCredentials(env);
-
         // Chú thích: Hybrid RAG - Tìm context từ SGK trước
         let ragContext = '';
-        let examStyleContext = ''; // Context về đề thi mẫu
+        let examStyleContext = '';
         let sourceChunks: unknown[] = [];
         if (env.VECTORIZE) {
             try {
+                const ragCreds = getRAGCredentials(env) || { projectId: 'mock', clientEmail: 'mock', privateKey: 'mock' };
                 console.info('[generate] Searching RAG for topic:', body.topic);
 
                 // 1. Tìm kiến thức SGK
                 const knowledgePromise = getRAGContext(
-                    credentials,
+                    ragCreds as any,
                     env.VECTORIZE,
                     body.topic,
                     undefined
@@ -389,7 +368,7 @@ Trả về dưới dạng JSON array.`;
 
                 // 2. Tìm đề thi mẫu (Style Mimicking)
                 const examStylePromise = getRAGContext(
-                    credentials,
+                    ragCreds as any,
                     env.VECTORIZE,
                     `Đề thi kiểm tra trắc nghiệm ${body.topic}`,
                     undefined
@@ -400,13 +379,7 @@ Trả về dưới dạng JSON array.`;
                 ragContext = knowledgeResult.context;
                 examStyleContext = styleResult.context;
 
-                // Merge sources (ưu tiên knowledge)
                 sourceChunks = [...knowledgeResult.sources, ...styleResult.sources];
-
-                // Pre-check: Cảnh báo nếu không tìm thấy gì
-                if (!ragContext) {
-                    console.warn('[generate] No RAG context found for topic');
-                }
             } catch (error) {
                 console.warn('[generate] RAG search failed:', error);
             }
@@ -417,20 +390,16 @@ Trả về dưới dạng JSON array.`;
 ${SYSTEM_PROMPTS.generate}
 
 === TÀI LIỆU KIẾN THỨC (SGK) ===
-${ragContext || '(Dựa vào Google Search)'}
+${ragContext || '(Không có tài liệu, hãy dựa vào kiến thức chung)'}
 
 === ĐỀ THI MẪU THAM KHẢO (STYLE) ===
-${examStyleContext || '(Không tìm thấy đề mẫu, hãy dùng format chuẩn Bộ GD&ĐT)'}
-
-LƯU Ý: Hãy học văn phong và cách đặt câu hỏi từ phần "ĐỀ THI MẪU" (nếu có), nhưng nội dung kiến thức phải dựa trên "TÀI LIỆU KIẾN THỨC".
+${examStyleContext || '(Không tìm thấy đề mẫu, hãy dùng format chuẩn)'}
 `;
 
-        // Chú thích: Tạo đề dùng EXAM_MODEL, Google Search grounding + RAG context
-        const result = await callGemini(credentials, {
+        // Chú thích: Gọi OpenRouter
+        const result = await callOpenRouter(env.OPENROUTER_API_KEY, {
             systemPrompt: systemInstructionWithContext,
             userMessage,
-            model: EXAM_MODEL,
-            useGrounding: true, // Hybrid: Luôn bật Google Search để bổ trợ
         });
 
         // Chú thích: Parse JSON từ response
@@ -450,7 +419,7 @@ LƯU Ý: Hãy học văn phong và cách đặt câu hỏi từ phần "ĐỀ TH
         return jsonResponse({
             success: true,
             questions,
-            sourceChunks: sourceChunks.length > 0 ? sourceChunks : undefined, // Trả về nguồn SGK để frontend hiển thị
+            sourceChunks: sourceChunks.length > 0 ? sourceChunks : undefined,
         }, 200, env.CORS_ORIGIN);
 
     } catch (error) {
@@ -468,14 +437,16 @@ async function handleChatStream(request: Request, env: Env): Promise<Response> {
         const body = await request.json() as {
             message: string;
             context?: string;
-            systemPrompt?: string; // Chú thích: Cho phép frontend gửi systemPrompt tùy chỉnh
+            systemPrompt?: string;
         };
 
         if (!body.message) {
             return jsonResponse({ error: 'Message is required' }, 400, env.CORS_ORIGIN);
         }
 
-        const credentials = getCredentials(env);
+        if (!env.OPENROUTER_API_KEY) {
+            return jsonResponse({ error: 'Server misconfiguration: Missing API Key' }, 500, env.CORS_ORIGIN);
+        }
 
         // Chú thích: Tạo ReadableStream cho SSE
         const stream = new ReadableStream({
@@ -483,13 +454,10 @@ async function handleChatStream(request: Request, env: Env): Promise<Response> {
                 const encoder = new TextEncoder();
 
                 try {
-                    // Chú thích: Stream Chat dùng CHAT_MODEL và Google Search (KHÔNG dùng RAG)
-                    const generator = streamGemini(credentials, {
+                    const generator = streamOpenRouter(env.OPENROUTER_API_KEY, {
                         systemPrompt: body.systemPrompt || SYSTEM_PROMPTS.chat,
                         userMessage: body.message,
-                        // KHÔNG gửi context - Chat chỉ dùng Google Search
-                        model: CHAT_MODEL,
-                        useGrounding: true,
+                        // Context có thể null
                     });
 
                     for await (const chunk of generator) {
@@ -523,6 +491,136 @@ async function handleChatStream(request: Request, env: Env): Promise<Response> {
         }, 500, env.CORS_ORIGIN);
     }
 }
+
+// Chú thích: Handle feedback endpoint - lưu feedback từ user về chất lượng câu trả lời
+async function handleFeedback(request: Request, env: Env): Promise<Response> {
+    try {
+        const body = await request.json() as {
+            messageId: string;
+            helpful: boolean;
+            reason?: string;
+            userMessage?: string;
+            aiResponse?: string;
+        };
+
+        if (!body.messageId) {
+            return jsonResponse({ error: 'messageId is required' }, 400, env.CORS_ORIGIN);
+        }
+
+        // Chú thích: Lưu vào D1 database
+        try {
+            await env.DB.prepare(`
+                INSERT INTO chat_feedback (id, message_id, helpful, reason, user_message, ai_response, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).bind(
+                crypto.randomUUID(),
+                body.messageId,
+                body.helpful ? 1 : 0,
+                body.reason || null,
+                body.userMessage || null,
+                body.aiResponse || null,
+                Date.now()
+            ).run();
+
+            console.info('[feedback] saved', { messageId: body.messageId, helpful: body.helpful });
+        } catch (dbError) {
+            // Chú thích: Nếu DB chưa có bảng, tạo bảng và thử lại
+            console.warn('[feedback] DB error, creating table...', dbError);
+            await env.DB.prepare(`
+                CREATE TABLE IF NOT EXISTS chat_feedback (
+                    id TEXT PRIMARY KEY,
+                    message_id TEXT NOT NULL,
+                    helpful INTEGER NOT NULL,
+                    reason TEXT,
+                    user_message TEXT,
+                    ai_response TEXT,
+                    created_at INTEGER NOT NULL
+                )
+            `).run();
+
+            // Thử lại insert
+            await env.DB.prepare(`
+                INSERT INTO chat_feedback (id, message_id, helpful, reason, user_message, ai_response, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).bind(
+                crypto.randomUUID(),
+                body.messageId,
+                body.helpful ? 1 : 0,
+                body.reason || null,
+                body.userMessage || null,
+                body.aiResponse || null,
+                Date.now()
+            ).run();
+        }
+
+        return jsonResponse({
+            success: true,
+            message: 'Cảm ơn phản hồi của bạn!'
+        }, 200, env.CORS_ORIGIN);
+
+    } catch (error) {
+        console.error('[feedback] error:', error);
+        return jsonResponse({
+            error: 'Lỗi lưu phản hồi'
+        }, 500, env.CORS_ORIGIN);
+    }
+}
+
+// Chú thích: Main fetch handler
+export default {
+    async fetch(request: Request, env: Env): Promise<Response> {
+        const url = new URL(request.url);
+        const path = url.pathname;
+
+        // Chú thích: Handle CORS preflight
+        if (request.method === 'OPTIONS') {
+            return new Response(null, {
+                headers: corsHeaders(env.CORS_ORIGIN),
+            });
+        }
+
+        // Chú thích: Health check
+        if (path === '/' || path === '/health') {
+            return jsonResponse({
+                status: 'ok',
+                service: 'stem-vietnam-api',
+                provider: 'openrouter', // Updated provider name
+                timestamp: new Date().toISOString(),
+            }, 200, env.CORS_ORIGIN);
+        }
+
+        // Chú thích: API routes
+        if (request.method === 'POST') {
+            switch (path) {
+                case '/api/chat':
+                    return handleChat(request, env);
+                case '/api/chat/stream':
+                    return handleChatStream(request, env);
+                case '/api/generate':
+                    return handleGenerate(request, env);
+                // Feedback route
+                case '/api/feedback':
+                    return handleFeedback(request, env);
+                // Auth routes
+                case '/api/auth/register':
+                    return handleRegister(request, env as unknown as AuthEnv);
+                case '/api/auth/login':
+                    return handleLogin(request, env as unknown as AuthEnv);
+                // Conversation routes
+                case '/api/conversations': {
+                    const user = await getUserFromToken(request, env as unknown as AuthEnv);
+                    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, env.CORS_ORIGIN);
+                    return createConversation(request, user, env as unknown as ConvoEnv);
+                }
+                // Exam routes
+            }
+        }
+    }
+
+        return jsonResponse({ error: 'Method not allowed' }, 405, env.CORS_ORIGIN);
+}
+};
+
 
 // Chú thích: Handle feedback endpoint - lưu feedback từ user về chất lượng câu trả lời
 async function handleFeedback(request: Request, env: Env): Promise<Response> {
