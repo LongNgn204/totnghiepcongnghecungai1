@@ -13,21 +13,130 @@ export const BOOK_PUBLISHERS = {
 
 export type BookPublisher = typeof BOOK_PUBLISHERS[keyof typeof BOOK_PUBLISHERS];
 
+// ==================== SGK - Sách Giáo Khoa ====================
+const SGK_BOOKS: Document[] = [
+    {
+        id: 'sgk-trong-trot-10',
+        title: 'SGK Công nghệ Trồng trọt 10',
+        grade: '10',
+        topic: 'Trồng trọt',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/sgk/SGK Công nghệ Trồng trọt 10.pdf',
+        createdAt: Date.now(),
+    },
+    {
+        id: 'sgk-thiet-ke-cong-nghe-10',
+        title: 'SGK Chuyên đề Thiết kế và Công nghệ 10',
+        grade: '10',
+        topic: 'Thiết kế & Công nghệ',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/sgk/SGKchuyên đề thiết kế và công nghệ 10.pdf',
+        createdAt: Date.now(),
+    },
+    {
+        id: 'sgk-chan-nuoi-11',
+        title: 'SGK Công nghệ Chăn nuôi 11',
+        grade: '11',
+        topic: 'Chăn nuôi',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/sgk/SGK công nghệ Chăn nuôi 11.pdf',
+        createdAt: Date.now(),
+    },
+    {
+        id: 'sgk-co-khi-11',
+        title: 'SGK Công nghệ 11 – Công nghệ cơ khí (Cánh Diều)',
+        grade: '11',
+        topic: 'Cơ khí',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/sgk/Sách giáo khoa Công nghệ 11 – Công nghệ cơ khí (Cánh Diều).pdf',
+        createdAt: Date.now(),
+    },
+    {
+        id: 'sgk-lam-nghiep-thuy-san-12',
+        title: 'SGK Công nghệ Lâm Nghiệp Thuỷ sản 12',
+        grade: '12',
+        topic: 'Lâm nghiệp & Thuỷ sản',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/sgk/SGK Công nghệ Lâm Nghiệp Thuỷ sản 12.pdf',
+        createdAt: Date.now(),
+    },
+    {
+        id: 'sgk-dien-dien-tu-12',
+        title: 'SGK Công nghệ Điện - Điện tử 12',
+        grade: '12',
+        topic: 'Điện - Điện tử',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/sgk/SGK Công nghệ điện - điện tử 12.pdf',
+        createdAt: Date.now(),
+    },
+];
+
+// ==================== CHUYÊN ĐỀ HỌC TẬP ====================
+const CHUYEN_DE_BOOKS: Document[] = [
+    {
+        id: 'cd-trong-trot-10',
+        title: 'Chuyên đề Công nghệ Trồng trọt 10',
+        grade: '10',
+        topic: 'Trồng trọt',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/chuyen_de/Chuyên đề công nghệ trồng trọt 10.pdf',
+        createdAt: Date.now(),
+    },
+    {
+        id: 'cd-thiet-ke-cong-nghe-10',
+        title: 'Chuyên đề học tập Thiết kế và Công nghệ 10',
+        grade: '10',
+        topic: 'Thiết kế & Công nghệ',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/chuyen_de/Chuyên đề học tập Thiết kế và Công nghệ 10 - Cánh diều.pdf',
+        createdAt: Date.now(),
+    },
+    {
+        id: 'cd-chan-nuoi-11',
+        title: 'Chuyên đề học tập Công nghệ 11 – Công nghệ chăn nuôi',
+        grade: '11',
+        topic: 'Chăn nuôi',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/chuyen_de/Chuyên đề học tập Công nghệ 11 – Công nghệ chăn nuôi (Cánh Diều).pdf',
+        createdAt: Date.now(),
+    },
+    {
+        id: 'cd-co-khi-11',
+        title: 'Chuyên đề học tập Công nghệ 11 – Công nghệ cơ khí',
+        grade: '11',
+        topic: 'Cơ khí',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/chuyen_de/Chuyên đề học tập Công nghệ 11 – Công nghệ cơ khí (Cánh Diều).pdf',
+        createdAt: Date.now(),
+    },
+    {
+        id: 'cd-lam-nghiep-thuy-san-12',
+        title: 'Chuyên đề học tập 12 - Lâm nghiệp & Thuỷ sản',
+        grade: '12',
+        topic: 'Lâm nghiệp & Thuỷ sản',
+        source: BOOK_PUBLISHERS.CANH_DIEU,
+        fileUrl: '/books/chuyen_de/Chuyên đề học tập 12, lâm nghiệp - Thuỷ sản.pdf',
+        createdAt: Date.now(),
+    },
+];
+
 // ==================== KHO TÀI LIỆU TỔNG HỢP (GOOGLE DRIVE) ====================
 const MASTER_LIBRARY: Document[] = [
     {
         id: 'master-drive-link',
         title: 'KHO TÀI LIỆU CÔNG NGHỆ THPT (SGK, Chuyên đề, Sách GV)',
-        grade: '12', // Hiển thị ở mọi lớp
+        grade: '12',
         topic: 'Thư viện tổng hợp',
         source: BOOK_PUBLISHERS.BO_GDDT,
-        fileUrl: 'https://drive.google.com/drive/folders/1EMT1HMKsmyA2yoSbDQGnOQ93YwX5J4i_?usp=sharing', // Cần cập nhật link thực tế
+        fileUrl: 'https://drive.google.com/drive/folders/1EMT1HMKsmyA2yoSbDQGnOQ93YwX5J4i_?usp=sharing',
         createdAt: Date.now(),
     }
 ];
 
 // ==================== TỔNG HỢP ====================
 export const DEFAULT_LIBRARY: Document[] = [
+    ...SGK_BOOKS,
+    ...CHUYEN_DE_BOOKS,
     ...MASTER_LIBRARY
 ];
 
@@ -42,7 +151,9 @@ export function getDocumentsByPublisher(publisher: BookPublisher): Document[] {
 }
 
 // Chú thích: Helper để lấy theo loại
-export function getDocumentsByType(_type: 'policy' | 'sgk' | 'chuyen_de'): Document[] {
+export function getDocumentsByType(type: 'sgk' | 'chuyen_de' | 'all'): Document[] {
+    if (type === 'sgk') return SGK_BOOKS;
+    if (type === 'chuyen_de') return CHUYEN_DE_BOOKS;
     return DEFAULT_LIBRARY;
 }
 
@@ -58,8 +169,7 @@ export async function checkDocumentExists(fileUrl: string): Promise<boolean> {
 
 // Chú thích: Thống kê thư viện
 export const LIBRARY_STATS = {
-    totalPolicy: 0,
-    totalSGK: 0,
-    totalChuyenDe: 0,
+    totalSGK: SGK_BOOKS.length,
+    totalChuyenDe: CHUYEN_DE_BOOKS.length,
     total: DEFAULT_LIBRARY.length,
 };
