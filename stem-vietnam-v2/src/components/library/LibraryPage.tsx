@@ -1,6 +1,6 @@
 // Chú thích: Library Page - Quản lý tài liệu nguồn cho RAG
 // Hiển thị SGK mặc định + Chuyên đề + Đề thi mẫu theo Tabs
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Library,
     Upload,
@@ -13,12 +13,16 @@ import {
     Download,
     Book,
     FileSpreadsheet,
-    Link as LinkIcon
+    Link as LinkIcon,
+    Loader2
 } from 'lucide-react';
 import type { Document } from '../../types';
 import { DEFAULT_LIBRARY, BOOK_PUBLISHERS, checkDocumentExists } from '../../data/library/defaultBooks';
 import { useAppStore } from '../../stores/appStore';
+import { useAuthStore } from '../../lib/auth';
 
+// Chú thích: API URL
+const API_URL = (import.meta.env.VITE_API_URL || 'https://stem-vietnam-api.stu725114073.workers.dev').replace(/\/$/, '');
 
 // Chú thích: Categories tabs - theo loại tài liệu thực tế
 const TABS = [
@@ -36,8 +40,12 @@ export default function LibraryPage() {
     const [showUpload, setShowUpload] = useState(false);
     const [filterGrade, setFilterGrade] = useState<'all' | '10' | '11' | '12'>('all');
     const [filterPublisher, setFilterPublisher] = useState<'all' | string>('all');
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
 
-    const { useDefaultLibrary, toggleDefaultLibrary } = useAppStore();
+    const { useDefaultLibrary, toggleDefaultLibrary, showNotification } = useAppStore();
+    const { token } = useAuthStore();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [uploadForm, setUploadForm] = useState({
         title: '',
@@ -46,6 +54,7 @@ export default function LibraryPage() {
         source: '',
         inputType: 'file' as 'file' | 'url',
         fileUrl: '',
+        file: null as File | null,
     });
 
     // Chú thích: Kiểm tra file PDF có tồn tại không khi mount
@@ -91,27 +100,104 @@ export default function LibraryPage() {
     const filteredDocuments = getTabDocuments();
 
 
-    const handleUpload = () => {
-        const newDoc: Document = {
-            id: `user-doc-${Date.now()}`,
-            title: uploadForm.title,
-            grade: uploadForm.grade,
-            topic: uploadForm.topic,
-            source: uploadForm.source,
-            fileUrl: uploadForm.inputType === 'url' ? uploadForm.fileUrl : '', // Handle real file upload later
-            createdAt: Date.now(),
-        };
-        setUserDocuments(prev => [newDoc, ...prev]);
-        setShowUpload(false);
-        setActiveTab('user'); // Switch to user tab
+    const handleUpload = async () => {
+        setUploadError(null);
+
+        // Chú thích: Nếu là URL mode, chỉ add vào local (không gọi API)
+        if (uploadForm.inputType === 'url') {
+            const newDoc: Document = {
+                id: `user-doc-${Date.now()}`,
+                title: uploadForm.title,
+                grade: uploadForm.grade,
+                topic: uploadForm.topic,
+                source: uploadForm.source,
+                fileUrl: uploadForm.fileUrl,
+                createdAt: Date.now(),
+            };
+            setUserDocuments(prev => [newDoc, ...prev]);
+            setShowUpload(false);
+            setActiveTab('user');
+            resetForm();
+            showNotification('success', 'Đã thêm tài liệu!');
+            return;
+        }
+
+        // Chú thích: Nếu là file mode, gọi API upload
+        if (!uploadForm.file) {
+            setUploadError('Vui lòng chọn file để upload');
+            return;
+        }
+
+        setIsUploading(true);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', uploadForm.file);
+            formData.append('metadata', JSON.stringify({
+                bookId: `user-${Date.now()}`,
+                title: uploadForm.title,
+                grade: uploadForm.grade,
+                subject: 'cong_nghiep',
+                type: 'user',
+            }));
+
+            const res = await fetch(`${API_URL}/api/admin/rag/upload`, {
+                method: 'POST',
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                body: formData,
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || data.details || 'Upload thất bại');
+            }
+
+            // Chú thích: Add document vào local state
+            const newDoc: Document = {
+                id: `user-doc-${Date.now()}`,
+                title: uploadForm.title,
+                grade: uploadForm.grade,
+                topic: uploadForm.topic,
+                source: uploadForm.source || 'Upload',
+                fileUrl: '',
+                createdAt: Date.now(),
+            };
+            setUserDocuments(prev => [newDoc, ...prev]);
+            setShowUpload(false);
+            setActiveTab('user');
+            resetForm();
+            showNotification('success', `Đã upload và index ${data.result?.chunksCreated || 0} chunks!`);
+
+        } catch (error) {
+            console.error('[library] upload error:', error);
+            setUploadError(error instanceof Error ? error.message : 'Upload thất bại');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const resetForm = () => {
         setUploadForm({
             title: '',
             grade: '12',
             topic: '',
             source: '',
             inputType: 'file',
-            fileUrl: ''
+            fileUrl: '',
+            file: null,
         });
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setUploadForm(prev => ({
+                ...prev,
+                file,
+                title: prev.title || file.name.replace(/\.[^/.]+$/, ''), // Auto-fill title từ filename
+            }));
+        }
     };
 
     const handleDelete = (id: string) => {
@@ -403,14 +489,41 @@ export default function LibraryPage() {
 
                             {/* Dynamic Input Area */}
                             {uploadForm.inputType === 'file' ? (
-                                <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-6 text-center hover:border-primary-500 transition-colors cursor-pointer">
-                                    <Upload className="mx-auto text-slate-400 mb-2" size={32} />
-                                    <p className="text-sm font-medium text-slate-900 dark:text-white">
-                                        Kéo thả file PDF vào đây
-                                    </p>
-                                    <p className="text-xs text-slate-500 mt-1">
-                                        hoặc click để chọn file
-                                    </p>
+                                <div
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${uploadForm.file
+                                        ? 'border-green-400 bg-green-50 dark:bg-green-900/20'
+                                        : 'border-slate-300 dark:border-slate-600 hover:border-primary-500'
+                                        }`}
+                                >
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept=".txt,.md,.docx,.pdf,.html,.json"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                    />
+                                    {uploadForm.file ? (
+                                        <>
+                                            <CheckCircle2 className="mx-auto text-green-500 mb-2" size={32} />
+                                            <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                                                {uploadForm.file.name}
+                                            </p>
+                                            <p className="text-xs text-slate-500 mt-1">
+                                                {(uploadForm.file.size / 1024 / 1024).toFixed(2)} MB - Click để đổi file
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload className="mx-auto text-slate-400 mb-2" size={32} />
+                                            <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                                Kéo thả file vào đây
+                                            </p>
+                                            <p className="text-xs text-slate-500 mt-1">
+                                                Hỗ trợ: TXT, MD, DOCX, PDF, HTML, JSON (tối đa 25MB)
+                                            </p>
+                                        </>
+                                    )}
                                 </div>
                             ) : (
                                 <div>
@@ -434,22 +547,42 @@ export default function LibraryPage() {
                                     </p>
                                 </div>
                             )}
-                        </div>
+                            {/* Error display */}
+                            {uploadError && (
+                                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+                                    <AlertCircle size={16} />
+                                    {uploadError}
+                                </div>
+                            )}
 
-                        <div className="flex gap-3 mt-6">
-                            <button
-                                onClick={() => setShowUpload(false)}
-                                className="btn-secondary flex-1"
-                            >
-                                Huỷ
-                            </button>
-                            <button
-                                onClick={handleUpload}
-                                disabled={!uploadForm.title.trim() || (uploadForm.inputType === 'url' && !uploadForm.fileUrl.trim())}
-                                className="btn-primary flex-1"
-                            >
-                                {uploadForm.inputType === 'file' ? 'Tải lên' : 'Thêm Link'}
-                            </button>
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={() => { setShowUpload(false); resetForm(); }}
+                                    disabled={isUploading}
+                                    className="btn-secondary flex-1"
+                                >
+                                    Huỷ
+                                </button>
+                                <button
+                                    onClick={handleUpload}
+                                    disabled={
+                                        isUploading ||
+                                        !uploadForm.title.trim() ||
+                                        (uploadForm.inputType === 'url' && !uploadForm.fileUrl.trim()) ||
+                                        (uploadForm.inputType === 'file' && !uploadForm.file)
+                                    }
+                                    className="btn-primary flex-1 flex items-center justify-center gap-2"
+                                >
+                                    {isUploading ? (
+                                        <>
+                                            <Loader2 className="animate-spin" size={16} />
+                                            Đang upload...
+                                        </>
+                                    ) : (
+                                        uploadForm.inputType === 'file' ? 'Tải lên' : 'Thêm Link'
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

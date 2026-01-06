@@ -21,10 +21,21 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-    // Chú thích: Luôn tắt dark mode
-    isDarkMode: false,
+    // Chú thích: Dark mode với localStorage persist
+    isDarkMode: typeof window !== 'undefined' && localStorage.getItem('theme') === 'dark',
 
-    toggleDarkMode: () => { },
+    toggleDarkMode: () => set((state) => {
+        const newMode = !state.isDarkMode;
+        // Chú thích: Persist preference
+        localStorage.setItem('theme', newMode ? 'dark' : 'light');
+        // Chú thích: Toggle class on document
+        if (newMode) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        return { isDarkMode: newMode };
+    }),
 
     useDefaultLibrary: true, // Default to true as requested
     toggleDefaultLibrary: () => set((state) => ({ useDefaultLibrary: !state.useDefaultLibrary })),

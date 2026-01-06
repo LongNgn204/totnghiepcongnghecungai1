@@ -43,10 +43,14 @@ function FullPageLoader() {
 function App() {
   const { notification, clearNotification } = useAppStore();
 
-  // Chú thích: Apply dark mode class on mount
-  // Chú thích: Dark mode disabled
+  // Chú thích: Apply dark mode class on mount từ localStorage
   useEffect(() => {
-    document.documentElement.classList.remove('dark');
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, []);
 
   return (
