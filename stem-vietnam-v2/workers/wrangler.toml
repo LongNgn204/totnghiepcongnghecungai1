@@ -7,12 +7,33 @@ compatibility_date = "2024-12-30"
 MAX_TOKEN_BUDGET = "50000"
 
 # Vertex AI Configuration
-# OpenRouter Configuration
-# OPENROUTER_API_KEY: "via secret"
-# npx wrangler secret put OPENROUTER_API_KEY
+VERTEX_PROJECT_ID = "voltaic-syntax-482104-b7"
+VERTEX_LOCATION = "global"
+# Fallback region
+VERTEX_LOCATION_FALLBACK = "us-central1"
 
-# Vertex Auth (Deprecated, kept if needed for legacy features like Drive ingestion)
-VERTEX_PROJECT_ID = "voltaic-syntax-482104-b7" # Keep for RAG compat until fully refactored
+# Chú thích: Môi trường development
+[env.dev]
+vars = { CORS_ORIGIN = "http://localhost:5173" }
+
+# Chú thích: Môi trường production
+[env.production]
+vars = { CORS_ORIGIN = "https://hoccongnghe.pages.dev" }
+
+# ============================================
+# Secrets (set via wrangler secret put)
+# ============================================
+# 
+# VERTEX_CLIENT_EMAIL: Email của service account
+# npx wrangler secret put VERTEX_CLIENT_EMAIL
+# Ví dụ: your-service-account@project.iam.gserviceaccount.com
+#
+# VERTEX_PRIVATE_KEY: Private key từ file JSON (bao gồm -----BEGIN/END-----)
+# npx wrangler secret put VERTEX_PRIVATE_KEY
+# Ví dụ: -----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----
+#
+# VERTEX_PRIVATE_KEY_ID: (optional) Key ID từ file JSON
+# npx wrangler secret put VERTEX_PRIVATE_KEY_ID
 
 # JWT Secret for auth
 # npx wrangler secret put JWT_SECRET
