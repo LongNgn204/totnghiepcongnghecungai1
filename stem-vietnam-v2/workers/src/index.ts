@@ -1,5 +1,7 @@
-// Chú thích: Entry point cho Cloudflare Workers API (Vertex AI + Auth + Conversations + Admin + RAG)
-import { callGemini, streamGemini, CHAT_MODEL, EXAM_MODEL } from './gemini';
+// Chú thích: Entry point cho Cloudflare Workers API (OpenRouter + Auth + Conversations + Admin + RAG)
+// Đã chuyển từ Vertex AI trực tiếp sang OpenRouter với multi-model routing
+import { callOpenRouter, streamOpenRouter, buildMessages, classifyQueryForModel, MODEL_ROUTES, MODELS } from './openrouter';
+import { webSearch, formatSearchResultsAsContext } from './duckduckgo';
 import { VertexAICredentials } from './gcp-auth';
 import { handleRegister, handleLogin, handleMe, getUserFromToken, AuthEnv } from './auth-routes';
 import { getConversations, getConversation, createConversation, deleteConversation, addMessage, addMessageFromRequest, ConvoEnv } from './conversation-routes';
@@ -17,7 +19,10 @@ import { parseFileWithOCR, isFileTypeSupported, isFileSizeValid, MAX_FILE_SIZE, 
 
 // Chú thích: Environment interface
 interface Env {
-    // Vertex AI config (từ vars trong wrangler.toml)
+    // OpenRouter API Key (BẮT BUỘC - set qua wrangler secret put)
+    OPENROUTER_API_KEY: string;
+
+    // Vertex AI config (giữ lại cho RAG embedding và voice call)
     VERTEX_PROJECT_ID: string;
     VERTEX_LOCATION: string;
     VERTEX_LOCATION_FALLBACK: string;
@@ -319,13 +324,42 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
             fullContext += body.context;
         }
 
-        // Chú thích: Chat AI dùng CHAT_MODEL, Google Search grounding + RAG context
-        const result = await callGemini(credentials, {
-            systemPrompt: body.systemPrompt || SYSTEM_PROMPTS.chat,
-            userMessage: body.message,
-            context: fullContext || undefined,
-            model: CHAT_MODEL,
-            useGrounding: true, // Bật Google Search cho tin tức, sự kiện mới
+        // Chú thích: Phân loại câu hỏi để chọn model phù hợp (OpenRouter multi-model routing)
+        const modelRouting = classifyQueryForModel(body.message);
+        console.info('[chat] Model routing:', modelRouting);
+
+        // Chú thích: Nếu cần web search → dùng DuckDuckGo API (miễn phí, không cần key)
+        let webSearchContext = '';
+        if (modelRouting.useOnlineSearch) {
+            try {
+                console.info('[chat] Web search triggered, querying DuckDuckGo...');
+                const searchResult = await webSearch(body.message);
+                webSearchContext = formatSearchResultsAsContext(searchResult);
+
+                if (webSearchContext) {
+                    console.info('[chat] DuckDuckGo search found results', {
+                        sourcesCount: searchResult.sources.length
+                    });
+                    fullContext = webSearchContext + '\n' + fullContext;
+                }
+            } catch (error) {
+                console.warn('[chat] DuckDuckGo search failed:', error);
+                // Tiếp tục mà không có web search context
+            }
+        }
+
+        // Chú thích: Build messages cho OpenRouter
+        const messages = buildMessages(
+            body.systemPrompt || SYSTEM_PROMPTS.chat,
+            body.message,
+            fullContext || undefined
+        );
+
+        // Chú thích: Gọi OpenRouter với model được chọn tự động
+        const result = await callOpenRouter(env.OPENROUTER_API_KEY, {
+            messages,
+            model: modelRouting.model,
+            useOnlineSearch: modelRouting.useOnlineSearch,
         });
 
         // Chú thích: Tạo suggestions dựa trên nội dung trả lời
@@ -337,6 +371,7 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
             sources: sources.length > 0 ? sources : undefined,
             queryType,
             suggestions, // Gợi ý câu hỏi tiếp theo
+            model: result.model, // Trả về model đã sử dụng để debug
         }, 200, env.CORS_ORIGIN);
 
 
@@ -425,12 +460,12 @@ ${examStyleContext || '(Không tìm thấy đề mẫu, hãy dùng format chuẩ
 LƯU Ý: Hãy học văn phong và cách đặt câu hỏi từ phần "ĐỀ THI MẪU" (nếu có), nhưng nội dung kiến thức phải dựa trên "TÀI LIỆU KIẾN THỨC".
 `;
 
-        // Chú thích: Tạo đề dùng EXAM_MODEL, Google Search grounding + RAG context
-        const result = await callGemini(credentials, {
-            systemPrompt: systemInstructionWithContext,
-            userMessage,
-            model: EXAM_MODEL,
-            useGrounding: true, // Hybrid: Luôn bật Google Search để bổ trợ
+        // Chú thích: Tạo đề dùng OpenRouter Gemini Flash + web search
+        const messages = buildMessages(systemInstructionWithContext, userMessage);
+        const result = await callOpenRouter(env.OPENROUTER_API_KEY, {
+            messages,
+            model: MODEL_ROUTES.examGeneration,
+            useOnlineSearch: true, // Bật web search để verify thông tin
         });
 
         // Chú thích: Parse JSON từ response
@@ -475,21 +510,27 @@ async function handleChatStream(request: Request, env: Env): Promise<Response> {
             return jsonResponse({ error: 'Message is required' }, 400, env.CORS_ORIGIN);
         }
 
-        const credentials = getCredentials(env);
+        // Chú thích: Phân loại câu hỏi để chọn model (OpenRouter routing)
+        const modelRouting = classifyQueryForModel(body.message);
 
-        // Chú thích: Tạo ReadableStream cho SSE
+        // Chú thích: Build messages cho OpenRouter
+        const messages = buildMessages(
+            body.systemPrompt || SYSTEM_PROMPTS.chat,
+            body.message,
+            body.context
+        );
+
+        // Chú thích: Tạo ReadableStream cho SSE với OpenRouter
         const stream = new ReadableStream({
             async start(controller) {
                 const encoder = new TextEncoder();
 
                 try {
-                    // Chú thích: Stream Chat dùng CHAT_MODEL và Google Search (KHÔNG dùng RAG)
-                    const generator = streamGemini(credentials, {
-                        systemPrompt: body.systemPrompt || SYSTEM_PROMPTS.chat,
-                        userMessage: body.message,
-                        // KHÔNG gửi context - Chat chỉ dùng Google Search
-                        model: CHAT_MODEL,
-                        useGrounding: true,
+                    // Chú thích: Stream Chat dùng OpenRouter với multi-model routing
+                    const generator = streamOpenRouter(env.OPENROUTER_API_KEY, {
+                        messages,
+                        model: modelRouting.model,
+                        useOnlineSearch: modelRouting.useOnlineSearch,
                     });
 
                     for await (const chunk of generator) {
