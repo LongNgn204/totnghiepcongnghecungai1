@@ -2,10 +2,12 @@
 // Format: 24 trắc nghiệm + 4 Đúng/Sai (theo cấu trúc 2025-2026)
 // Lưu ý: Đề THPT tập trung vào lớp 12, nhưng hiện chưa có SGK lớp 12
 import { useState } from 'react';
-import { ClipboardList, Sparkles, Download, Printer, BookOpen, AlertTriangle, Info } from 'lucide-react';
+import { ClipboardList, Sparkles, Printer, BookOpen, AlertTriangle, Info, FileText, FileDown, Edit3, Eye } from 'lucide-react';
 import { generateExamWithRAG } from '../../lib/rag/generator';
 import { EXAM_GENERATOR_PROMPT } from '../../lib/prompts';
 import { BOOK_PUBLISHERS } from '../../data/library/defaultBooks';
+import { exportExamToWord } from '../../lib/exam-export';
+import type { RetrievedChunk } from '../../types';
 
 // Chú thích: Các loại đề thi THPT
 const EXAM_PURPOSES = {
@@ -50,6 +52,15 @@ export default function ExamFormPage() {
     });
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<string>('');
+    const [editedContent, setEditedContent] = useState<string>('');
+    const [isEditing, setIsEditing] = useState(false);
+    const [sources, setSources] = useState<RetrievedChunk[]>([]);
+
+    // Chú thích: Khi có kết quả mới, sync với editedContent
+    const handleResultChange = (newResult: string) => {
+        setResult(newResult);
+        setEditedContent(newResult);
+    };
 
     const handleGenerate = async () => {
         setIsLoading(true);
@@ -95,10 +106,12 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                 customPrompt: fullCustomPrompt || undefined,
             });
 
-            setResult(response.text);
+            handleResultChange(response.text);
+            setSources(response.sourceChunks || []);
         } catch (error) {
             console.error('[exam-form] error:', error);
-            setResult('Đã có lỗi xảy ra. Vui lòng thử lại.');
+            handleResultChange('Đã có lỗi xảy ra. Vui lòng thử lại.');
+            setSources([]);
         } finally {
             setIsLoading(false);
         }
@@ -145,8 +158,8 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                             <button
                                 onClick={() => setFormData(prev => ({ ...prev, subject: 'cong_nghiep' }))}
                                 className={`p-3 rounded-xl text-center transition-all border-2 ${formData.subject === 'cong_nghiep'
-                                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                        : 'border-slate-200 dark:border-slate-700'
+                                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                    : 'border-slate-200 dark:border-slate-700'
                                     }`}
                             >
                                 <p className="font-semibold text-sm">🏭 Công nghiệp</p>
@@ -155,8 +168,8 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                             <button
                                 onClick={() => setFormData(prev => ({ ...prev, subject: 'nong_nghiep' }))}
                                 className={`p-3 rounded-xl text-center transition-all border-2 ${formData.subject === 'nong_nghiep'
-                                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                        : 'border-slate-200 dark:border-slate-700'
+                                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                    : 'border-slate-200 dark:border-slate-700'
                                     }`}
                             >
                                 <p className="font-semibold text-sm">🌾 Nông nghiệp</p>
@@ -178,8 +191,8 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                                         key={purpose}
                                         onClick={() => setFormData(prev => ({ ...prev, examPurpose: purpose }))}
                                         className={`w-full p-3 rounded-xl text-left transition-all border-2 ${formData.examPurpose === purpose
-                                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                                             }`}
                                     >
                                         <p className="font-semibold text-sm text-slate-900 dark:text-white">
@@ -205,8 +218,8 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                                     key={level}
                                     onClick={() => setFormData(prev => ({ ...prev, difficulty: level }))}
                                     className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${formData.difficulty === level
-                                            ? 'bg-primary-600 text-white'
-                                            : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                                        ? 'bg-primary-600 text-white'
+                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                                         }`}
                                 >
                                     {DIFFICULTY_LEVELS[level].label}
@@ -284,11 +297,25 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                         </h3>
                         {result && (
                             <div className="flex gap-2">
-                                <button className="btn-secondary py-2 px-4 flex items-center gap-2 text-sm">
-                                    <Download size={16} />
-                                    PDF
+                                {/* Toggle Edit/Preview */}
+                                <button
+                                    onClick={() => setIsEditing(!isEditing)}
+                                    className="btn-secondary py-2 px-4 flex items-center gap-2 text-sm"
+                                >
+                                    {isEditing ? <Eye size={16} /> : <Edit3 size={16} />}
+                                    {isEditing ? 'Xem' : 'Chỉnh sửa'}
                                 </button>
-                                <button className="btn-secondary py-2 px-4 flex items-center gap-2 text-sm">
+                                <button
+                                    onClick={() => exportExamToWord(editedContent || result, formData.subject)}
+                                    className="btn-primary py-2 px-4 flex items-center gap-2 text-sm"
+                                >
+                                    <FileDown size={16} />
+                                    Xuất Word
+                                </button>
+                                <button
+                                    onClick={() => window.print()}
+                                    className="btn-secondary py-2 px-4 flex items-center gap-2 text-sm"
+                                >
                                     <Printer size={16} />
                                     In
                                 </button>
@@ -297,9 +324,18 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                     </div>
 
                     {result ? (
-                        <pre className="whitespace-pre-wrap text-sm bg-slate-50 dark:bg-slate-900 p-4 rounded-xl overflow-auto max-h-[600px]">
-                            {result}
-                        </pre>
+                        isEditing ? (
+                            <textarea
+                                value={editedContent}
+                                onChange={(e) => setEditedContent(e.target.value)}
+                                className="w-full h-[600px] p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-mono resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                placeholder="Chỉnh sửa nội dung đề thi tại đây..."
+                            />
+                        ) : (
+                            <pre className="whitespace-pre-wrap text-sm bg-slate-50 dark:bg-slate-900 p-4 rounded-xl overflow-auto max-h-[600px]">
+                                {editedContent || result}
+                            </pre>
+                        )
                     ) : (
                         <div className="h-96 flex flex-col items-center justify-center text-slate-400">
                             <ClipboardList size={48} className="mb-4 opacity-50" />
@@ -309,6 +345,36 @@ PHẢI có ĐÁP ÁN đầy đủ ở cuối đề.
                     )}
                 </div>
             </div>
+
+            {/* Sources - Nguồn tham khảo */}
+            {sources.length > 0 && (
+                <div className="lg:col-span-3 glass-panel p-6">
+                    <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                        <BookOpen size={20} className="text-primary-500" />
+                        Nguồn tham khảo ({sources.length} tài liệu)
+                    </h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {sources.map((source, idx) => (
+                            <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <div className="flex items-start gap-2">
+                                    <FileText size={16} className="text-primary-500 mt-0.5 shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
+                                            {source.document.title}
+                                        </p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                            Lớp {source.document.grade} • Đoạn {source.chunk.chunkIndex + 1}
+                                        </p>
+                                        <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
+                                            {source.chunk.content.slice(0, 100)}...
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
