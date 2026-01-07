@@ -1,7 +1,10 @@
 // Chú thích: Cloudflare Vectorize client cho RAG pipeline
-// Sử dụng Vertex AI Text Embeddings để tạo embeddings
+// Sử dụng HuggingFace Inference API để tạo embeddings (miễn phí)
 
-import { getAccessToken, type VertexAICredentials } from './gcp-auth';
+import { createEmbedding as hfCreateEmbedding, createEmbeddingsBatch as hfCreateEmbeddingsBatch, EMBEDDING_DIMENSIONS } from './huggingface';
+
+// Chú thích: Re-export dimensions để các module khác biết
+export { EMBEDDING_DIMENSIONS };
 
 // Chú thích: Interface cho Vectorize record
 export interface VectorRecord {
@@ -27,75 +30,22 @@ export interface SearchResult {
     metadata: VectorRecord['metadata'];
 }
 
-// Chú thích: Tạo embedding từ text sử dụng Vertex AI
+// Chú thích: Tạo embedding từ text sử dụng HuggingFace (thay thế Vertex AI)
 export async function createEmbedding(
-    credentials: VertexAICredentials,
+    hfApiToken: string,
     text: string
 ): Promise<number[]> {
-    const accessToken = await getAccessToken(credentials);
-
-    // Chú thích: Vertex AI Text Embeddings endpoint
-    const endpoint = `https://${credentials.location}-aiplatform.googleapis.com/v1/projects/${credentials.projectId}/locations/${credentials.location}/publishers/google/models/text-embedding-005:predict`;
-
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            instances: [{ content: text }],
-            parameters: {
-                outputDimensionality: 768, // Phải match với Vectorize index
-            },
-        }),
-    });
-
-    if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Embedding error: ${response.status} - ${error}`);
-    }
-
-    const data = await response.json() as {
-        predictions: Array<{ embeddings: { values: number[] } }>;
-    };
-
-    return data.predictions[0].embeddings.values;
+    const result = await hfCreateEmbedding(hfApiToken, text);
+    return result.embedding;
 }
 
 // Chú thích: Batch tạo embeddings (tiết kiệm API calls)
 export async function createEmbeddingsBatch(
-    credentials: VertexAICredentials,
+    hfApiToken: string,
     texts: string[]
 ): Promise<number[][]> {
-    const accessToken = await getAccessToken(credentials);
-
-    const endpoint = `https://${credentials.location}-aiplatform.googleapis.com/v1/projects/${credentials.projectId}/locations/${credentials.location}/publishers/google/models/text-embedding-005:predict`;
-
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            instances: texts.map(text => ({ content: text })),
-            parameters: {
-                outputDimensionality: 768,
-            },
-        }),
-    });
-
-    if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Batch embedding error: ${response.status} - ${error}`);
-    }
-
-    const data = await response.json() as {
-        predictions: Array<{ embeddings: { values: number[] } }>;
-    };
-
-    return data.predictions.map(p => p.embeddings.values);
+    const results = await hfCreateEmbeddingsBatch(hfApiToken, texts);
+    return results.map(r => r.embedding);
 }
 
 // Chú thích: Insert vectors vào Vectorize index
@@ -119,7 +69,7 @@ export async function insertVectors(
 // Chú thích: Search vectors với filters
 export async function searchVectors(
     vectorize: VectorizeIndex,
-    credentials: VertexAICredentials,
+    hfApiToken: string,
     query: string,
     filters?: {
         grade?: string;
@@ -128,8 +78,8 @@ export async function searchVectors(
     },
     topK: number = 5
 ): Promise<SearchResult[]> {
-    // Chú thích: Step 1 - Tạo embedding cho query
-    const queryVector = await createEmbedding(credentials, query);
+    // Chú thích: Step 1 - Tạo embedding cho query dùng HuggingFace
+    const queryVector = await createEmbedding(hfApiToken, query);
 
     // Chú thích: Step 2 - Build filter object cho Vectorize
     const filterObj: Record<string, string> = {};

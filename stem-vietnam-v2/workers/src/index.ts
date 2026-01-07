@@ -1,8 +1,7 @@
 // Chú thích: Entry point cho Cloudflare Workers API (OpenRouter + Auth + Conversations + Admin + RAG)
-// Đã chuyển từ Vertex AI trực tiếp sang OpenRouter với multi-model routing
+// Đã chuyển hoàn toàn từ Vertex AI sang OpenRouter + HuggingFace (miễn phí)
 import { callOpenRouter, streamOpenRouter, buildMessages, classifyQueryForModel, MODEL_ROUTES, MODELS } from './openrouter';
 import { webSearch, formatSearchResultsAsContext } from './duckduckgo';
-import { VertexAICredentials } from './gcp-auth';
 import { handleRegister, handleLogin, handleMe, getUserFromToken, AuthEnv } from './auth-routes';
 import { getConversations, getConversation, createConversation, deleteConversation, addMessage, addMessageFromRequest, ConvoEnv } from './conversation-routes';
 import {
@@ -13,24 +12,19 @@ import {
 } from './exam-routes';
 import { getUsers, getUser, deleteUser, updateUser, getStats, getAdminConversations, getAdminConversation, deleteAdminConversation, AdminEnv } from './admin-routes';
 import { searchVectors, buildContextFromResults } from './vectorize';
-import { listPDFsInFolder, listAllPDFsRecursive } from './google-drive';
-import { processDocument, processLocalFile, getRAGContext, parseMetadataFromFilename, type RAGPipelineConfig, type BookMetadata } from './rag-pipeline';
-import { parseFileWithOCR, isFileTypeSupported, isFileSizeValid, MAX_FILE_SIZE, getSupportedExtensions } from './file-parser';
+import { processLocalFile, getRAGContext, parseMetadataFromFilename, type RAGPipelineConfig, type BookMetadata } from './rag-pipeline';
+import { isFileTypeSupported, isFileSizeValid, MAX_FILE_SIZE, getSupportedExtensions } from './file-parser';
 
-// Chú thích: Environment interface
+// Chú thích: Environment interface (đã xoá Vertex AI, chuyển sang HuggingFace)
 interface Env {
     // OpenRouter API Key (BẮT BUỘC - set qua wrangler secret put)
     OPENROUTER_API_KEY: string;
 
-    // Vertex AI config (giữ lại cho RAG embedding và voice call)
-    VERTEX_PROJECT_ID: string;
-    VERTEX_LOCATION: string;
-    VERTEX_LOCATION_FALLBACK: string;
+    // HuggingFace API Token (cho embeddings RAG - miễn phí)
+    // Chú thích: Lấy từ https://huggingface.co/settings/tokens
+    HF_API_TOKEN: string;
 
-    // Secrets (từ wrangler secret put)
-    VERTEX_CLIENT_EMAIL: string;
-    VERTEX_PRIVATE_KEY: string;
-    VERTEX_PRIVATE_KEY_ID?: string;
+    // JWT Secret for auth
     JWT_SECRET: string;
 
     // D1 Database
@@ -39,24 +33,8 @@ interface Env {
     // Vectorize (RAG Pipeline)
     VECTORIZE: VectorizeIndex;
 
-    // Document AI Config (cần set qua wrangler secret hoặc vars)
-    DOCUMENT_AI_PROCESSOR_ID?: string;
-    DOCUMENT_AI_LOCATION?: string;
-    DRIVE_FOLDER_ID?: string;
-
     // CORS
     CORS_ORIGIN: string;
-}
-
-// Chú thích: Helper để tạo credentials từ env
-function getCredentials(env: Env): VertexAICredentials {
-    return {
-        clientEmail: env.VERTEX_CLIENT_EMAIL,
-        privateKey: env.VERTEX_PRIVATE_KEY,
-        privateKeyId: env.VERTEX_PRIVATE_KEY_ID,
-        projectId: env.VERTEX_PROJECT_ID,
-        location: env.VERTEX_LOCATION,
-    };
 }
 
 const SYSTEM_PROMPTS = {
@@ -299,19 +277,17 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
             return jsonResponse({ error: 'Message is required' }, 400, env.CORS_ORIGIN);
         }
 
-        const credentials = getCredentials(env);
-
         // Chú thích: Phân loại câu hỏi để quyết định có dùng RAG không
         const queryType = classifyQuery(body.message);
         let ragContext = '';
         let sources: unknown[] = [];
 
         // Chú thích: Nếu là câu hỏi học tập → tìm RAG context từ thư viện sách
-        if (queryType === 'academic' && env.VECTORIZE) {
+        if (queryType === 'academic' && env.VECTORIZE && env.HF_API_TOKEN) {
             try {
                 console.info('[chat] Academic query detected, searching RAG...');
                 const ragResult = await getRAGContext(
-                    credentials,
+                    env.HF_API_TOKEN,
                     env.VECTORIZE,
                     body.message,
                     undefined // Không filter theo grade/subject
@@ -413,19 +389,17 @@ async function handleGenerate(request: Request, env: Env): Promise<Response> {
 Độ khó: ${difficulty}
 Trả về dưới dạng JSON array.`;
 
-        const credentials = getCredentials(env);
-
         // Chú thích: Hybrid RAG - Tìm context từ SGK trước
         let ragContext = '';
         let examStyleContext = ''; // Context về đề thi mẫu
         let sourceChunks: unknown[] = [];
-        if (env.VECTORIZE) {
+        if (env.VECTORIZE && env.HF_API_TOKEN) {
             try {
                 console.info('[generate] Searching RAG for topic:', body.topic);
 
                 // 1. Tìm kiến thức SGK
                 const knowledgePromise = getRAGContext(
-                    credentials,
+                    env.HF_API_TOKEN,
                     env.VECTORIZE,
                     body.topic,
                     undefined
@@ -433,7 +407,7 @@ Trả về dưới dạng JSON array.`;
 
                 // 2. Tìm đề thi mẫu (Style Mimicking)
                 const examStylePromise = getRAGContext(
-                    credentials,
+                    env.HF_API_TOKEN,
                     env.VECTORIZE,
                     `Đề thi kiểm tra trắc nghiệm ${body.topic}`,
                     undefined
@@ -661,14 +635,12 @@ export default {
             });
         }
 
-        // Chú thích: Health check
+        // Chú thích: Health check (đã xoá Vertex AI, chuyển sang OpenRouter + HuggingFace)
         if (path === '/' || path === '/health') {
             return jsonResponse({
                 status: 'ok',
                 service: 'stem-vietnam-api',
-                provider: 'vertex-ai',
-                project: env.VERTEX_PROJECT_ID,
-                location: env.VERTEX_LOCATION,
+                provider: 'openrouter + huggingface',
                 timestamp: new Date().toISOString(),
             }, 200, env.CORS_ORIGIN);
         }
@@ -812,67 +784,15 @@ export default {
             }
         }
 
-        // Admin RAG routes
-        if (request.method === 'GET' && path === '/api/admin/rag/list') {
-            // List PDFs từ Google Drive folder
-            const folderId = env.DRIVE_FOLDER_ID;
-            if (!folderId) {
-                return jsonResponse({ error: 'DRIVE_FOLDER_ID not configured' }, 400, env.CORS_ORIGIN);
-            }
-            try {
-                const files = await listPDFsInFolder(getCredentials(env), folderId);
-                return jsonResponse({ success: true, files }, 200, env.CORS_ORIGIN);
-            } catch (error) {
-                return jsonResponse({
-                    error: 'Failed to list files',
-                    details: error instanceof Error ? error.message : 'Unknown error'
-                }, 500, env.CORS_ORIGIN);
-            }
-        }
-
-        if (request.method === 'POST' && path === '/api/admin/rag/process') {
-            // Process một file PDF
-            const body = await request.json() as { fileId: string; metadata?: BookMetadata };
-            if (!body.fileId) {
-                return jsonResponse({ error: 'fileId is required' }, 400, env.CORS_ORIGIN);
-            }
-            if (!env.DOCUMENT_AI_PROCESSOR_ID || !env.DOCUMENT_AI_LOCATION) {
-                return jsonResponse({ error: 'Document AI not configured' }, 400, env.CORS_ORIGIN);
-            }
-
-            const config: RAGPipelineConfig = {
-                documentAI: {
-                    processorId: env.DOCUMENT_AI_PROCESSOR_ID,
-                    location: env.DOCUMENT_AI_LOCATION,
-                },
-                driveFolderId: env.DRIVE_FOLDER_ID || '',
-            };
-
-            // Sử dụng metadata từ request hoặc parse từ filename
-            const metadata = body.metadata || parseMetadataFromFilename(body.fileId, 'unknown.pdf');
-            if (!metadata) {
-                return jsonResponse({ error: 'Could not determine metadata' }, 400, env.CORS_ORIGIN);
-            }
-
-            try {
-                const result = await processDocument(
-                    getCredentials(env),
-                    env.VECTORIZE,
-                    config,
-                    body.fileId,
-                    metadata
-                );
-                return jsonResponse({ success: true, result }, 200, env.CORS_ORIGIN);
-            } catch (error) {
-                return jsonResponse({
-                    error: 'Processing failed',
-                    details: error instanceof Error ? error.message : 'Unknown error'
-                }, 500, env.CORS_ORIGIN);
-            }
-        }
+        // Admin RAG routes (đã xoá Google Drive và Document AI, chỉ giữ search)
+        // Chú thích: Route /api/admin/rag/list và /api/admin/rag/process đã bị xoá vì cần GCP
 
         if (request.method === 'POST' && path === '/api/admin/rag/search') {
-            // Test RAG search
+            // Test RAG search (dùng HuggingFace embeddings)
+            if (!env.HF_API_TOKEN) {
+                return jsonResponse({ error: 'HF_API_TOKEN not configured' }, 400, env.CORS_ORIGIN);
+            }
+
             const body = await request.json() as { query: string; filters?: { grade?: string; subject?: string } };
             if (!body.query) {
                 return jsonResponse({ error: 'query is required' }, 400, env.CORS_ORIGIN);
@@ -880,7 +800,7 @@ export default {
 
             try {
                 const { context, sources } = await getRAGContext(
-                    getCredentials(env),
+                    env.HF_API_TOKEN,
                     env.VECTORIZE,
                     body.query,
                     body.filters
@@ -894,11 +814,10 @@ export default {
             }
         }
 
-        // Chú thích: Upload file và xử lý với Document AI OCR
+        // Chú thích: Upload file route (đơn giản hoá, không dùng Document AI OCR)
         if (request.method === 'POST' && path === '/api/admin/rag/upload') {
-            // Kiểm tra Document AI config
-            if (!env.DOCUMENT_AI_PROCESSOR_ID || !env.DOCUMENT_AI_LOCATION) {
-                return jsonResponse({ error: 'Document AI not configured' }, 400, env.CORS_ORIGIN);
+            if (!env.HF_API_TOKEN) {
+                return jsonResponse({ error: 'HF_API_TOKEN not configured' }, 400, env.CORS_ORIGIN);
             }
 
             try {
@@ -941,22 +860,9 @@ export default {
                 // Read file buffer
                 const fileBuffer = await file.arrayBuffer();
 
-                // Parse file với Document AI OCR (cho PDF)
-                const credentials = getCredentials(env);
-                const ocrOptions = {
-                    credentials,
-                    documentAIConfig: {
-                        processorId: env.DOCUMENT_AI_PROCESSOR_ID,
-                        location: env.DOCUMENT_AI_LOCATION,
-                    },
-                };
-
-                // Parse file
-                const parsed = await parseFileWithOCR(fileBuffer, file.name, file.type, ocrOptions);
-
-                // Process và index vào Vectorize
+                // Process và index vào Vectorize (dùng HuggingFace embeddings)
                 const result = await processLocalFile(
-                    credentials,
+                    env.HF_API_TOKEN,
                     env.VECTORIZE,
                     fileBuffer,
                     file.name,
@@ -966,11 +872,6 @@ export default {
                 return jsonResponse({
                     success: true,
                     result,
-                    parsed: {
-                        fileName: parsed.metadata.fileName,
-                        fileType: parsed.metadata.fileType,
-                        extractedLength: parsed.metadata.extractedLength,
-                    }
                 }, 200, env.CORS_ORIGIN);
 
             } catch (error) {

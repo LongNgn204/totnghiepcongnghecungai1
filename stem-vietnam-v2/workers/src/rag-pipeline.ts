@@ -1,17 +1,16 @@
-// Chú thích: RAG Pipeline - Full processing flow cho documents
-// Flow: File Upload/Drive → Parse → Chunks → Embeddings → Vectorize
-// Hỗ trợ: txt, md, docx, pdf (text-based), html, json
+// Chú thích: RAG Pipeline - Search context từ Vectorize
+// Đã xoá phụ thuộc Vertex AI, Google Drive, Document AI
+// Chỉ giữ lại: getRAGContext (search) và processLocalFile (parse file local)
 
-import { type VertexAICredentials } from './gcp-auth';
-import { downloadFile, getFileMetadata, listPDFsInFolder, type DriveFile } from './google-drive';
-import { extractTextFromPDF, chunkText, type DocumentAIConfig, type TextChunk } from './document-ai';
 import { createEmbeddingsBatch, insertVectors, searchVectors, buildContextFromResults, type VectorRecord, type SearchResult } from './vectorize';
-import { parseFile, isFileTypeSupported, isFileSizeValid, MAX_FILE_SIZE, type ParsedDocument } from './file-parser';
+import { parseFile, isFileSizeValid, MAX_FILE_SIZE, type ParsedDocument } from './file-parser';
 
-// Chú thích: Config cho RAG pipeline
+// ============================================
+// TYPES
+// ============================================
+
+// Chú thích: Config cho RAG pipeline (đã đơn giản hoá, xoá GCP)
 export interface RAGPipelineConfig {
-    documentAI: DocumentAIConfig;
-    driveFolderId: string;
     chunkOptions?: {
         maxTokens?: number;
         overlapTokens?: number;
@@ -39,154 +38,99 @@ export interface ProcessingResult {
     latencyMs: number;
 }
 
-// Chú thích: Process một file PDF từ Drive vào Vectorize
-export async function processDocument(
-    credentials: VertexAICredentials,
-    vectorize: VectorizeIndex,
-    config: RAGPipelineConfig,
-    fileId: string,
-    metadata: BookMetadata
-): Promise<ProcessingResult> {
-    const t0 = Date.now();
-
-    try {
-        // Chú thích: Step 1 - Download PDF từ Drive
-        console.log('[rag-pipeline] downloading', { fileId, bookId: metadata.bookId });
-        const pdfBuffer = await downloadFile(credentials, fileId);
-
-        // Chú thích: Step 2 - Extract text với Document AI
-        console.log('[rag-pipeline] extracting text');
-        const extracted = await extractTextFromPDF(credentials, config.documentAI, pdfBuffer);
-
-        if (!extracted.text || extracted.text.length < 100) {
-            throw new Error('Extracted text too short or empty');
-        }
-
-        // Chú thích: Step 3 - Chunk text
-        console.log('[rag-pipeline] chunking text');
-        const chunks = chunkText(extracted.text, metadata.bookId, config.chunkOptions);
-
-        // Chú thích: Step 4 - Tạo embeddings (batch để tiết kiệm API calls)
-        console.log('[rag-pipeline] creating embeddings', { chunks: chunks.length });
-        const BATCH_SIZE = 20; // Vertex AI limit
-        const allEmbeddings: number[][] = [];
-
-        for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
-            const batch = chunks.slice(i, i + BATCH_SIZE);
-            const texts = batch.map(c => c.content);
-            const embeddings = await createEmbeddingsBatch(credentials, texts);
-            allEmbeddings.push(...embeddings);
-        }
-
-        // Chú thích: Step 5 - Build vector records
-        const vectorRecords: VectorRecord[] = chunks.map((chunk, index) => ({
-            id: chunk.id,
-            values: allEmbeddings[index],
-            metadata: {
-                bookId: metadata.bookId,
-                title: metadata.title,
-                grade: metadata.grade,
-                subject: metadata.subject,
-                type: metadata.type,
-                content: chunk.content,
-            },
-        }));
-
-        // Chú thích: Step 6 - Insert vào Vectorize
-        console.log('[rag-pipeline] inserting vectors');
-        const insertResult = await insertVectors(vectorize, vectorRecords);
-
-        const latency = Date.now() - t0;
-        console.log('[rag-pipeline] completed', {
-            bookId: metadata.bookId,
-            chunks: chunks.length,
-            vectors: insertResult.inserted,
-            latency,
-        });
-
-        return {
-            fileId,
-            fileName: metadata.title,
-            success: true,
-            chunksCreated: chunks.length,
-            vectorsInserted: insertResult.inserted,
-            latencyMs: latency,
-        };
-
-    } catch (error) {
-        const latency = Date.now() - t0;
-        console.error('[rag-pipeline] error', { fileId, error });
-
-        return {
-            fileId,
-            fileName: metadata.title,
-            success: false,
-            chunksCreated: 0,
-            vectorsInserted: 0,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            latencyMs: latency,
-        };
-    }
-}
-
-// Chú thích: Process tất cả PDFs trong một folder
-export async function processAllDocuments(
-    credentials: VertexAICredentials,
-    vectorize: VectorizeIndex,
-    config: RAGPipelineConfig,
-    metadataMap: Map<string, BookMetadata> // fileId -> metadata
-): Promise<{
-    total: number;
-    success: number;
-    failed: number;
-    results: ProcessingResult[];
-}> {
-    const files = await listPDFsInFolder(credentials, config.driveFolderId);
-
-    console.log('[rag-pipeline] processing all', { total: files.length });
-
-    const results: ProcessingResult[] = [];
-    let success = 0;
-    let failed = 0;
-
-    for (const file of files) {
-        const metadata = metadataMap.get(file.id);
-        if (!metadata) {
-            console.warn('[rag-pipeline] no metadata for file', { fileId: file.id, name: file.name });
-            results.push({
-                fileId: file.id,
-                fileName: file.name,
-                success: false,
-                chunksCreated: 0,
-                vectorsInserted: 0,
-                error: 'No metadata provided',
-                latencyMs: 0,
-            });
-            failed++;
-            continue;
-        }
-
-        const result = await processDocument(credentials, vectorize, config, file.id, metadata);
-        results.push(result);
-
-        if (result.success) {
-            success++;
-        } else {
-            failed++;
-        }
-    }
-
-    return {
-        total: files.length,
-        success,
-        failed,
-        results,
+// Chú thích: Interface cho text chunk (inline, xoá import từ document-ai.ts)
+interface TextChunk {
+    id: string;
+    content: string;
+    startIndex: number;
+    endIndex: number;
+    metadata: {
+        chunkIndex: number;
+        totalChunks?: number;
     };
 }
 
-// Chú thích: Search context cho RAG
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+// Chú thích: Chunk text thành các đoạn nhỏ hơn (đã copy từ document-ai.ts trước khi xoá)
+function chunkText(
+    text: string,
+    documentId: string,
+    options: { maxTokens?: number; overlapTokens?: number } = {}
+): TextChunk[] {
+    const maxTokens = options.maxTokens || 500;
+    const overlapTokens = options.overlapTokens || 100;
+    const separators = ['\n\n', '\n', '. ', ' '];
+
+    const maxChars = maxTokens * 4;
+    const overlapChars = overlapTokens * 4;
+
+    const chunks: TextChunk[] = [];
+    let currentIndex = 0;
+    let chunkIndex = 0;
+
+    while (currentIndex < text.length) {
+        // Chú thích: Tìm điểm cắt tốt nhất
+        let endIndex = Math.min(currentIndex + maxChars, text.length);
+
+        // Chú thích: Nếu chưa hết text, tìm separator gần nhất
+        if (endIndex < text.length) {
+            let bestSplit = endIndex;
+            for (const sep of separators) {
+                const lastSep = text.lastIndexOf(sep, endIndex);
+                if (lastSep > currentIndex + maxChars * 0.5) {
+                    bestSplit = lastSep + sep.length;
+                    break;
+                }
+            }
+            endIndex = bestSplit;
+        }
+
+        const content = text.slice(currentIndex, endIndex).trim();
+
+        if (content.length > 0) {
+            chunks.push({
+                id: `${documentId}-chunk-${chunkIndex}`,
+                content,
+                startIndex: currentIndex,
+                endIndex,
+                metadata: {
+                    chunkIndex,
+                },
+            });
+            chunkIndex++;
+        }
+
+        // Chú thích: Move to next chunk với overlap
+        currentIndex = endIndex - overlapChars;
+        if (currentIndex <= chunks[chunks.length - 1]?.startIndex) {
+            currentIndex = endIndex; // Tránh infinite loop
+        }
+    }
+
+    // Chú thích: Update totalChunks
+    for (const chunk of chunks) {
+        chunk.metadata.totalChunks = chunks.length;
+    }
+
+    console.log('[rag-pipeline] chunked text', {
+        documentId,
+        totalChunks: chunks.length,
+        avgChunkSize: Math.round(text.length / chunks.length),
+    });
+
+    return chunks;
+}
+
+// ============================================
+// MAIN FUNCTIONS
+// ============================================
+
+// Chú thích: Search context cho RAG (dùng HuggingFace embeddings)
 export async function getRAGContext(
-    credentials: VertexAICredentials,
+    hfApiToken: string,
     vectorize: VectorizeIndex,
     query: string,
     filters?: {
@@ -199,7 +143,7 @@ export async function getRAGContext(
     context: string;
     sources: SearchResult[];
 }> {
-    const results = await searchVectors(vectorize, credentials, query, filters, topK);
+    const results = await searchVectors(vectorize, hfApiToken, query, filters, topK);
     const context = buildContextFromResults(results);
 
     return {
@@ -246,10 +190,10 @@ export function parseMetadataFromFilename(
     }
 }
 
-// Chú thích: Process file upload trực tiếp (không cần Google Drive/Document AI)
+// Chú thích: Process file upload trực tiếp (dùng HuggingFace embeddings)
 // Hỗ trợ: txt, md, docx, pdf (limited), html, json
 export async function processLocalFile(
-    credentials: VertexAICredentials,
+    hfApiToken: string,
     vectorize: VectorizeIndex,
     fileBuffer: ArrayBuffer,
     fileName: string,
@@ -276,7 +220,7 @@ export async function processLocalFile(
         console.log('[rag-pipeline] chunking text', { textLength: parsed.content.length });
         const chunks = chunkText(parsed.content, metadata.bookId, chunkOptions);
 
-        // Chú thích: Step 4 - Tạo embeddings (batch)
+        // Chú thích: Step 4 - Tạo embeddings (batch) với HuggingFace
         console.log('[rag-pipeline] creating embeddings', { chunks: chunks.length });
         const BATCH_SIZE = 20;
         const allEmbeddings: number[][] = [];
@@ -284,7 +228,7 @@ export async function processLocalFile(
         for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
             const batch = chunks.slice(i, i + BATCH_SIZE);
             const texts = batch.map(c => c.content);
-            const embeddings = await createEmbeddingsBatch(credentials, texts);
+            const embeddings = await createEmbeddingsBatch(hfApiToken, texts);
             allEmbeddings.push(...embeddings);
         }
 
