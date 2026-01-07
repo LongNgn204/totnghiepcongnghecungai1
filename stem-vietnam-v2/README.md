@@ -1,136 +1,177 @@
-# STEM Vietnam - Trợ Lý Học Tập Thông Minh
+# 🎓 STEM Vietnam - Trợ Lý Học Tập Môn Công Nghệ THPT
 
-STEM Vietnam là nền tảng hỗ trợ học tập môn Công nghệ THPT tích hợp AI tiên tiến, giúp học sinh ôn tập, giải đáp thắc mắc và giáo viên tạo đề thi chất lượng cao dựa trên chương trình Giáo dục phổ thông mới (2018).
+> **Dự án Nghiên cứu Khoa học**  
+> Nền tảng hỗ trợ học tập môn Công nghệ THPT tích hợp AI, giúp học sinh ôn tập và giáo viên tạo đề thi.
 
 ![STEM AI Banner](https://placehold.co/1200x300/6d28d9/ffffff?text=STEM+Vietnam+AI)
 
-## 🌟 Tính Năng Chính
+## ✨ Tính Năng
 
-*   **🤖 STEMBot AI**: Trợ lý ảo thông minh trả lời câu hỏi, giải bài tập với kiến thức chuẩn xác từ SGK.
-*   **📝 Tạo Đề Thi Với AI (RAG)**:
-    *   Tự động tạo đề trắc nghiệm, đúng/sai theo cấu trúc thi THPT Quốc gia mới.
-    *   **Hybrid RAG**: Kết hợp kiến thức SGK (chính xác) + Google Search (thực tế) + Đề thi mẫu (Style Mimicking).
-    *   **Nguồn Minh Bạch**: Hiển thị rõ nguồn trích dẫn từ SGK hay Internet cho từng câu hỏi.
-*   **💬 Chat Với Đề Thi**: Hỏi đáp trực tiếp với AI về đề thi vừa tạo để hiểu sâu hơn.
-*   **📚 Thư Viện Tài Liệu**: Tích hợp sách giáo khoa, chuyên đề học tập (Cánh Diều, KNTT...) và đề thi mẫu.
+| Tính năng | Mô tả |
+|-----------|-------|
+| 🤖 **StemBot AI** | Chat AI thông minh, giải đáp thắc mắc 24/7 |
+| 📝 **Tạo Đề Thi** | Tự động tạo đề theo cấu trúc THPT Quốc gia |
+| 🔍 **Web Search** | Dữ liệu mới nhất từ internet |
+| 📚 **RAG System** | Kiến thức chính xác từ SGK |
 
-## 🏗️ Kiến Trúc Hệ Thống
+## 🏗️ Kiến Trúc
 
-Hệ thống sử dụng kiến trúc **Serverless** hiện đại trên nền tảng Cloudflare và Google Cloud Vertex AI.
-
-```mermaid
-flowchart TD
-    User([User: Học sinh / Giáo viên]) -->|Tương tác| Frontend[Frontend: React + Vite]
-    
-    subgraph "Frontend Layer (Vercel/Static)"
-        Frontend -->|Chat / Tạo đề| API_Client[API Client]
-    end
-
-    subgraph "Backend Layer (Cloudflare Workers)"
-        API_Client -->|POST /api/generate| Worker[Main Worker]
-        
-        Worker -->|1. Knowledge Retrieval| RAG_SGK{RAG: SGK & Chuyên đề}
-        Worker -->|2. Style Retrieval| RAG_Exam{RAG: Đề thi mẫu}
-        
-        RAG_SGK -->|Query| VectorDB[Cloudflare Vectorize]
-        RAG_Exam -->|Query| VectorDB
-        
-        Worker -->|3. Generation| Gemini[Google Gemini 2.0 Flash]
-        Gemini -->|Grounding| GoogleSearch[Google Search Tool]
-    end
-
-    subgraph "Data Layer"
-        VectorDB -- "Embeddings" --> D1[Cloudflare D1 (SQL)]
-        D1 -- "Metadata & Chat History" --> Worker
-    end
-
-    Gemini -->|JSON Output| Worker
-    Worker -->|Response| Frontend
+```
+┌──────────────────────────────────────────────────────────┐
+│                     FRONTEND (React)                      │
+│                   Vercel / Cloudflare Pages               │
+└─────────────────────────┬────────────────────────────────┘
+                          │
+                          ▼
+┌──────────────────────────────────────────────────────────┐
+│              CLOUDFLARE WORKERS (API)                     │
+│                                                           │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │
+│  │  OpenRouter │  │ HuggingFace │  │  DuckDuckGo │       │
+│  │   (FREE)    │  │   (FREE)    │  │   (FREE)    │       │
+│  │  LLM Chat   │  │  Embeddings │  │  Web Search │       │
+│  └─────────────┘  └─────────────┘  └─────────────┘       │
+│                          │                                │
+│                          ▼                                │
+│              ┌─────────────────────┐                     │
+│              │ Cloudflare Vectorize │                     │
+│              │   (RAG Database)     │                     │
+│              └─────────────────────┘                     │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ## 🛠️ Tech Stack
 
-*   **Frontend**: React, TypeScript, Vite, Tailwind CSS, Lucide Icons, React Router.
-*   **Backend**: Cloudflare Workers (Hono/Native), Cloudflare Vectorize (Vector DB), Cloudflare D1 (SQL Lite).
-*   **AI Model**: Google Gemini 2.0 Flash (via Vertex AI).
-*   **RAG**: Hybrid Search (Semantic Retrieval + Keyword Search), Google Search Grounding.
+| Layer | Công nghệ |
+|-------|-----------|
+| **Frontend** | React, TypeScript, Vite, Tailwind CSS |
+| **Backend** | Cloudflare Workers |
+| **AI/LLM** | OpenRouter (Gemini, DeepSeek, MiMo - FREE) |
+| **Embeddings** | HuggingFace Inference API (FREE) |
+| **Database** | Cloudflare D1 (SQL), Vectorize (RAG) |
+| **Search** | DuckDuckGo API (FREE) |
 
-## 🚀 Cài Đặt & Chạy Dự Án
+## 🚀 Cài Đặt
 
-### Yêu Cầu
+### Yêu cầu
 - Node.js 18+
-- Tài khoản Cloudflare (để chạy Backend/Wrangler)
-- Google Cloud Project (để lấy Vertex AI credentials)
+- Tài khoản Cloudflare
+- OpenRouter API Key (free tại [openrouter.ai](https://openrouter.ai))
+- HuggingFace Token (free tại [huggingface.co](https://huggingface.co/settings/tokens))
 
-### 1. Clone & Cài Đặt Dependencies
+### 1. Clone & Install
 
 ```bash
-git clone https://github.com/your-repo/stem-vietnam-v2.git
+git clone https://github.com/LongNgn204/totnghiepcongnghecungai1.git
 cd stem-vietnam-v2
 
-# Cài đặt Frontend
+# Frontend
 npm install
 
-# Cài đặt Backend (Workers)
+# Backend
+cd workers && npm install
+```
+
+### 2. Cấu hình Secrets
+
+```bash
 cd workers
-npm install
-```
 
-### 2. Cấu Hình Môi Trường (.env)
-
-Tạo file `.env` ở root (Frontend) và `workers/.dev.vars` (Backend).
-
-**Frontend (.env):**
-```env
-VITE_API_URL=http://localhost:8787
-```
-
-**Backend (workers/.dev.vars):**
-```env
-VERTEX_PROJECT_ID=your-project-id
-VERTEX_LOCATION=us-central1
-# Các biến môi trường khác...
+# API Keys (bắt buộc)
+npx wrangler secret put OPENROUTER_API_KEY
+npx wrangler secret put HF_API_TOKEN
+npx wrangler secret put JWT_SECRET
 ```
 
 ### 3. Chạy Local
 
-**Terminal 1 (Backend):**
 ```bash
-cd workers
-npx wrangler dev
-```
+# Terminal 1 - Backend
+cd workers && npx wrangler dev
 
-**Terminal 2 (Frontend):**
-```bash
-# Ở thư mục gốc
+# Terminal 2 - Frontend  
 npm run dev
 ```
 
-Truy cập `http://localhost:5173` để trải nghiệm ứng dụng.
+Truy cập: http://localhost:5173
 
 ## 📂 Cấu Trúc Dự Án
 
 ```
 stem-vietnam-v2/
-├── public/              # Static assets (Books, Exams...)
-├── src/
-│   ├── components/      # React Components
-│   │   ├── chat/        # Chat Interface (ChatPage, Sidebar...)
-│   │   ├── forms/       # Exam Generation Forms
-│   │   └── ...
-│   ├── data/            # Static Data (Library index...)
-│   ├── lib/             # Shared Logic (API, RAG Generator...)
-│   └── types/           # TypeScript Definitions
-├── workers/             # Cloudflare Workers Code
+├── src/                    # Frontend React
+│   ├── components/         # UI Components
+│   ├── lib/                # API clients, utils
+│   └── pages/              # Route pages
+├── workers/                # Cloudflare Workers API
 │   ├── src/
-│   │   └── index.ts     # Main Worker Logic (API Handlers)
-│   └── wrangler.toml    # Worker Configuration
-└── README.md            # Tài liệu dự án
+│   │   ├── index.ts        # Main API routes
+│   │   ├── openrouter.ts   # LLM client (FREE)
+│   │   ├── huggingface.ts  # Embeddings (FREE)
+│   │   ├── duckduckgo.ts   # Web search (FREE)
+│   │   └── vectorize.ts    # RAG vector search
+│   └── wrangler.toml       # Worker config
+├── public/                 # Static assets
+├── ROADMAP.md              # Development roadmap
+└── README.md
 ```
 
-## 🤝 Đóng Góp
+## 🌐 Deploy
 
-Dự án được phát triển bởi đội ngũ kỹ sư STEM Vietnam. Mọi đóng góp xin vui lòng tạo Pull Request hoặc Issue trên GitHub.
+### Frontend (Cloudflare Pages)
+```bash
+npm run build
+# Deploy dist/ to Cloudflare Pages
+```
+
+### Backend (Cloudflare Workers)
+```bash
+cd workers
+npm run deploy
+```
+
+## 💰 Chi Phí
+
+| Service | Chi phí |
+|---------|---------|
+| OpenRouter | **FREE** (free models) |
+| HuggingFace | **FREE** (inference API) |
+| DuckDuckGo | **FREE** |
+| Cloudflare Workers | **FREE** (100k req/day) |
+| Cloudflare D1 | **FREE** (5GB) |
+| Cloudflare Vectorize | **FREE** (30M vectors) |
+
+**Tổng chi phí vận hành: $0/tháng** 🎉
+
+## 📖 API Endpoints
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| POST | `/api/chat` | Chat với AI |
+| POST | `/api/chat/stream` | Chat streaming |
+| POST | `/api/generate` | Tạo câu hỏi trắc nghiệm |
+| POST | `/api/auth/login` | Đăng nhập |
+| POST | `/api/auth/register` | Đăng ký |
+| GET | `/api/conversations` | Lấy danh sách hội thoại |
+| GET | `/api/exams` | Lấy danh sách đề thi |
+
+## 🧪 Testing
+
+```bash
+# Health check
+curl https://stem-vietnam-api.stu725114073.workers.dev/health
+
+# Test chat
+curl -X POST https://stem-vietnam-api.stu725114073.workers.dev/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Mạng LAN là gì?"}'
+```
+
+## 📝 License
+
+MIT License © 2026 STEM Vietnam
 
 ---
-© 2026 STEM Vietnam. All rights reserved.
+
+**Tác giả**: Nguyễn Hoàng Long - HNUE  
+**Liên hệ**: [GitHub](https://github.com/LongNgn204)
