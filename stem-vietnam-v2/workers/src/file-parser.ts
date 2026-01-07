@@ -1,9 +1,8 @@
 // Chú thích: File Parser Module - Hỗ trợ nhiều format file cho RAG pipeline
-// Formats: txt, md, docx, pdf (full support với Document AI), html, json
+// Formats: txt, md, docx, pdf (basic text extraction), html, json
+// Đã xoá Document AI OCR (cần GCP)
 
 import mammoth from 'mammoth';
-import { extractTextFromPDF, type DocumentAIConfig } from './document-ai';
-import { type VertexAICredentials } from './gcp-auth';
 
 // Chú thích: Supported file types
 export type SupportedFileType = 'txt' | 'md' | 'docx' | 'pdf' | 'html' | 'json';
@@ -124,7 +123,6 @@ async function parseDocxFile(buffer: ArrayBuffer, fileName: string): Promise<Par
 async function parsePdfFile(buffer: ArrayBuffer, fileName: string): Promise<ParsedDocument> {
     // Chú thích: Trong Cloudflare Workers, không có native PDF support
     // User nên convert PDF sang txt/docx trước khi upload
-    // Hoặc dùng Document AI nếu muốn parse PDF chính xác
 
     // Thử decode như text (chỉ hoạt động với PDF có embedded text layer)
     const decoder = new TextDecoder('utf-8');
@@ -264,82 +262,4 @@ export const MAX_FILE_SIZE = 25 * 1024 * 1024;
 // Chú thích: Check file size
 export function isFileSizeValid(size: number): boolean {
     return size <= MAX_FILE_SIZE;
-}
-
-// Chú thích: Parse PDF với Document AI OCR (hỗ trợ cả scanned PDFs)
-async function parsePdfWithDocumentAI(
-    buffer: ArrayBuffer,
-    fileName: string,
-    credentials: VertexAICredentials,
-    documentAIConfig: DocumentAIConfig
-): Promise<ParsedDocument> {
-    console.log('[file-parser] parsing PDF with Document AI', { fileName });
-
-    const extracted = await extractTextFromPDF(credentials, documentAIConfig, buffer);
-
-    if (!extracted.text || extracted.text.length < 10) {
-        throw new Error(`Document AI could not extract text from PDF: ${fileName}`);
-    }
-
-    return {
-        content: extracted.text.trim(),
-        metadata: {
-            fileName,
-            fileType: 'pdf',
-            originalSize: buffer.byteLength,
-            extractedLength: extracted.text.length,
-        },
-    };
-}
-
-// Chú thích: Interface cho parseFileWithOCR options
-export interface ParseWithOCROptions {
-    credentials: VertexAICredentials;
-    documentAIConfig: DocumentAIConfig;
-}
-
-// Chú thích: Main parse function với Document AI OCR support cho PDFs
-// Sử dụng khi muốn parse PDF với OCR capability
-export async function parseFileWithOCR(
-    buffer: ArrayBuffer,
-    fileName: string,
-    mimeType?: string,
-    ocrOptions?: ParseWithOCROptions
-): Promise<ParsedDocument> {
-    const fileType = detectFileType(fileName, mimeType);
-
-    if (!fileType) {
-        throw new Error(`Unsupported file type: ${fileName}. Supported: txt, md, docx, pdf, html, json`);
-    }
-
-    console.log('[file-parser] parsing with OCR support', { fileName, fileType, hasOCR: !!ocrOptions });
-
-    // Chú thích: Nếu là PDF và có OCR config, dùng Document AI
-    if (fileType === 'pdf' && ocrOptions) {
-        return parsePdfWithDocumentAI(
-            buffer,
-            fileName,
-            ocrOptions.credentials,
-            ocrOptions.documentAIConfig
-        );
-    }
-
-    // Chú thích: Các file type khác dùng parser thông thường
-    switch (fileType) {
-        case 'txt':
-            return parseTextFile(buffer, fileName);
-        case 'md':
-            return parseMarkdownFile(buffer, fileName);
-        case 'docx':
-            return parseDocxFile(buffer, fileName);
-        case 'pdf':
-            // Fallback: thử basic extraction, thông báo cần OCR nếu thất bại
-            return parsePdfFile(buffer, fileName);
-        case 'html':
-            return parseHtmlFile(buffer, fileName);
-        case 'json':
-            return parseJsonFile(buffer, fileName);
-        default:
-            throw new Error(`Parser not implemented for: ${fileType}`);
-    }
 }
